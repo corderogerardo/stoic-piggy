@@ -6,7 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class PiggyService {
   constructor(private readonly prisma: PrismaService) {}
 
-  listPiggyBanks(childId: string) {
+  async listPiggyBanks(childId: string) {
     return this.prisma.piggyBank.findMany({ where: { childId } });
   }
 

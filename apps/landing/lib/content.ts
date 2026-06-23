@@ -111,9 +111,21 @@ export const CONTENT: Record<Lang, LandingContent> = {
       title: 'Tres pasos, cero peleas por la mesada',
       sub: 'Desde tu panel asignas, ellos cumplen, y tú apruebas. El dinero solo entra cuando la tarea está hecha.',
       steps: [
-        { tag: 'EN TU PANEL', title: 'Asigna las tareas', body: 'Desde el panel de padres creas tareas con un valor: sacar la basura $20, leer 20 min +50 XP. Únicas o semanales.' },
-        { tag: 'EN SU APP', title: 'Completan y aprenden', body: 'Tus hijos marcan las tareas como hechas y desbloquean misiones de finanzas mientras avanzan de nivel.' },
-        { tag: 'TÚ APRUEBAS', title: 'Ganan y ahorran', body: 'Apruebas con un toque, el dinero entra a su alcancía, y la cochinita los reta a ahorrarlo en vez de gastarlo.' },
+        {
+          tag: 'EN TU PANEL',
+          title: 'Asigna las tareas',
+          body: 'Desde el panel de padres creas tareas con un valor: sacar la basura $20, leer 20 min +50 XP. Únicas o semanales.',
+        },
+        {
+          tag: 'EN SU APP',
+          title: 'Completan y aprenden',
+          body: 'Tus hijos marcan las tareas como hechas y desbloquean misiones de finanzas mientras avanzan de nivel.',
+        },
+        {
+          tag: 'TÚ APRUEBAS',
+          title: 'Ganan y ahorran',
+          body: 'Apruebas con un toque, el dinero entra a su alcancía, y la cochinita los reta a ahorrarlo en vez de gastarlo.',
+        },
       ],
     },
     flow: {
@@ -121,9 +133,15 @@ export const CONTENT: Record<Lang, LandingContent> = {
       title: 'Cada tarea es una lección de dinero',
       sub: 'No es solo pagar por chambear. Cada peso ganado pasa por la cochinita estoica, que reta a tus hijos a pensar antes de gastar.',
       points: [
-        { b: 'Tú pones el valor.', t: 'Lavar el coche $50, tender la cama $10, leer un capítulo +50 XP.' },
+        {
+          b: 'Tú pones el valor.',
+          t: 'Lavar el coche $50, tender la cama $10, leer un capítulo +50 XP.',
+        },
         { b: 'Ellos eligen.', t: 'Marcan la tarea como hecha y la mandan a tu aprobación.' },
-        { b: 'La cochinita interviene.', t: 'Antes de un gasto por impulso, los hace respirar y decidir con calma.' },
+        {
+          b: 'La cochinita interviene.',
+          t: 'Antes de un gasto por impulso, los hace respirar y decidir con calma.',
+        },
       ],
       cardLabel: 'TAREA ASIGNADA',
       cardTag: 'POR APROBAR',
@@ -135,16 +153,41 @@ export const CONTENT: Record<Lang, LandingContent> = {
     },
     feat: { eyebrow: 'TODO EN UN LUGAR', title: 'Hecho para padres ocupados' },
     features: [
-      { icon: 'list-ul', title: 'Tareas con valor real', body: 'Crea tareas con pago en pesos o experiencia. Únicas o que se repiten cada semana.' },
-      { icon: 'check-circle', title: 'Aprobación con un toque', body: 'Tus hijos marcan hecho, tú revisas y liberas el dinero. Tú tienes la última palabra.' },
-      { icon: 'commenting-o', title: 'Mentor con IA', body: 'La cochinita responde dudas de dinero y los reta a no comprar por impulso.' },
-      { icon: 'bank', title: 'Metas de ahorro', body: 'Cada hijo fija una meta — una bici, un juego — y ve crecer su alcancía.' },
-      { icon: 'bar-chart', title: 'Reportes para padres', body: 'Mira qué tareas cumplen, cuánto ahorran y cuántos impulsos resisten.' },
-      { icon: 'refresh', title: 'Mesada automática', body: 'Programa un depósito semanal o mensual y olvídate de andar con efectivo.' },
+      {
+        icon: 'list-ul',
+        title: 'Tareas con valor real',
+        body: 'Crea tareas con pago en pesos o experiencia. Únicas o que se repiten cada semana.',
+      },
+      {
+        icon: 'check-circle',
+        title: 'Aprobación con un toque',
+        body: 'Tus hijos marcan hecho, tú revisas y liberas el dinero. Tú tienes la última palabra.',
+      },
+      {
+        icon: 'commenting-o',
+        title: 'Mentor con IA',
+        body: 'La cochinita responde dudas de dinero y los reta a no comprar por impulso.',
+      },
+      {
+        icon: 'bank',
+        title: 'Metas de ahorro',
+        body: 'Cada hijo fija una meta — una bici, un juego — y ve crecer su alcancía.',
+      },
+      {
+        icon: 'bar-chart',
+        title: 'Reportes para padres',
+        body: 'Mira qué tareas cumplen, cuánto ahorran y cuántos impulsos resisten.',
+      },
+      {
+        icon: 'refresh',
+        title: 'Mesada automática',
+        body: 'Programa un depósito semanal o mensual y olvídate de andar con efectivo.',
+      },
     ],
     stoic: {
       eyebrow: 'INSPIRADO EN LA FILOSOFÍA ESTOICA',
-      quote: '"La riqueza no consiste en tener grandes posesiones, sino en tener pocas necesidades."',
+      quote:
+        '"La riqueza no consiste en tener grandes posesiones, sino en tener pocas necesidades."',
       author: '— EPICTETO',
       body: 'Stoic Piggy no premia gastar — premia el dominio propio. Tus hijos aprenden la habilidad que ninguna escuela enseña: querer menos, elegir mejor y ahorrar para lo que de verdad importa.',
     },
@@ -152,21 +195,60 @@ export const CONTENT: Record<Lang, LandingContent> = {
       eyebrow: 'FAMILIAS REALES',
       title: 'Padres que ya respiran tranquilos',
       items: [
-        { quote: 'Mi hija dejó de pedirme dinero a cada rato. Ahora sabe que se gana, y piensa dos veces antes de gastarlo.', name: 'Laura M.', role: 'Mamá de 2 · Monterrey', initial: 'L', avBg: '#E63946' },
-        { quote: 'Las peleas por la mesada se acabaron. Asigno tareas el domingo y la app se encarga del resto.', name: 'Diego R.', role: 'Papá de 3 · CDMX', initial: 'D', avBg: '#457B9D' },
-        { quote: 'Lo de "respira antes de comprar" le quedó grabado a mi hijo. A los 11 años ya tiene su fondo de ahorro.', name: 'Andrea P.', role: 'Mamá de 1 · Guadalajara', initial: 'A', avBg: '#1D3557' },
+        {
+          quote:
+            'Mi hija dejó de pedirme dinero a cada rato. Ahora sabe que se gana, y piensa dos veces antes de gastarlo.',
+          name: 'Laura M.',
+          role: 'Mamá de 2 · Monterrey',
+          initial: 'L',
+          avBg: '#E63946',
+        },
+        {
+          quote:
+            'Las peleas por la mesada se acabaron. Asigno tareas el domingo y la app se encarga del resto.',
+          name: 'Diego R.',
+          role: 'Papá de 3 · CDMX',
+          initial: 'D',
+          avBg: '#457B9D',
+        },
+        {
+          quote:
+            'Lo de "respira antes de comprar" le quedó grabado a mi hijo. A los 11 años ya tiene su fondo de ahorro.',
+          name: 'Andrea P.',
+          role: 'Mamá de 1 · Guadalajara',
+          initial: 'A',
+          avBg: '#1D3557',
+        },
       ],
     },
     faq: {
       eyebrow: 'PREGUNTAS FRECUENTES',
       title: '¿Dudas? Las resolvemos',
       items: [
-        { q: '¿Cuánto cuesta?', a: 'Gratis mientras estamos en acceso anticipado — con hijos ilimitados. Queremos que las familias de verdad lo usen.' },
-        { q: '¿El dinero es real?', a: 'Tú decides. La app lleva el saldo y las metas; tú entregas el dinero real (efectivo, transferencia o tarjeta) cuando apruebas una tarea o liberas el ahorro.' },
-        { q: '¿Desde qué edad sirve?', a: 'Funciona bien de los 6 a los 16. Los más pequeños se enfocan en tareas y metas; los mayores desbloquean misiones de inversión y deuda.' },
-        { q: '¿Mis hijos pueden gastar sin que yo sepa?', a: 'No. Tú apruebas cada tarea y liberas cada retiro. La cochinita además los hace pausar antes de cualquier gasto por impulso.' },
-        { q: '¿Está en español?', a: 'Sí, completamente bilingüe español e inglés. Cambias el idioma cuando quieras desde la app.' },
-        { q: '¿Mis datos están seguros?', a: 'Sí. No vendemos datos ni mostramos anuncios. La información de tu familia está cifrada y es solo tuya.' },
+        {
+          q: '¿Cuánto cuesta?',
+          a: 'Gratis mientras estamos en acceso anticipado — con hijos ilimitados. Queremos que las familias de verdad lo usen.',
+        },
+        {
+          q: '¿El dinero es real?',
+          a: 'Tú decides. La app lleva el saldo y las metas; tú entregas el dinero real (efectivo, transferencia o tarjeta) cuando apruebas una tarea o liberas el ahorro.',
+        },
+        {
+          q: '¿Desde qué edad sirve?',
+          a: 'Funciona bien de los 6 a los 16. Los más pequeños se enfocan en tareas y metas; los mayores desbloquean misiones de inversión y deuda.',
+        },
+        {
+          q: '¿Mis hijos pueden gastar sin que yo sepa?',
+          a: 'No. Tú apruebas cada tarea y liberas cada retiro. La cochinita además los hace pausar antes de cualquier gasto por impulso.',
+        },
+        {
+          q: '¿Está en español?',
+          a: 'Sí, completamente bilingüe español e inglés. Cambias el idioma cuando quieras desde la app.',
+        },
+        {
+          q: '¿Mis datos están seguros?',
+          a: 'Sí. No vendemos datos ni mostramos anuncios. La información de tu familia está cifrada y es solo tuya.',
+        },
       ],
     },
     footer: {
@@ -212,9 +294,21 @@ export const CONTENT: Record<Lang, LandingContent> = {
       title: 'Three steps, zero allowance fights',
       sub: 'From your dashboard you assign, they do the work, you approve. Money only moves once the task is done.',
       steps: [
-        { tag: 'IN YOUR DASHBOARD', title: 'Assign the tasks', body: 'From the parent dashboard you create tasks with a value: take out the trash $20, read 20 min +50 XP. One-off or weekly.' },
-        { tag: 'IN THEIR APP', title: 'They complete & learn', body: 'Your kids mark tasks done and unlock finance quests as they level up.' },
-        { tag: 'YOU APPROVE', title: 'They earn & save', body: 'Approve with one tap, the money lands in their piggy bank, and the piggy challenges them to save it instead of spending it.' },
+        {
+          tag: 'IN YOUR DASHBOARD',
+          title: 'Assign the tasks',
+          body: 'From the parent dashboard you create tasks with a value: take out the trash $20, read 20 min +50 XP. One-off or weekly.',
+        },
+        {
+          tag: 'IN THEIR APP',
+          title: 'They complete & learn',
+          body: 'Your kids mark tasks done and unlock finance quests as they level up.',
+        },
+        {
+          tag: 'YOU APPROVE',
+          title: 'They earn & save',
+          body: 'Approve with one tap, the money lands in their piggy bank, and the piggy challenges them to save it instead of spending it.',
+        },
       ],
     },
     flow: {
@@ -222,9 +316,15 @@ export const CONTENT: Record<Lang, LandingContent> = {
       title: 'Every task is a money lesson',
       sub: "It's not just paying for chores. Every dollar earned runs past the stoic piggy, who challenges your kids to think before they spend.",
       points: [
-        { b: 'You set the value.', t: 'Wash the car $50, make the bed $10, read a chapter +50 XP.' },
+        {
+          b: 'You set the value.',
+          t: 'Wash the car $50, make the bed $10, read a chapter +50 XP.',
+        },
         { b: 'They choose.', t: 'They mark a task done and send it for your approval.' },
-        { b: 'The piggy steps in.', t: 'Before an impulse buy, it makes them breathe and decide calmly.' },
+        {
+          b: 'The piggy steps in.',
+          t: 'Before an impulse buy, it makes them breathe and decide calmly.',
+        },
       ],
       cardLabel: 'ASSIGNED TASK',
       cardTag: 'TO APPROVE',
@@ -236,12 +336,36 @@ export const CONTENT: Record<Lang, LandingContent> = {
     },
     feat: { eyebrow: 'ALL IN ONE PLACE', title: 'Built for busy parents' },
     features: [
-      { icon: 'list-ul', title: 'Tasks worth real money', body: 'Create tasks that pay in cash or XP. One-off, or repeating every week.' },
-      { icon: 'check-circle', title: 'One-tap approval', body: 'Kids mark it done, you review and release the money. You always have the final word.' },
-      { icon: 'commenting-o', title: 'AI mentor', body: 'The piggy answers money questions and challenges them not to buy on impulse.' },
-      { icon: 'bank', title: 'Savings goals', body: 'Each kid sets a goal — a bike, a game — and watches their piggy bank grow.' },
-      { icon: 'bar-chart', title: 'Parent reports', body: 'See which tasks they finish, how much they save, and how many urges they resist.' },
-      { icon: 'refresh', title: 'Auto allowance', body: 'Schedule a weekly or monthly deposit and forget about carrying cash.' },
+      {
+        icon: 'list-ul',
+        title: 'Tasks worth real money',
+        body: 'Create tasks that pay in cash or XP. One-off, or repeating every week.',
+      },
+      {
+        icon: 'check-circle',
+        title: 'One-tap approval',
+        body: 'Kids mark it done, you review and release the money. You always have the final word.',
+      },
+      {
+        icon: 'commenting-o',
+        title: 'AI mentor',
+        body: 'The piggy answers money questions and challenges them not to buy on impulse.',
+      },
+      {
+        icon: 'bank',
+        title: 'Savings goals',
+        body: 'Each kid sets a goal — a bike, a game — and watches their piggy bank grow.',
+      },
+      {
+        icon: 'bar-chart',
+        title: 'Parent reports',
+        body: 'See which tasks they finish, how much they save, and how many urges they resist.',
+      },
+      {
+        icon: 'refresh',
+        title: 'Auto allowance',
+        body: 'Schedule a weekly or monthly deposit and forget about carrying cash.',
+      },
     ],
     stoic: {
       eyebrow: 'INSPIRED BY STOIC PHILOSOPHY',
@@ -253,21 +377,60 @@ export const CONTENT: Record<Lang, LandingContent> = {
       eyebrow: 'REAL FAMILIES',
       title: 'Parents who finally breathe easy',
       items: [
-        { quote: 'My daughter stopped asking me for money constantly. Now she knows it has to be earned, and she thinks twice before spending it.', name: 'Laura M.', role: 'Mom of 2 · Monterrey', initial: 'L', avBg: '#E63946' },
-        { quote: 'The allowance fights are over. I assign tasks on Sunday and the app handles the rest.', name: 'Diego R.', role: 'Dad of 3 · Mexico City', initial: 'D', avBg: '#457B9D' },
-        { quote: '"Breathe before you buy" really stuck with my son. At 11 he already has his own savings fund.', name: 'Andrea P.', role: 'Mom of 1 · Guadalajara', initial: 'A', avBg: '#1D3557' },
+        {
+          quote:
+            'My daughter stopped asking me for money constantly. Now she knows it has to be earned, and she thinks twice before spending it.',
+          name: 'Laura M.',
+          role: 'Mom of 2 · Monterrey',
+          initial: 'L',
+          avBg: '#E63946',
+        },
+        {
+          quote:
+            'The allowance fights are over. I assign tasks on Sunday and the app handles the rest.',
+          name: 'Diego R.',
+          role: 'Dad of 3 · Mexico City',
+          initial: 'D',
+          avBg: '#457B9D',
+        },
+        {
+          quote:
+            '"Breathe before you buy" really stuck with my son. At 11 he already has his own savings fund.',
+          name: 'Andrea P.',
+          role: 'Mom of 1 · Guadalajara',
+          initial: 'A',
+          avBg: '#1D3557',
+        },
       ],
     },
     faq: {
       eyebrow: 'FREQUENTLY ASKED',
       title: 'Questions? We answer them',
       items: [
-        { q: 'How much does it cost?', a: "Free while we're in early access — with unlimited kids. We want families to actually use it." },
-        { q: 'Is the money real?', a: 'You decide. The app tracks the balance and goals; you hand over the real money (cash, transfer, or card) when you approve a task or release savings.' },
-        { q: 'What age is it for?', a: 'It works well from 6 to 16. Younger kids focus on tasks and goals; older kids unlock investing and debt quests.' },
-        { q: 'Can my kids spend without me knowing?', a: 'No. You approve every task and release every withdrawal. The piggy also makes them pause before any impulse buy.' },
-        { q: 'Is it in English?', a: 'Yes, fully bilingual English and Spanish. Switch the language anytime in the app.' },
-        { q: 'Is my data safe?', a: "Yes. We don't sell data or show ads. Your family's information is encrypted and yours alone." },
+        {
+          q: 'How much does it cost?',
+          a: "Free while we're in early access — with unlimited kids. We want families to actually use it.",
+        },
+        {
+          q: 'Is the money real?',
+          a: 'You decide. The app tracks the balance and goals; you hand over the real money (cash, transfer, or card) when you approve a task or release savings.',
+        },
+        {
+          q: 'What age is it for?',
+          a: 'It works well from 6 to 16. Younger kids focus on tasks and goals; older kids unlock investing and debt quests.',
+        },
+        {
+          q: 'Can my kids spend without me knowing?',
+          a: 'No. You approve every task and release every withdrawal. The piggy also makes them pause before any impulse buy.',
+        },
+        {
+          q: 'Is it in English?',
+          a: 'Yes, fully bilingual English and Spanish. Switch the language anytime in the app.',
+        },
+        {
+          q: 'Is my data safe?',
+          a: "Yes. We don't sell data or show ads. Your family's information is encrypted and yours alone.",
+        },
       ],
     },
     footer: {

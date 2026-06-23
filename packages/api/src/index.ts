@@ -9,4 +9,10 @@ export {
   useSavingsGoals,
 } from './hooks';
 export { ApiProvider, type ApiProviderProps } from './provider';
-export { type AppRouter, type RouterInputs, type RouterOutputs, useTRPC, useTRPCClient } from './trpc';
+export {
+  type AppRouter,
+  type RouterInputs,
+  type RouterOutputs,
+  useTRPC,
+  useTRPCClient,
+} from './trpc';

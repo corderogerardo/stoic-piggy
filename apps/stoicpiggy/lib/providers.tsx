@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useContext, useMemo, useState } from 'react';
 import { type AppStrings, type Lang, STR } from './content';
-import { type ThemeColors, THEMES, type ThemeName } from './theme';
+import { THEMES, type ThemeColors, type ThemeName } from './theme';
 
 interface ThemeCtxValue {
   name: ThemeName;
@@ -13,7 +13,11 @@ interface LangCtxValue {
   setLang: (lang: Lang) => void;
 }
 
-const ThemeCtx = createContext<ThemeCtxValue>({ name: 'zen', colors: THEMES.zen, setTheme: () => {} });
+const ThemeCtx = createContext<ThemeCtxValue>({
+  name: 'zen',
+  colors: THEMES.zen,
+  setTheme: () => {},
+});
 const LangCtx = createContext<LangCtxValue>({ lang: 'es', t: STR.es, setLang: () => {} });
 
 export function AppProviders({ children }: { children: ReactNode }) {

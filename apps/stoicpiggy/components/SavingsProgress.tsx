@@ -1,10 +1,6 @@
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 /** Gamified, spring-animated savings progress bar (Reanimated 4). */
 export function SavingsProgress({ progress }: { progress: number }) {

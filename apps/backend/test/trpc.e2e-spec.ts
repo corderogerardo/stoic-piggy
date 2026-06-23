@@ -11,12 +11,26 @@ import { TrpcModule } from '../src/trpc/trpc.module';
 import { TrpcRouter } from '../src/trpc/trpc.router';
 
 // Stub the data layer so the tRPC HTTP surface can be exercised without a database.
-const familyStub: Pick<FamilyService, 'listChildren' | 'listGoals' | 'listQuests' | 'dashboardByParent'> = {
+const familyStub: Pick<
+  FamilyService,
+  'listChildren' | 'listGoals' | 'listQuests' | 'dashboardByParent'
+> = {
   listChildren: async () => [],
   listGoals: async () => [],
   listQuests: async () => [],
   dashboardByParent: async () => [
-    { id: 'c1', displayName: 'Marco', avatarUrl: null, age: 12, level: 7, xp: 1240, balanceCents: 34000, allowanceCents: 5000, autopayEnabled: true, goal: { title: 'Bici', targetCents: 50000, savedCents: 34000 } },
+    {
+      id: 'c1',
+      displayName: 'Marco',
+      avatarUrl: null,
+      age: 12,
+      level: 7,
+      xp: 1240,
+      balanceCents: 34000,
+      allowanceCents: 5000,
+      autopayEnabled: true,
+      goal: { title: 'Bici', targetCents: 50000, savedCents: 34000 },
+    },
   ],
 };
 const piggyStub: Pick<PiggyService, 'listPiggyBanks' | 'createTransaction'> = {
@@ -39,7 +53,10 @@ describe('tRPC (e2e)', () => {
 
     app = moduleRef.createNestApplication();
     const trpc = app.get(TrpcRouter);
-    app.use('/trpc', createExpressMiddleware({ router: trpc.appRouter, createContext: trpc.createContext }));
+    app.use(
+      '/trpc',
+      createExpressMiddleware({ router: trpc.appRouter, createContext: trpc.createContext }),
+    );
     await app.init();
   });
 
@@ -55,7 +72,9 @@ describe('tRPC (e2e)', () => {
 
   it('GET /trpc/children.dashboardByParent -> aggregated rows', async () => {
     const input = encodeURIComponent(JSON.stringify({ json: { parentId: 'seed-parent' } }));
-    const res = await request(app.getHttpServer()).get(`/trpc/children.dashboardByParent?input=${input}`);
+    const res = await request(app.getHttpServer()).get(
+      `/trpc/children.dashboardByParent?input=${input}`,
+    );
     expect(res.status).toBe(200);
     expect(res.body.result.data.json[0].balanceCents).toBe(34000);
     expect(res.body.result.data.json[0].goal.targetCents).toBe(50000);

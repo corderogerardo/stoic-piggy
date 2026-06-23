@@ -38,17 +38,41 @@ const FAMILIES: SeedFamily[] = [
     displayName: 'Patricia',
     children: [
       {
-        id: 'seed-marco', displayName: 'Marco', age: 12, level: 7, xp: 1240,
-        allowanceCents: 5000, autopayEnabled: true, balanceCents: 34000,
+        id: 'seed-marco',
+        displayName: 'Marco',
+        age: 12,
+        level: 7,
+        xp: 1240,
+        allowanceCents: 5000,
+        autopayEnabled: true,
+        balanceCents: 34000,
         goal: { title: 'Bici nueva', targetCents: 50000, savedCents: 34000 },
         quests: [
-          { id: 'seed-q1', title: 'Presupuesto base', description: 'Dale un trabajo a cada peso antes de gastarlo.', rewardXp: 120, status: 'completed' },
-          { id: 'seed-q2', title: 'Interés compuesto', description: 'Tu dinero crece mientras descansas.', rewardXp: 150, status: 'in_progress' },
+          {
+            id: 'seed-q1',
+            title: 'Presupuesto base',
+            description: 'Dale un trabajo a cada peso antes de gastarlo.',
+            rewardXp: 120,
+            status: 'completed',
+          },
+          {
+            id: 'seed-q2',
+            title: 'Interés compuesto',
+            description: 'Tu dinero crece mientras descansas.',
+            rewardXp: 150,
+            status: 'in_progress',
+          },
         ],
       },
       {
-        id: 'seed-sofia', displayName: 'Sofía', age: 9, level: 4, xp: 540,
-        allowanceCents: 3000, autopayEnabled: false, balanceCents: 18000,
+        id: 'seed-sofia',
+        displayName: 'Sofía',
+        age: 9,
+        level: 4,
+        xp: 540,
+        allowanceCents: 3000,
+        autopayEnabled: false,
+        balanceCents: 18000,
         goal: { title: 'Nintendo Switch', targetCents: 120000, savedCents: 18000 },
       },
     ],
@@ -59,19 +83,45 @@ const FAMILIES: SeedFamily[] = [
     displayName: 'Diego',
     children: [
       {
-        id: 'seed-lucas', displayName: 'Lucas', age: 14, level: 9, xp: 1680,
-        allowanceCents: 6000, autopayEnabled: true, balanceCents: 52000,
+        id: 'seed-lucas',
+        displayName: 'Lucas',
+        age: 14,
+        level: 9,
+        xp: 1680,
+        allowanceCents: 6000,
+        autopayEnabled: true,
+        balanceCents: 52000,
         goal: { title: 'Tenis nuevos', targetCents: 80000, savedCents: 52000 },
-        quests: [{ id: 'seed-q3', title: 'Deuda y crédito', description: 'Lo que cuesta pedir prestado.', rewardXp: 200, status: 'available' }],
+        quests: [
+          {
+            id: 'seed-q3',
+            title: 'Deuda y crédito',
+            description: 'Lo que cuesta pedir prestado.',
+            rewardXp: 200,
+            status: 'available',
+          },
+        ],
       },
       {
-        id: 'seed-emma', displayName: 'Emma', age: 7, level: 2, xp: 220,
-        allowanceCents: 2500, autopayEnabled: false, balanceCents: 9000,
+        id: 'seed-emma',
+        displayName: 'Emma',
+        age: 7,
+        level: 2,
+        xp: 220,
+        allowanceCents: 2500,
+        autopayEnabled: false,
+        balanceCents: 9000,
         goal: { title: 'Casa de muñecas', targetCents: 40000, savedCents: 9000 },
       },
       {
-        id: 'seed-mateo', displayName: 'Mateo', age: 10, level: 5, xp: 760,
-        allowanceCents: 4000, autopayEnabled: true, balanceCents: 26000,
+        id: 'seed-mateo',
+        displayName: 'Mateo',
+        age: 10,
+        level: 5,
+        xp: 760,
+        allowanceCents: 4000,
+        autopayEnabled: true,
+        balanceCents: 26000,
         goal: { title: 'Set de Lego', targetCents: 60000, savedCents: 26000 },
       },
     ],
@@ -82,10 +132,24 @@ const FAMILIES: SeedFamily[] = [
     displayName: 'Andrea',
     children: [
       {
-        id: 'seed-valeria', displayName: 'Valeria', age: 11, level: 6, xp: 980,
-        allowanceCents: 4500, autopayEnabled: false, balanceCents: 41000,
+        id: 'seed-valeria',
+        displayName: 'Valeria',
+        age: 11,
+        level: 6,
+        xp: 980,
+        allowanceCents: 4500,
+        autopayEnabled: false,
+        balanceCents: 41000,
         goal: { title: 'Bici nueva', targetCents: 70000, savedCents: 41000 },
-        quests: [{ id: 'seed-q4', title: 'Metas que se cumplen', description: 'Divide una meta grande en pasos pequeños.', rewardXp: 130, status: 'completed' }],
+        quests: [
+          {
+            id: 'seed-q4',
+            title: 'Metas que se cumplen',
+            description: 'Divide una meta grande en pasos pequeños.',
+            rewardXp: 130,
+            status: 'completed',
+          },
+        ],
       },
     ],
   },
@@ -118,14 +182,25 @@ async function main(): Promise<void> {
       await prisma.piggyBank.upsert({
         where: { id: `${kid.id}-bank` },
         update: {},
-        create: { id: `${kid.id}-bank`, childId: kid.id, name: 'Ahorros', balanceCents: kid.balanceCents },
+        create: {
+          id: `${kid.id}-bank`,
+          childId: kid.id,
+          name: 'Ahorros',
+          balanceCents: kid.balanceCents,
+        },
       });
 
       if (kid.goal) {
         await prisma.savingsGoal.upsert({
           where: { id: `${kid.id}-goal` },
           update: {},
-          create: { id: `${kid.id}-goal`, childId: kid.id, title: kid.goal.title, targetCents: kid.goal.targetCents, savedCents: kid.goal.savedCents },
+          create: {
+            id: `${kid.id}-goal`,
+            childId: kid.id,
+            title: kid.goal.title,
+            targetCents: kid.goal.targetCents,
+            savedCents: kid.goal.savedCents,
+          },
         });
       }
 
@@ -133,14 +208,23 @@ async function main(): Promise<void> {
         await prisma.quest.upsert({
           where: { id: quest.id },
           update: {},
-          create: { id: quest.id, childId: kid.id, title: quest.title, description: quest.description, rewardXp: quest.rewardXp, status: quest.status },
+          create: {
+            id: quest.id,
+            childId: kid.id,
+            title: quest.title,
+            description: quest.description,
+            rewardXp: quest.rewardXp,
+            status: quest.status,
+          },
         });
       }
     }
   }
 
   const [parents, children] = await Promise.all([prisma.parent.count(), prisma.child.count()]);
-  console.log(`🌱 Seeded ${parents} parents and ${children} children with banks, goals and quests.`);
+  console.log(
+    `🌱 Seeded ${parents} parents and ${children} children with banks, goals and quests.`,
+  );
 }
 
 main()

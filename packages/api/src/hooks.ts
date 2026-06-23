@@ -14,28 +14,38 @@ export function useApiHealth() {
 
 export function useChildren(parentId: string) {
   const trpc = useTRPC();
-  return useQuery(trpc.children.listByParent.queryOptions({ parentId }, { enabled: parentId.length > 0 }));
+  return useQuery(
+    trpc.children.listByParent.queryOptions({ parentId }, { enabled: parentId.length > 0 }),
+  );
 }
 
 /** Aggregated per-child dashboard rows (balance + goal) for a parent. */
 export function useDashboardChildren(parentId: string) {
   const trpc = useTRPC();
-  return useQuery(trpc.children.dashboardByParent.queryOptions({ parentId }, { enabled: parentId.length > 0 }));
+  return useQuery(
+    trpc.children.dashboardByParent.queryOptions({ parentId }, { enabled: parentId.length > 0 }),
+  );
 }
 
 export function usePiggyBanks(childId: string) {
   const trpc = useTRPC();
-  return useQuery(trpc.piggy.listByChild.queryOptions({ childId }, { enabled: childId.length > 0 }));
+  return useQuery(
+    trpc.piggy.listByChild.queryOptions({ childId }, { enabled: childId.length > 0 }),
+  );
 }
 
 export function useSavingsGoals(childId: string) {
   const trpc = useTRPC();
-  return useQuery(trpc.goals.listByChild.queryOptions({ childId }, { enabled: childId.length > 0 }));
+  return useQuery(
+    trpc.goals.listByChild.queryOptions({ childId }, { enabled: childId.length > 0 }),
+  );
 }
 
 export function useQuests(childId: string) {
   const trpc = useTRPC();
-  return useQuery(trpc.quests.listByChild.queryOptions({ childId }, { enabled: childId.length > 0 }));
+  return useQuery(
+    trpc.quests.listByChild.queryOptions({ childId }, { enabled: childId.length > 0 }),
+  );
 }
 
 export function useCreateTransaction() {

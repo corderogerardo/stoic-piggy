@@ -4,7 +4,10 @@
   "private": true,
   "main": "tailwind-preset.js",
   "types": "tailwind-preset.d.ts",
-  "files": ["*.js", "*.d.ts"],
+  "files": [
+    "*.js",
+    "*.d.ts"
+  ],
   "peerDependencies": {
     "tailwindcss": ">=3.4.0"
   }

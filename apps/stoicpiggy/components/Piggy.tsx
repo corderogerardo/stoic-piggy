@@ -9,7 +9,16 @@ export function Piggy({ mood = 'zen', size = 96 }: { mood?: PiggyMood; size?: nu
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       <Svg width={size} height={size} viewBox="0 0 120 124" fill="none">
         {mood === 'zen' && (
-          <Circle cx={60} cy={66} r={54} fill="none" stroke="#A8DADC" strokeWidth={2} strokeDasharray="3 7" opacity={0.55} />
+          <Circle
+            cx={60}
+            cy={66}
+            r={54}
+            fill="none"
+            stroke="#A8DADC"
+            strokeWidth={2}
+            strokeDasharray="3 7"
+            opacity={0.55}
+          />
         )}
 
         {/* ears */}
