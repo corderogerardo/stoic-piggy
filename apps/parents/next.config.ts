@@ -3,8 +3,10 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@stoicpiggy/shared', '@stoicpiggy/ui', '@stoicpiggy/api'],
-  // Self-contained server build (.next/standalone) for slim Docker images.
-  output: 'standalone',
+  // Static export (out/) — deployed to Cloudflare Pages. The dashboard is a
+  // client SPA that talks to the API via NEXT_PUBLIC_API_URL at runtime.
+  output: 'export',
+  images: { unoptimized: true },
 };
 
 export default nextConfig;
