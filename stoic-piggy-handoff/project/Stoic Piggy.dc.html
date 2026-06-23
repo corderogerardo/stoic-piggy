@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800;9..40,900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+    html, body { margin: 0; padding: 0; }
+    button { font-family: 'DM Sans', system-ui, sans-serif; }
+    ::-webkit-scrollbar { width: 0; height: 0; }
+    @keyframes sp-fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    @keyframes sp-floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    @keyframes sp-breathe { 0%, 100% { transform: scale(0.92); } 50% { transform: scale(1.1); } }
+    @keyframes sp-ring { 0% { transform: scale(0.7); opacity: 0.5; } 100% { transform: scale(1.5); opacity: 0; } }
+  </style>
+</helmet>
+
+<div style="min-height:100vh;width:100%;background:#E5E3DD;display:flex;align-items:center;justify-content:center;gap:30px;padding:32px;font-family:'DM Sans',system-ui,sans-serif;">
+
+  <!-- ===================== CONTROL PANEL ===================== -->
+  <div style="width:214px;flex:none;display:flex;flex-direction:column;gap:20px;align-self:center;">
+    <div style="display:flex;align-items:center;gap:11px;">
+      <div style="width:42px;height:42px;border-radius:13px;background:#E63946;display:flex;align-items:center;justify-content:center;flex:none;">
+        <dc-import name="Piggy" mood="zen" size="30" hint-size="30px,30px"></dc-import>
+      </div>
+      <div style="line-height:1.1;">
+        <div style="font-weight:800;font-size:17px;color:#1D3557;">Stoic Piggy</div>
+        <div style="font-size:11px;font-weight:600;color:rgba(29,53,87,.55);">Prototipo · ES / EN</div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:10px;font-weight:800;letter-spacing:.6px;color:rgba(29,53,87,.5);margin-bottom:9px;">{{ c.panel.style }}</div>
+      <div style="display:flex;gap:8px;">
+        <sc-for list="{{ themeSwatches }}" as="s" hint-placeholder-count="3">
+          <button onClick="{{ s.onClick }}" style="flex:1;background:#fff;border:2px solid {{ s.ring }};border-radius:13px;padding:6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;">
+            <div style="width:100%;height:30px;border-radius:7px;background:{{ s.bg }};border:1px solid rgba(0,0,0,.07);position:relative;">
+              <span style="position:absolute;right:5px;bottom:5px;width:9px;height:9px;border-radius:50%;background:{{ s.accent }};"></span>
+            </div>
+            <span style="font-size:10px;font-weight:800;color:#1D3557;">{{ s.name }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:10px;font-weight:800;letter-spacing:.6px;color:rgba(29,53,87,.5);margin-bottom:9px;">{{ c.panel.language }}</div>
+      <div style="display:flex;gap:8px;">
+        <button onClick="{{ setLangEs }}" style="flex:1;padding:10px 0;border-radius:11px;border:none;cursor:pointer;font-weight:800;font-size:12px;letter-spacing:.5px;background:{{ esBg }};color:{{ esFg }};">ES</button>
+        <button onClick="{{ setLangEn }}" style="flex:1;padding:10px 0;border-radius:11px;border:none;cursor:pointer;font-weight:800;font-size:12px;letter-spacing:.5px;background:{{ enBg }};color:{{ enFg }};">EN</button>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:10px;font-weight:800;letter-spacing:.6px;color:rgba(29,53,87,.5);margin-bottom:9px;">{{ c.panel.screens }}</div>
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="6">
+          <button onClick="{{ n.onClick }}" style="text-align:left;padding:9px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;font-size:13px;background:{{ n.bg }};color:{{ n.fg }};display:flex;align-items:center;gap:9px;">
+            <i class="fa fa-{{ n.icon }}" style="font-size:12px;width:14px;"></i>{{ n.label }}
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="font-size:11px;line-height:1.5;color:rgba(29,53,87,.5);border-top:1px solid rgba(29,53,87,.12);padding-top:13px;">{{ c.panel.hint }}</div>
+  </div>
+
+  <!-- ===================== PHONE ===================== -->
+  <div style="width:392px;height:812px;background:#0b1320;border-radius:54px;padding:11px;box-shadow:0 40px 90px rgba(11,19,32,.45);flex:none;">
+    <div ref="{{ screenRef }}" style="position:relative;width:100%;height:100%;border-radius:44px;overflow:hidden;background:var(--c-canvas,#FAFBF6);color:var(--c-ink,#1D3557);font-family:'DM Sans',system-ui,sans-serif;">
+
+      <!-- notch -->
+      <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:148px;height:30px;background:#0b1320;border-bottom-left-radius:18px;border-bottom-right-radius:18px;z-index:50;"></div>
+      <!-- status bar -->
+      <div style="position:absolute;top:0;left:0;right:0;height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 7px;z-index:45;pointer-events:none;">
+        <span style="font-weight:800;font-size:14px;color:var(--c-statusbar,#1D3557);">9:41</span>
+        <span style="display:flex;gap:7px;align-items:center;color:var(--c-statusbar,#1D3557);font-size:13px;"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span>
+      </div>
+
+      <!-- ============ ONBOARDING ============ -->
+      <sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute;inset:0;overflow-y:auto;padding:66px 30px 34px;display:flex;flex-direction:column;background:var(--c-canvas,#FAFBF6);">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+            <div style="position:relative;margin-bottom:26px;">
+              <div style="position:absolute;inset:-14px;border-radius:50%;background:var(--c-soft,rgba(168,218,220,.4));"></div>
+              <div style="position:relative;animation:sp-floaty 5s ease-in-out infinite;">
+                <dc-import name="Piggy" mood="zen" size="140" hint-size="140px,140px"></dc-import>
+              </div>
+            </div>
+            <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:var(--c-accent,#E63946);margin-bottom:14px;">{{ c.ob.eyebrow }}</div>
+            <h1 style="margin:0;font-size:33px;font-weight:800;line-height:1.1;color:var(--c-ink,#1D3557);">{{ c.ob.title1 }}<br>{{ c.ob.title2 }}</h1>
+            <p style="margin:16px 0 0;font-size:14.5px;line-height:1.6;color:var(--c-ink-2,rgba(29,53,87,.7));max-width:300px;">{{ c.ob.sub }}</p>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px;margin:28px 0 24px;">
+            <div style="display:flex;align-items:center;gap:14px;">
+              <div style="width:42px;height:42px;border-radius:12px;background:var(--c-soft,rgba(168,218,220,.4));display:flex;align-items:center;justify-content:center;flex:none;"><i class="fa fa-hand-stop-o" style="font-size:17px;color:var(--c-accent,#E63946);"></i></div>
+              <div><div style="font-weight:800;font-size:14px;color:var(--c-ink,#1D3557);">{{ c.ob.f1 }}</div><div style="font-size:12.5px;color:var(--c-ink-2,rgba(29,53,87,.7));">{{ c.ob.f1d }}</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;">
+              <div style="width:42px;height:42px;border-radius:12px;background:var(--c-soft,rgba(168,218,220,.4));display:flex;align-items:center;justify-content:center;flex:none;"><i class="fa fa-compass" style="font-size:17px;color:var(--c-accent,#E63946);"></i></div>
+              <div><div style="font-weight:800;font-size:14px;color:var(--c-ink,#1D3557);">{{ c.ob.f2 }}</div><div style="font-size:12.5px;color:var(--c-ink-2,rgba(29,53,87,.7));">{{ c.ob.f2d }}</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;">
+              <div style="width:42px;height:42px;border-radius:12px;background:var(--c-soft,rgba(168,218,220,.4));display:flex;align-items:center;justify-content:center;flex:none;"><i class="fa fa-commenting-o" style="font-size:17px;color:var(--c-accent,#E63946);"></i></div>
+              <div><div style="font-weight:800;font-size:14px;color:var(--c-ink,#1D3557);">{{ c.ob.f3 }}</div><div style="font-size:12.5px;color:var(--c-ink-2,rgba(29,53,87,.7));">{{ c.ob.f3d }}</div></div>
+            </div>
+          </div>
+
+          <button onClick="{{ start }}" style="width:100%;padding:17px;border-radius:16px;border:none;cursor:pointer;background:var(--c-accent,#E63946);color:var(--c-accent-ink,#F1FAEE);font-weight:800;font-size:16px;">{{ c.ob.cta }}</button>
+          <button onClick="{{ start }}" style="width:100%;padding:13px;margin-top:8px;background:transparent;border:none;cursor:pointer;color:var(--c-ink-2,rgba(29,53,87,.7));font-weight:700;font-size:13.5px;">{{ c.ob.login }}</button>
+        </div>
+      </sc-if>
+
+      <!-- ============ HOME ============ -->
+      <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute;top:52px;left:0;right:0;bottom:0;overflow-y:auto;padding:8px 22px 112px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin:8px 0 20px;">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--c-ink-2,rgba(29,53,87,.7));">{{ c.home.hi }}</div>
+              <div style="font-size:27px;font-weight:800;color:var(--c-ink,#1D3557);line-height:1.1;">Marco</div>
+            </div>
+            <span style="display:inline-flex;align-items:center;gap:6px;background:var(--c-accent,#E63946);color:var(--c-accent-ink,#F1FAEE);padding:7px 13px;border-radius:9999px;font-weight:800;font-size:10px;letter-spacing:.5px;"><i class="fa fa-bolt"></i>{{ c.home.level }}</span>
+          </div>
+
+          <!-- balance / player card -->
+          <div style="background:var(--c-dark-bg,#1D3557);border-radius:24px;padding:22px;color:var(--c-dark-ink,#F1FAEE);margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+              <span style="font-size:10px;font-weight:800;letter-spacing:.6px;color:var(--c-dark-ink-2,rgba(168,218,220,.85));">{{ c.home.balLabel }}</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.14);padding:5px 11px;border-radius:9999px;font-size:9px;font-weight:800;letter-spacing:.5px;color:var(--c-dark-ink,#F1FAEE);"><i class="fa fa-fire" style="color:#E63946;"></i>{{ c.home.streak }}</span>
+            </div>
+            <div style="font-family:'Space Mono',monospace;font-size:42px;font-weight:700;letter-spacing:-1.5px;line-height:1;margin-bottom:18px;">$2,340</div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:7px;">
+              <span style="font-size:10px;font-weight:800;letter-spacing:.5px;color:var(--c-dark-ink-2,rgba(168,218,220,.85));">{{ c.home.xp }}</span>
+              <span style="font-size:11px;font-weight:800;color:var(--c-dark-ink,#F1FAEE);">1,240 / 2,000 XP</span>
+            </div>
+            <div style="height:9px;border-radius:9999px;background:rgba(255,255,255,.16);overflow:hidden;"><div style="height:100%;width:62%;background:#E63946;border-radius:9999px;"></div></div>
+          </div>
+
+          <!-- daily challenge -->
+          <div style="background:var(--c-accent,#E63946);border-radius:24px;padding:22px;color:var(--c-accent-ink,#F1FAEE);margin-bottom:16px;position:relative;overflow:hidden;">
+            <div style="position:absolute;right:-12px;top:-6px;opacity:.92;"><dc-import name="Piggy" mood="tempted" size="104" hint-size="104px,104px"></dc-import></div>
+            <div style="font-size:10px;font-weight:800;letter-spacing:.7px;margin-bottom:10px;opacity:.9;">{{ c.home.chEyebrow }}</div>
+            <div style="font-size:23px;font-weight:800;line-height:1.1;max-width:200px;">{{ c.home.chTitle }}</div>
+            <p style="margin:9px 0 16px;font-size:13px;line-height:1.5;opacity:.92;max-width:210px;">{{ c.home.chBody }}</p>
+            <button onClick="{{ takeChallenge }}" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.96);color:var(--c-accent,#E63946);border:none;cursor:pointer;padding:12px 18px;border-radius:13px;font-weight:800;font-size:14px;">{{ c.home.chCta }}<i class="fa fa-arrow-right"></i></button>
+          </div>
+
+          <!-- current quest -->
+          <div style="background:var(--c-card-bg,transparent);border:var(--c-card-border,2px solid #1D3557);border-radius:24px;padding:20px;margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <span style="font-size:10px;font-weight:800;letter-spacing:.6px;color:var(--c-ink-3,rgba(29,53,87,.5));">{{ c.home.questEyebrow }}</span>
+              <span style="font-size:11px;font-weight:800;color:var(--c-accent,#E63946);">{{ c.home.questProg }}</span>
+            </div>
+            <div style="font-size:20px;font-weight:800;color:var(--c-ink,#1D3557);">{{ c.home.questTitle }}</div>
+            <p style="margin:6px 0 14px;font-size:13px;line-height:1.5;color:var(--c-ink-2,rgba(29,53,87,.7));">{{ c.home.questBody }}</p>
+            <div style="height:7px;border-radius:9999px;background:var(--c-chip,rgba(29,53,87,.1));overflow:hidden;margin-bottom:16px;"><div style="height:100%;width:60%;background:var(--c-accent,#E63946);border-radius:9999px;"></div></div>
+            <button onClick="{{ goLessons }}" style="display:inline-flex;align-items:center;gap:8px;background:transparent;border:none;cursor:pointer;color:var(--c-accent,#E63946);font-weight:800;font-size:14px;padding:0;">{{ c.home.questCta }}<i class="fa fa-arrow-right"></i></button>
+          </div>
+
+          <!-- ask coach -->
+          <div onClick="{{ goCoach }}" style="background:var(--c-soft,rgba(168,218,220,.4));border-radius:20px;padding:18px;display:flex;align-items:center;gap:14px;cursor:pointer;margin-bottom:20px;">
+            <div style="flex:none;"><dc-import name="Piggy" mood="thinking" size="52" hint-size="52px,52px"></dc-import></div>
+            <div style="flex:1;">
+              <div style="font-size:10px;font-weight:800;letter-spacing:.5px;color:var(--c-ink-3,rgba(29,53,87,.5));margin-bottom:3px;">{{ c.home.askEyebrow }}</div>
+              <div style="font-size:13.5px;line-height:1.45;color:var(--c-ink,#1D3557);font-weight:600;">{{ c.home.askBody }}</div>
+            </div>
+            <i class="fa fa-chevron-right" style="color:var(--c-ink-3,rgba(29,53,87,.5));"></i>
+          </div>
+
+          <div style="text-align:center;padding:4px 10px 8px;">
+            <p style="font-size:13px;line-height:1.55;font-style:italic;color:var(--c-ink-2,rgba(29,53,87,.7));margin:0;">{{ c.home.tip }}</p>
+            <div style="font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--c-ink-3,rgba(29,53,87,.5));margin-top:8px;">{{ c.home.tipAuthor }}</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ COACH ============ -->
+      <sc-if value="{{ isCoach }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute;top:52px;left:0;right:0;bottom:0;display:flex;flex-direction:column;">
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 22px 14px;border-bottom:1px solid var(--c-divider,rgba(29,53,87,.12));">
+            <div style="width:46px;height:46px;border-radius:50%;background:var(--c-soft,rgba(168,218,220,.4));display:flex;align-items:center;justify-content:center;flex:none;"><dc-import name="Piggy" mood="zen" size="38" hint-size="38px,38px"></dc-import></div>
+            <div style="flex:1;">
+              <div style="font-size:16px;font-weight:800;color:var(--c-ink,#1D3557);">{{ c.coach.name }}</div>
+              <div style="display:flex;align-items:center;gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:#2Fae6b;"></span><span style="font-size:10px;font-weight:800;letter-spacing:.5px;color:var(--c-ink-3,rgba(29,53,87,.5));">{{ c.coach.status }}</span></div>
+            </div>
+          </div>
+
+          <div ref="{{ msgRef }}" style="flex:1;overflow-y:auto;padding:18px 20px 8px;display:flex;flex-direction:column;gap:12px;">
+            <sc-for list="{{ messages }}" as="m" hint-placeholder-count="2">
+              <div style="display:flex;justify-content:{{ m.justify }};">
+                <div style="max-width:78%;padding:12px 15px;border-radius:18px;font-size:13.5px;line-height:1.5;background:{{ m.bubbleBg }};color:{{ m.bubbleFg }};border:{{ m.bubbleBorder }};animation:sp-fadeUp .25s ease-out;">{{ m.text }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="padding:6px 18px 10px;display:flex;gap:8px;flex-wrap:wrap;">
+            <sc-for list="{{ suggestions }}" as="s" hint-placeholder-count="3">
+              <button onClick="{{ s.onClick }}" style="background:var(--c-chip,rgba(29,53,87,.08));color:var(--c-chip-ink,rgba(29,53,87,.7));border:none;cursor:pointer;padding:9px 13px;border-radius:9999px;font-size:12px;font-weight:600;">{{ s.text }}</button>
+            </sc-for>
+          </div>
+
+          <div style="padding:8px 18px 84px;display:flex;gap:10px;align-items:center;">
+            <input value="{{ input }}" onInput="{{ setInput }}" onKeyDown="{{ onInputKey }}" placeholder="{{ c.coach.placeholder }}" style="flex:1;padding:13px 16px;border-radius:9999px;border:1.5px solid var(--c-divider,rgba(29,53,87,.18));background:var(--c-card-bg,transparent);color:var(--c-ink,#1D3557);font-size:13.5px;font-family:'DM Sans',sans-serif;outline:none;">
+            <button onClick="{{ send }}" style="width:46px;height:46px;border-radius:50%;background:var(--c-accent,#E63946);color:var(--c-accent-ink,#F1FAEE);border:none;cursor:pointer;flex:none;font-size:16px;"><i class="fa fa-paper-plane"></i></button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ LESSONS ============ -->
+      <sc-if value="{{ isLessons }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute;top:52px;left:0;right:0;bottom:0;overflow-y:auto;padding:14px 22px 112px;">
+          <div style="font-size:27px;font-weight:800;color:var(--c-ink,#1D3557);margin:6px 0 2px;">{{ c.lessons.title }}</div>
+          <p style="font-size:13.5px;color:var(--c-ink-2,rgba(29,53,87,.7));margin:0 0 20px;">{{ c.lessons.sub }}</p>
+          <div style="display:flex;flex-direction:column;gap:13px;">
+            <sc-for list="{{ quests }}" as="q" hint-placeholder-count="5">
+              <div style="background:var(--c-card-bg,transparent);border:var(--c-card-border,2px solid #1D3557);border-radius:20px;padding:18px;opacity:{{ q.opacity }};">
+                <div style="display:flex;align-items:center;gap:13px;margin-bottom:12px;">
+                  <div style="width:46px;height:46px;border-radius:13px;background:{{ q.iconBg }};display:flex;align-items:center;justify-content:center;flex:none;"><i class="fa fa-{{ q.icon }}" style="font-size:19px;color:{{ q.iconFg }};"></i></div>
+                  <div style="flex:1;">
+                    <div style="font-size:16px;font-weight:800;color:var(--c-ink,#1D3557);line-height:1.15;">{{ q.title }}</div>
+                    <div style="font-size:12.5px;color:var(--c-ink-2,rgba(29,53,87,.7));margin-top:2px;">{{ q.desc }}</div>
+                  </div>
+                  <span style="background:{{ q.statusBg }};color:{{ q.statusFg }};padding:5px 10px;border-radius:9999px;font-size:9px;font-weight:800;letter-spacing:.4px;flex:none;">{{ q.statusLabel }}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="flex:1;height:6px;border-radius:9999px;background:var(--c-chip,rgba(29,53,87,.1));overflow:hidden;"><div style="height:100%;width:{{ q.progPct }};background:var(--c-accent,#E63946);border-radius:9999px;"></div></div>
+                  <span style="font-size:11px;font-weight:800;color:var(--c-ink-3,rgba(29,53,87,.5));"><i class="fa fa-bolt" style="color:var(--c-accent,#E63946);"></i> {{ q.xp }} XP</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ TASKS (kid) ============ -->
+      <sc-if value="{{ isTasks }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute;top:52px;left:0;right:0;bottom:0;overflow-y:auto;padding:14px 22px 112px;">
+          <div style="font-size:27px;font-weight:800;color:var(--c-ink,#1D3557);margin:6px 0 2px;">{{ c.tasks.title }}</div>
+          <p style="font-size:13.5px;color:var(--c-ink-2,rgba(29,53,87,.7));margin:0 0 18px;">{{ c.tasks.sub }}</p>
+
+          <div style="background:var(--c-dark-bg,#1D3557);border-radius:20px;padding:18px 20px;color:var(--c-dark-ink,#F1FAEE);margin-bottom:18px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;">
+            <div style="flex:1;">
+              <div style="font-size:10px;font-weight:800;letter-spacing:.6px;color:var(--c-dark-ink-2,rgba(168,218,220,.85));margin-bottom:7px;">{{ c.tasks.earnLabel }}</div>
+              <div style="font-family:'Space Mono',monospace;font-size:32px;font-weight:700;letter-spacing:-1.5px;line-height:1;">{{ weeklyEarn }}</div>
+            </div>
+            <div style="flex:none;margin-right:-4px;"><dc-import name="Piggy" mood="happy" size="58" hint-size="58px,58px"></dc-import></div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:11px;">
+            <sc-for list="{{ kidTasks }}" as="t" hint-placeholder-count="5">
+              <div style="background:var(--c-card-bg,transparent);border:var(--c-card-border,2px solid #1D3557);border-radius:18px;padding:14px;display:flex;align-items:center;gap:13px;opacity:{{ t.opacity }};">
+                <div style="width:44px;height:44px;border-radius:12px;background:{{ t.iconBg }};display:flex;align-items:center;justify-content:center;flex:none;"><i class="fa fa-{{ t.icon }}" style="color:{{ t.iconFg }};font-size:18px;"></i></div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:15px;font-weight:800;color:var(--c-ink,#1D3557);line-height:1.2;{{ t.strike }}">{{ t.title }}</div>
+                  <div style="font-size:10px;font-weight:800;letter-spacing:.4px;color:{{ t.metaFg }};margin-top:4px;">{{ t.meta }}</div>
+                </div>
+                <span style="font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:{{ t.rewardFg }};">{{ t.reward }}</span>
+                <button onClick="{{ t.onClick }}" style="width:40px;height:40px;border-radius:12px;border:{{ t.btnBorder }};background:{{ t.btnBg }};color:{{ t.btnFg }};cursor:{{ t.cursor }};font-size:15px;flex:none;display:flex;align-items:center;justify-content:center;"><i class="fa fa-{{ t.btnIcon }}"></i></button>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ WINS ============ -->
+      <sc-if value="{{ isWins }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute;top:52px;left:0;right:0;bottom:0;overflow-y:auto;padding:14px 22px 112px;">
+          <div style="font-size:27px;font-weight:800;color:var(--c-ink,#1D3557);margin:6px 0 2px;">{{ c.wins.title }}</div>
+          <p style="font-size:13.5px;color:var(--c-ink-2,rgba(29,53,87,.7));margin:0 0 18px;">{{ c.wins.sub }}</p>
+
+          <div style="display:flex;gap:10px;margin-bottom:22px;">
+            <div style="flex:1;background:var(--c-dark-bg,#1D3557);border-radius:16px;padding:14px;text-align:center;color:var(--c-dark-ink,#F1FAEE);">
+              <div style="font-family:'Space Mono',monospace;font-size:26px;font-weight:700;">7</div>
+              <div style="font-size:9px;font-weight:800;letter-spacing:.5px;color:var(--c-dark-ink-2,rgba(168,218,220,.85));margin-top:3px;">{{ c.wins.stat1 }}</div>
+            </div>
+            <div style="flex:1;background:var(--c-dark-bg,#1D3557);border-radius:16px;padding:14px;text-align:center;color:var(--c-dark-ink,#F1FAEE);">
+              <div style="font-family:'Space Mono',monospace;font-size:26px;font-weight:700;">7</div>
+              <div style="font-size:9px;font-weight:800;letter-spacing:.5px;color:var(--c-dark-ink-2,rgba(168,218,220,.85));margin-top:3px;">{{ c.wins.stat2 }}</div>
+            </div>
+            <div style="flex:1;background:var(--c-accent,#E63946);border-radius:16px;padding:14px;text-align:center;color:var(--c-accent-ink,#F1FAEE);">
+              <div style="font-family:'Space Mono',monospace;font-size:26px;font-weight:700;">{{ resisted }}</div>
+              <div style="font-size:9px;font-weight:800;letter-spacing:.5px;opacity:.9;margin-top:3px;">{{ c.wins.stat3 }}</div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <sc-for list="{{ achievements }}" as="a" hint-placeholder-count="6">
+              <div style="background:var(--c-card-bg,transparent);border:var(--c-card-border,2px solid #1D3557);border-radius:20px;padding:16px;text-align:center;opacity:{{ a.opacity }};">
+                <div style="width:50px;height:50px;border-radius:50%;background:{{ a.iconBg }};display:flex;align-items:center;justify-content:center;margin:0 auto 11px;"><i class="fa fa-{{ a.icon }}" style="font-size:21px;color:{{ a.iconFg }};"></i></div>
+                <div style="font-size:13.5px;font-weight:800;color:var(--c-ink,#1D3557);line-height:1.2;">{{ a.title }}</div>
+                <div style="font-size:11.5px;color:var(--c-ink-2,rgba(29,53,87,.7));margin-top:3px;line-height:1.35;">{{ a.desc }}</div>
+                <div style="font-size:8.5px;font-weight:800;letter-spacing:.5px;color:{{ a.labelFg }};margin-top:9px;">{{ a.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ TEMPTATION CHALLENGE ============ -->
+      <sc-if value="{{ isTemptation }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:var(--c-canvas,#FAFBF6);z-index:20;display:flex;flex-direction:column;padding:60px 26px 30px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <button onClick="{{ goHome }}" style="width:38px;height:38px;border-radius:50%;border:none;background:var(--c-chip,rgba(29,53,87,.08));color:var(--c-ink,#1D3557);cursor:pointer;font-size:15px;"><i class="fa fa-times"></i></button>
+            <span style="display:inline-flex;align-items:center;gap:7px;background:var(--c-chip,rgba(29,53,87,.08));color:var(--c-ink-2,rgba(29,53,87,.7));padding:7px 13px;border-radius:9999px;font-size:9px;font-weight:800;letter-spacing:.5px;"><i class="fa fa-snowflake-o" style="color:var(--c-accent,#E63946);"></i>{{ resisted }} {{ c.templ.resistedLabel }}</span>
+          </div>
+
+          <!-- intro -->
+          <sc-if value="{{ tIntro }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+              <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:var(--c-accent,#E63946);margin-bottom:18px;">{{ c.templ.eyebrow }}</div>
+              <div style="animation:sp-floaty 4s ease-in-out infinite;margin-bottom:8px;"><dc-import name="Piggy" mood="tempted" size="120" hint-size="120px,120px"></dc-import></div>
+              <div style="background:var(--c-card-bg,transparent);border:var(--c-card-border,2px solid #1D3557);border-radius:20px;padding:18px 22px;margin:14px 0 18px;width:100%;">
+                <div style="font-size:10px;font-weight:800;letter-spacing:.6px;color:var(--c-ink-3,rgba(29,53,87,.5));margin-bottom:8px;">{{ c.templ.wantLabel }}</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                  <span style="font-size:18px;font-weight:800;color:var(--c-ink,#1D3557);text-align:left;">{{ c.templ.wantItem }}</span>
+                  <span style="font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:var(--c-accent,#E63946);">{{ c.templ.wantPrice }}</span>
+                </div>
+              </div>
+              <p style="font-size:14px;line-height:1.55;color:var(--c-ink-2,rgba(29,53,87,.7));margin:0 0 6px;max-width:300px;">{{ c.templ.wantBody }}</p>
+            </div>
+            <button onClick="{{ breathe }}" style="width:100%;padding:17px;border-radius:16px;border:none;cursor:pointer;background:var(--c-accent,#E63946);color:var(--c-accent-ink,#F1FAEE);font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;gap:9px;"><i class="fa fa-leaf"></i>{{ c.templ.breatheCta }}</button>
+            <button onClick="{{ buyNow }}" style="width:100%;padding:13px;margin-top:8px;background:transparent;border:none;cursor:pointer;color:var(--c-ink-3,rgba(29,53,87,.5));font-weight:700;font-size:13px;text-decoration:underline;">{{ c.templ.buyNow }}</button>
+          </sc-if>
+
+          <!-- breathing -->
+          <sc-if value="{{ tBreathing }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+              <div style="position:relative;width:200px;height:200px;display:flex;align-items:center;justify-content:center;margin-bottom:34px;">
+                <div style="position:absolute;inset:0;border-radius:50%;border:2px solid var(--c-accent,#E63946);animation:sp-ring 2.6s ease-out infinite;"></div>
+                <div style="position:absolute;inset:0;border-radius:50%;border:2px solid var(--c-accent,#E63946);animation:sp-ring 2.6s ease-out infinite 1.3s;"></div>
+                <div style="animation:sp-breathe 2.6s ease-in-out infinite;"><dc-import name="Piggy" mood="zen" size="130" hint-size="130px,130px"></dc-import></div>
+              </div>
+              <div style="font-size:26px;font-weight:800;color:var(--c-ink,#1D3557);">{{ c.templ.breathing }}</div>
+              <p style="font-size:14px;color:var(--c-ink-2,rgba(29,53,87,.7));margin:10px 0 0;">{{ c.templ.breathingSub }}</p>
+            </div>
+          </sc-if>
+
+          <!-- decide -->
+          <sc-if value="{{ tDecide }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+              <div style="margin-bottom:18px;"><dc-import name="Piggy" mood="thinking" size="120" hint-size="120px,120px"></dc-import></div>
+              <div style="font-size:22px;font-weight:800;color:var(--c-ink,#1D3557);line-height:1.25;max-width:280px;">{{ c.templ.decideQ }}</div>
+            </div>
+            <button onClick="{{ resist }}" style="width:100%;padding:17px;border-radius:16px;border:none;cursor:pointer;background:var(--c-accent,#E63946);color:var(--c-accent-ink,#F1FAEE);font-weight:800;font-size:16px;margin-bottom:10px;">{{ c.templ.resist }}</button>
+            <button onClick="{{ buyAnyway }}" style="width:100%;padding:15px;border-radius:16px;cursor:pointer;background:transparent;border:var(--c-card-border,2px solid #1D3557);color:var(--c-ink,#1D3557);font-weight:800;font-size:14px;">{{ c.templ.buyAnyway }}</button>
+          </sc-if>
+
+          <!-- resisted -->
+          <sc-if value="{{ tResisted }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+              <div style="animation:sp-floaty 4s ease-in-out infinite;margin-bottom:14px;"><dc-import name="Piggy" mood="happy" size="128" hint-size="128px,128px"></dc-import></div>
+              <div style="font-size:30px;font-weight:800;color:var(--c-accent,#E63946);">{{ c.templ.wonTitle }}</div>
+              <p style="font-size:14.5px;line-height:1.55;color:var(--c-ink-2,rgba(29,53,87,.7));margin:10px 0 18px;max-width:300px;">{{ c.templ.wonBody }}</p>
+              <div style="background:var(--c-soft,rgba(168,218,220,.4));border-radius:18px;padding:16px 20px;width:100%;">
+                <p style="font-size:13.5px;font-style:italic;line-height:1.5;color:var(--c-ink,#1D3557);margin:0;">{{ c.templ.wonQuote }}</p>
+                <div style="font-size:11px;font-weight:800;color:var(--c-ink-3,rgba(29,53,87,.5));margin-top:7px;">{{ c.templ.wonAuthor }}</div>
+              </div>
+              <div style="display:inline-flex;align-items:center;gap:8px;background:var(--c-accent,#E63946);color:var(--c-accent-ink,#F1FAEE);padding:9px 16px;border-radius:9999px;font-size:12px;font-weight:800;letter-spacing:.3px;margin-top:16px;"><i class="fa fa-bolt"></i>{{ c.templ.wonXp }}</div>
+            </div>
+            <button onClick="{{ goHome }}" style="width:100%;padding:17px;border-radius:16px;border:none;cursor:pointer;background:var(--c-accent,#E63946);color:var(--c-accent-ink,#F1FAEE);font-weight:800;font-size:16px;margin-bottom:9px;">{{ c.templ.wonCta }}</button>
+            <button onClick="{{ tAgain }}" style="width:100%;padding:13px;background:transparent;border:none;cursor:pointer;color:var(--c-ink-2,rgba(29,53,87,.7));font-weight:700;font-size:13.5px;">{{ c.templ.again }}</button>
+          </sc-if>
+
+          <!-- bought -->
+          <sc-if value="{{ tBought }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+              <div style="margin-bottom:14px;"><dc-import name="Piggy" mood="zen" size="124" hint-size="124px,124px"></dc-import></div>
+              <div style="font-size:30px;font-weight:800;color:var(--c-ink,#1D3557);">{{ c.templ.boughtTitle }}</div>
+              <p style="font-size:14.5px;line-height:1.6;color:var(--c-ink-2,rgba(29,53,87,.7));margin:12px 0 0;max-width:300px;">{{ c.templ.boughtBody }}</p>
+            </div>
+            <button onClick="{{ goHome }}" style="width:100%;padding:17px;border-radius:16px;border:none;cursor:pointer;background:var(--c-ink,#1D3557);color:var(--c-canvas,#FAFBF6);font-weight:800;font-size:16px;">{{ c.templ.boughtCta }}</button>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ============ TAB BAR ============ -->
+      <sc-if value="{{ isApp }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute;bottom:0;left:0;right:0;background:var(--c-tab-bg,#F1FAEE);border-top:var(--c-tab-border,2px solid #1D3557);padding:12px 8px 26px;display:flex;z-index:30;">
+          <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="4">
+            <button onClick="{{ tab.onClick }}" style="flex:1;background:transparent;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;padding:4px 0;">
+              <i class="fa fa-{{ tab.icon }}" style="font-size:19px;color:{{ tab.color }};"></i>
+              <span style="font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:{{ tab.color }};">{{ tab.label }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:680,&quot;height&quot;:880}}">
+class Component extends DCLogic {
+  screenRef = React.createRef();
+  msgRef = React.createRef();
+
+  state = { screen: 'onboarding', lang: 'es', theme: 0, chat: [], input: '', tStage: 'intro', resisted: 12, taskStatus: { 1: 'todo', 2: 'done', 3: 'todo', 4: 'todo', 5: 'pending' } };
+
+  TASKS = [
+    { id: 1, icon: 'trash-o', amt: 20, es: 'Sacar la basura', en: 'Take out the trash' },
+    { id: 3, icon: 'book', xp: 50, es: 'Leer 20 minutos', en: 'Read for 20 minutes' },
+    { id: 4, icon: 'paw', amt: 25, es: 'Pasear al perro', en: 'Walk the dog' },
+    { id: 5, icon: 'paint-brush', amt: 50, es: 'Pintar la cerca', en: 'Paint the fence' },
+    { id: 2, icon: 'bed', amt: 10, es: 'Tender la cama', en: 'Make the bed' }
+  ];
+
+  THEMES = {
+    zen: {
+      '--c-canvas': '#FAFBF6', '--c-ink': '#1D3557', '--c-ink-2': 'rgba(29,53,87,.70)', '--c-ink-3': 'rgba(29,53,87,.50)',
+      '--c-accent': '#E63946', '--c-accent-ink': '#F1FAEE', '--c-card-bg': 'transparent', '--c-card-border': '2px solid #1D3557',
+      '--c-soft': 'rgba(168,218,220,.40)', '--c-dark-bg': '#1D3557', '--c-dark-ink': '#F1FAEE', '--c-dark-ink-2': 'rgba(168,218,220,.85)',
+      '--c-chip': 'rgba(29,53,87,.08)', '--c-chip-ink': 'rgba(29,53,87,.70)', '--c-tab-bg': '#F1FAEE', '--c-tab-border': '2px solid #1D3557',
+      '--c-divider': 'rgba(29,53,87,.14)', '--c-statusbar': '#1D3557'
+    },
+    temple: {
+      '--c-canvas': '#13243B', '--c-ink': '#F1FAEE', '--c-ink-2': 'rgba(241,250,238,.72)', '--c-ink-3': 'rgba(168,218,220,.62)',
+      '--c-accent': '#E63946', '--c-accent-ink': '#F1FAEE', '--c-card-bg': 'rgba(168,218,220,.06)', '--c-card-border': '1px solid rgba(168,218,220,.22)',
+      '--c-soft': 'rgba(69,123,157,.30)', '--c-dark-bg': '#E63946', '--c-dark-ink': '#F1FAEE', '--c-dark-ink-2': 'rgba(241,250,238,.82)',
+      '--c-chip': 'rgba(168,218,220,.12)', '--c-chip-ink': 'rgba(241,250,238,.78)', '--c-tab-bg': '#0F1D30', '--c-tab-border': '1px solid rgba(168,218,220,.18)',
+      '--c-divider': 'rgba(168,218,220,.16)', '--c-statusbar': '#F1FAEE'
+    },
+    coral: {
+      '--c-canvas': '#FFF3F1', '--c-ink': '#1D3557', '--c-ink-2': 'rgba(29,53,87,.70)', '--c-ink-3': 'rgba(29,53,87,.50)',
+      '--c-accent': '#E63946', '--c-accent-ink': '#FFF3F1', '--c-card-bg': '#FFFFFF', '--c-card-border': '2px solid #E63946',
+      '--c-soft': 'rgba(230,57,70,.10)', '--c-dark-bg': '#1D3557', '--c-dark-ink': '#F1FAEE', '--c-dark-ink-2': 'rgba(168,218,220,.85)',
+      '--c-chip': 'rgba(230,57,70,.10)', '--c-chip-ink': '#E63946', '--c-tab-bg': '#FFFFFF', '--c-tab-border': '2px solid #E63946',
+      '--c-divider': 'rgba(230,57,70,.18)', '--c-statusbar': '#1D3557'
+    }
+  };
+
+  STR = {
+    es: {
+      panel: { style: 'Estilo', language: 'Idioma', screens: 'Pantallas', hint: 'Toca "Aceptar reto" en Inicio para probar el flujo estoico contra el impulso.' },
+      nav: { home: 'Inicio', tasks: 'Tareas', coach: 'Mentor', learn: 'Misiones', wins: 'Logros' },
+      ob: {
+        eyebrow: 'TU MENTOR FINANCIERO ZEN', title1: 'Ahorra con calma.', title2: 'Gasta con propósito.',
+        sub: 'Aprende finanzas con una cochinita estoica que te enseña a no comprar por impulso.',
+        f1: 'Domina tus impulsos', f1d: 'Reta tus antojos antes de pagar',
+        f2: 'Misiones de dinero', f2d: 'Aprende un concepto a la vez',
+        f3: 'Mentor con IA', f3d: 'La cochinita responde tus dudas',
+        cta: 'Empezar', login: 'Ya tengo cuenta'
+      },
+      home: {
+        hi: 'Hola de nuevo', level: 'NIVEL 7', balLabel: 'AHORRADO ESTE MES', streak: '7 DÍAS', xp: 'EXPERIENCIA',
+        chEyebrow: 'RETO DEL DÍA', chTitle: 'Resiste la tentación', chBody: 'Apareció un antojo. Respira y decide con la cabeza fría.', chCta: 'Aceptar reto',
+        questEyebrow: 'MISIÓN ACTUAL', questTitle: 'Interés compuesto', questProg: '3 / 5', questBody: 'El dinero que no gastas trabaja por ti. Aprende cómo crece solo.', questCta: 'Continuar misión',
+        askEyebrow: 'PREGÚNTALE A LA COCHINITA', askBody: '¿Gastar o ahorrar? Tu mentor estoico te ayuda a decidir.',
+        tip: '"La riqueza consiste no en tener grandes posesiones, sino en tener pocas necesidades."', tipAuthor: '— EPICTETO'
+      },
+      coach: {
+        name: 'Cochinita Zen', status: 'EN LÍNEA', placeholder: 'Escribe tu duda...',
+        intro: 'Respira. Antes de gastar, preguntémonos: ¿esto te acerca a tu meta o solo calma un impulso?',
+        s1: '¿Cómo empiezo a ahorrar?', s2: '¿Vale la pena este antojo?', s3: '¿Qué es un fondo de emergencia?'
+      },
+      templ: {
+        eyebrow: 'RETO · RESISTE EL IMPULSO', wantLabel: 'APARECIÓ UN ANTOJO', wantItem: 'Tenis edición limitada', wantPrice: '$1,800',
+        wantBody: 'Los viste en oferta. Tu mente dice "ahora o nunca". Tu cochinita dice: respira.',
+        breatheCta: 'Respira antes de decidir', buyNow: 'Comprar sin pensar', breathing: 'Inhala… exhala…', breathingSub: 'Deja que el impulso pase',
+        decideQ: 'El impulso bajó. ¿Qué decides?', resist: 'Resistir', buyAnyway: 'Comprar de todos modos',
+        wonTitle: 'Mente fría.', wonBody: 'Resististe. Ese dinero ahora trabaja para tu meta, no para un capricho.',
+        wonQuote: '"No es pobre el que tiene poco, sino el que desea más."', wonAuthor: '— SÉNECA', wonXp: '+50 XP · +$1,800 a tu meta',
+        wonCta: 'Volver al inicio', again: 'Otro reto',
+        boughtTitle: 'Sin culpa.', boughtBody: 'A veces compramos. Lo estoico es notarlo y elegir mejor la próxima vez. Aprendiste algo de ti.',
+        boughtCta: 'Entendido', resistedLabel: 'RESISTIDOS'
+      },
+      tasks: { title: 'Mis tareas', sub: 'Asignadas por mamá. Complétalas y gana.', earnLabel: 'PUEDES GANAR ESTA SEMANA', todo: 'POR HACER', pending: 'ESPERANDO A MAMÁ', approved: 'APROBADA ✓', markDone: 'Marcar hecho' },
+      lessons: { title: 'Misiones', sub: 'Aprende finanzas, una quest a la vez', done: 'COMPLETADA', prog: 'EN CURSO', locked: 'BLOQUEADA' },
+      wins: { title: 'Logros', sub: 'Tu camino estoico con el dinero', earned: 'OBTENIDO', locked: 'BLOQUEADO', stat1: 'NIVEL', stat2: 'RACHA', stat3: 'RESISTIDOS' }
+    },
+    en: {
+      panel: { style: 'Style', language: 'Language', screens: 'Screens', hint: 'Tap "Take the challenge" on Home to try the stoic flow against impulse.' },
+      nav: { home: 'Home', tasks: 'Tasks', coach: 'Coach', learn: 'Quests', wins: 'Wins' },
+      ob: {
+        eyebrow: 'YOUR ZEN MONEY MENTOR', title1: 'Save with calm.', title2: 'Spend with purpose.',
+        sub: 'Learn money skills with a stoic little pig who teaches you to resist impulse buys.',
+        f1: 'Master your impulses', f1d: 'Challenge your urges before you pay',
+        f2: 'Money quests', f2d: 'Learn one concept at a time',
+        f3: 'AI mentor', f3d: 'The piggy answers your questions',
+        cta: 'Get started', login: 'I already have an account'
+      },
+      home: {
+        hi: 'Welcome back', level: 'LEVEL 7', balLabel: 'SAVED THIS MONTH', streak: '7 DAYS', xp: 'EXPERIENCE',
+        chEyebrow: 'DAILY CHALLENGE', chTitle: 'Resist the temptation', chBody: 'An urge appeared. Breathe and decide with a cool head.', chCta: 'Take the challenge',
+        questEyebrow: 'CURRENT QUEST', questTitle: 'Compound interest', questProg: '3 / 5', questBody: 'The money you do not spend works for you. Learn how it grows on its own.', questCta: 'Continue quest',
+        askEyebrow: 'ASK THE PIGGY', askBody: 'Spend or save? Your stoic mentor helps you decide.',
+        tip: '"Wealth consists not in having great possessions, but in having few wants."', tipAuthor: '— EPICTETUS'
+      },
+      coach: {
+        name: 'Zen Piggy', status: 'ONLINE', placeholder: 'Type your question...',
+        intro: 'Breathe. Before you spend, let us ask: does this move you toward your goal, or just calm an urge?',
+        s1: 'How do I start saving?', s2: 'Is this urge worth it?', s3: 'What is an emergency fund?'
+      },
+      templ: {
+        eyebrow: 'CHALLENGE · RESIST THE URGE', wantLabel: 'AN URGE APPEARED', wantItem: 'Limited edition sneakers', wantPrice: '$1,800',
+        wantBody: 'You saw them on sale. Your mind says "now or never". Your piggy says: breathe.',
+        breatheCta: 'Breathe before deciding', buyNow: 'Buy without thinking', breathing: 'Inhale… exhale…', breathingSub: 'Let the urge pass',
+        decideQ: 'The urge faded. What do you choose?', resist: 'Resist', buyAnyway: 'Buy it anyway',
+        wonTitle: 'Cool mind.', wonBody: 'You resisted. That money now works for your goal, not for a whim.',
+        wonQuote: '"It is not the man who has too little, but the man who craves more, that is poor."', wonAuthor: '— SENECA', wonXp: '+50 XP · +$1,800 to your goal',
+        wonCta: 'Back to home', again: 'Another challenge',
+        boughtTitle: 'No guilt.', boughtBody: 'Sometimes we buy. The stoic move is to notice it and choose better next time. You learned something.',
+        boughtCta: 'Got it', resistedLabel: 'RESISTED'
+      },
+      tasks: { title: 'My tasks', sub: 'Assigned by mom. Finish them and earn.', earnLabel: 'YOU CAN EARN THIS WEEK', todo: 'TO DO', pending: 'WAITING FOR MOM', approved: 'APPROVED ✓', markDone: 'Mark done' },
+      lessons: { title: 'Quests', sub: 'Learn money skills, one quest at a time', done: 'COMPLETED', prog: 'IN PROGRESS', locked: 'LOCKED' },
+      wins: { title: 'Wins', sub: 'Your stoic journey with money', earned: 'EARNED', locked: 'LOCKED', stat1: 'LEVEL', stat2: 'STREAK', stat3: 'RESISTED' }
+    }
+  };
+
+  QUESTS = [
+    { icon: 'pie-chart', xp: 120, status: 'done', es: { t: 'Presupuesto base', d: 'Dale un trabajo a cada peso antes de gastarlo.' }, en: { t: 'The base budget', d: 'Give every dollar a job before you spend it.' } },
+    { icon: 'line-chart', xp: 150, status: 'prog', prog: '3/5', es: { t: 'Interés compuesto', d: 'Tu dinero crece mientras descansas.' }, en: { t: 'Compound interest', d: 'Your money grows while you rest.' } },
+    { icon: 'shield', xp: 140, status: 'prog', prog: '1/4', es: { t: 'Fondo de emergencia', d: 'El colchón que te da calma estoica.' }, en: { t: 'Emergency fund', d: 'The cushion that buys you calm.' } },
+    { icon: 'balance-scale', xp: 160, status: 'locked', es: { t: 'Deuda buena vs mala', d: 'No toda deuda es tu enemiga.' }, en: { t: 'Good vs bad debt', d: 'Not all debt is your enemy.' } },
+    { icon: 'rocket', xp: 200, status: 'locked', es: { t: 'Inversión 101', d: 'Pon tu dinero a trabajar a largo plazo.' }, en: { t: 'Investing 101', d: 'Put your money to work for the long run.' } }
+  ];
+
+  ACHV = [
+    { icon: 'star', earned: true, es: { t: 'Primera semana', d: '7 días de racha' }, en: { t: 'First week', d: '7-day streak' } },
+    { icon: 'snowflake-o', earned: true, es: { t: 'Mente fría', d: 'Resististe 10 impulsos' }, en: { t: 'Cool mind', d: 'Resisted 10 urges' } },
+    { icon: 'bank', earned: true, es: { t: 'Ahorrador', d: '$2,000 guardados' }, en: { t: 'Saver', d: '$2,000 saved' } },
+    { icon: 'book', earned: false, es: { t: 'Estudiante', d: 'Completa 3 misiones' }, en: { t: 'Student', d: 'Finish 3 quests' } },
+    { icon: 'trophy', earned: false, es: { t: 'Filósofo del dinero', d: 'Llega a nivel 10' }, en: { t: 'Money sage', d: 'Reach level 10' } },
+    { icon: 'fire', earned: false, es: { t: 'Racha de fuego', d: '30 días seguidos' }, en: { t: 'On fire', d: '30-day streak' } }
+  ];
+
+  REPLIES = {
+    es: [
+      'Pregúntate: ¿lo necesito o solo lo deseo? El deseo pasa; la meta queda.',
+      'Empieza pequeño: aparta el 10% apenas te paguen, antes de gastar nada.',
+      'Un fondo de emergencia son 3 a 6 meses de gastos. Es tu armadura contra el caos.',
+      'Si esperas 24 horas y aún lo quieres, quizá valga. Casi nunca lo querrás igual.'
+    ],
+    en: [
+      'Ask yourself: do I need it, or do I just want it? The want fades; the goal stays.',
+      'Start small: set aside 10% the moment you get paid, before you spend anything.',
+      'An emergency fund is 3 to 6 months of expenses. It is your armor against chaos.',
+      'If you wait 24 hours and still want it, maybe it is worth it. You rarely will.'
+    ]
+  };
+
+  componentDidMount() { this.applyTheme(); }
+  componentDidUpdate() {
+    this.applyTheme();
+    if (this.state.screen === 'coach' && this.msgRef.current) this.msgRef.current.scrollTop = this.msgRef.current.scrollHeight;
+  }
+  applyTheme() {
+    const el = this.screenRef.current;
+    if (!el) return;
+    const v = this.THEMES[['zen', 'temple', 'coral'][this.state.theme]];
+    for (const k in v) el.style.setProperty(k, v[k]);
+  }
+
+  go = (s) => this.setState({ screen: s });
+  send = (text) => {
+    const t = (typeof text === 'string') ? text : this.state.input;
+    if (!t || !t.trim()) return;
+    const uc = this.state.chat.filter(m => m.role === 'me').length;
+    const i = uc % this.REPLIES.es.length;
+    this.setState({
+      chat: [...this.state.chat, { role: 'me', es: t, en: t }, { role: 'piggy', es: this.REPLIES.es[i], en: this.REPLIES.en[i] }],
+      input: ''
+    });
+  };
+
+  renderVals() {
+    const lang = this.state.lang;
+    const c = this.STR[lang];
+    const screen = this.state.screen;
+    const appScreens = ['home', 'tasks', 'coach', 'lessons', 'wins'];
+    const ts = this.state.tStage;
+
+    const messages = [{ role: 'piggy', text: c.coach.intro }];
+    this.state.chat.forEach(m => messages.push({ role: m.role, text: m[lang] }));
+
+    const navMeta = [
+      { key: 'onboarding', icon: 'play-circle-o', label: lang === 'es' ? 'Bienvenida' : 'Welcome' },
+      { key: 'home', icon: 'home', label: c.nav.home },
+      { key: 'tasks', icon: 'check-square-o', label: lang === 'es' ? 'Tareas' : 'Tasks' },
+      { key: 'coach', icon: 'commenting-o', label: c.nav.coach },
+      { key: 'temptation', icon: 'hand-stop-o', label: lang === 'es' ? 'Reto' : 'Challenge' },
+      { key: 'lessons', icon: 'compass', label: c.nav.learn },
+      { key: 'wins', icon: 'trophy', label: c.nav.wins }
+    ];
+
+    return {
+      c, lang, screenRef: this.screenRef, msgRef: this.msgRef, input: this.state.input, resisted: this.state.resisted,
+
+      isOnboarding: screen === 'onboarding',
+      isApp: appScreens.includes(screen),
+      isHome: screen === 'home', isCoach: screen === 'coach', isLessons: screen === 'lessons', isWins: screen === 'wins', isTasks: screen === 'tasks',
+      isTemptation: screen === 'temptation',
+      tIntro: ts === 'intro', tBreathing: ts === 'breathing', tDecide: ts === 'decide', tResisted: ts === 'resisted', tBought: ts === 'bought',
+
+      start: () => this.setState({ screen: 'home' }),
+      go: this.go,
+      goHome: () => this.setState({ screen: 'home', tStage: 'intro' }),
+      goCoach: () => this.setState({ screen: 'coach' }),
+      goLessons: () => this.setState({ screen: 'lessons' }),
+      markDone: (id) => this.setState({ taskStatus: { ...this.state.taskStatus, [id]: 'pending' } }),
+      weeklyEarn: '$' + this.TASKS.filter(t => t.amt && this.state.taskStatus[t.id] === 'todo').reduce((s, t) => s + t.amt, 0),
+      kidTasks: this.TASKS.slice().sort((a, b) => {
+        const ord = { todo: 0, pending: 1, done: 2 };
+        return ord[this.state.taskStatus[a.id]] - ord[this.state.taskStatus[b.id]];
+      }).map(t => {
+        const st = this.state.taskStatus[t.id];
+        const isXp = !!t.xp;
+        const reward = isXp ? ('+' + t.xp + ' XP') : ('+$' + t.amt);
+        const base = {
+          icon: t.icon, title: t[lang], reward,
+          iconBg: st === 'done' ? 'var(--c-chip,rgba(29,53,87,.08))' : isXp ? 'rgba(69,123,157,.16)' : 'var(--c-soft,rgba(168,218,220,.4))',
+          iconFg: st === 'done' ? 'var(--c-ink-3,rgba(29,53,87,.5))' : 'var(--c-accent,#E63946)',
+          rewardFg: st === 'done' ? 'var(--c-ink-3,rgba(29,53,87,.5))' : isXp ? '#457B9D' : 'var(--c-ink,#1D3557)',
+          strike: '', opacity: '1'
+        };
+        if (st === 'todo') return { ...base, meta: c.tasks.todo, metaFg: 'var(--c-ink-3,rgba(29,53,87,.5))', btnBg: 'transparent', btnBorder: '2px solid var(--c-accent,#E63946)', btnFg: 'var(--c-accent,#E63946)', btnIcon: 'check', cursor: 'pointer', onClick: () => this.setState({ taskStatus: { ...this.state.taskStatus, [t.id]: 'pending' } }) };
+        if (st === 'pending') return { ...base, meta: c.tasks.pending, metaFg: 'var(--c-accent,#E63946)', btnBg: 'var(--c-soft,rgba(168,218,220,.4))', btnBorder: 'none', btnFg: 'var(--c-accent,#E63946)', btnIcon: 'clock-o', cursor: 'default', onClick: () => {} };
+        return { ...base, meta: c.tasks.approved, metaFg: '#2Fae6b', strike: 'text-decoration:line-through;', opacity: '.55', btnBg: 'var(--c-accent,#E63946)', btnBorder: 'none', btnFg: 'var(--c-accent-ink,#F1FAEE)', btnIcon: 'check', cursor: 'default', onClick: () => {} };
+      }),
+      takeChallenge: () => this.setState({ screen: 'temptation', tStage: 'intro' }),
+      breathe: () => { this.setState({ tStage: 'breathing' }); setTimeout(() => { if (this.state.tStage === 'breathing') this.setState({ tStage: 'decide' }); }, 2900); },
+      resist: () => this.setState({ tStage: 'resisted', resisted: this.state.resisted + 1 }),
+      buyAnyway: () => this.setState({ tStage: 'bought' }),
+      buyNow: () => this.setState({ tStage: 'bought' }),
+      tAgain: () => this.setState({ tStage: 'intro' }),
+
+      send: this.send,
+      setInput: (e) => this.setState({ input: e.target.value }),
+      onInputKey: (e) => { if (e.key === 'Enter') { e.preventDefault(); this.send(); } },
+      suggestions: [c.coach.s1, c.coach.s2, c.coach.s3].map(t => ({ text: t, onClick: () => this.send(t) })),
+
+      messages: messages.map(m => {
+        const me = m.role === 'me';
+        return {
+          text: m.text, justify: me ? 'flex-end' : 'flex-start',
+          bubbleBg: me ? 'var(--c-accent,#E63946)' : 'var(--c-soft,rgba(168,218,220,.4))',
+          bubbleFg: me ? 'var(--c-accent-ink,#F1FAEE)' : 'var(--c-ink,#1D3557)',
+          bubbleBorder: 'none'
+        };
+      }),
+
+      quests: this.QUESTS.map(q => {
+        const done = q.status === 'done', prog = q.status === 'prog', locked = q.status === 'locked';
+        let pct = '0%';
+        if (done) pct = '100%';
+        else if (prog && q.prog) { const p = q.prog.split('/'); pct = Math.round((+p[0] / +p[1]) * 100) + '%'; }
+        return {
+          icon: q.icon, xp: q.xp, title: q[lang].t, desc: q[lang].d, progPct: pct,
+          opacity: locked ? '.5' : '1',
+          iconBg: done ? 'var(--c-accent,#E63946)' : locked ? 'var(--c-chip,rgba(29,53,87,.08))' : 'var(--c-soft,rgba(168,218,220,.4))',
+          iconFg: done ? 'var(--c-accent-ink,#F1FAEE)' : locked ? 'var(--c-ink-3,rgba(29,53,87,.5))' : 'var(--c-accent,#E63946)',
+          statusBg: done ? 'var(--c-accent,#E63946)' : locked ? 'var(--c-chip,rgba(29,53,87,.08))' : 'var(--c-soft,rgba(168,218,220,.4))',
+          statusFg: done ? 'var(--c-accent-ink,#F1FAEE)' : 'var(--c-ink-2,rgba(29,53,87,.7))',
+          statusLabel: done ? c.lessons.done : prog ? c.lessons.prog : c.lessons.locked
+        };
+      }),
+
+      achievements: this.ACHV.map(a => ({
+        icon: a.icon, title: a[lang].t, desc: a[lang].d,
+        opacity: a.earned ? '1' : '.5',
+        iconBg: a.earned ? 'var(--c-accent,#E63946)' : 'var(--c-chip,rgba(29,53,87,.08))',
+        iconFg: a.earned ? 'var(--c-accent-ink,#F1FAEE)' : 'var(--c-ink-3,rgba(29,53,87,.5))',
+        labelFg: a.earned ? 'var(--c-accent,#E63946)' : 'var(--c-ink-3,rgba(29,53,87,.5))',
+        label: a.earned ? c.wins.earned : c.wins.locked
+      })),
+
+      tabs: [
+        { key: 'home', icon: 'home', label: c.nav.home },
+        { key: 'tasks', icon: 'check-square-o', label: c.nav.tasks },
+        { key: 'coach', icon: 'commenting-o', label: c.nav.coach },
+        { key: 'lessons', icon: 'compass', label: c.nav.learn },
+        { key: 'wins', icon: 'trophy', label: c.nav.wins }
+      ].map(t => ({ ...t, color: screen === t.key ? 'var(--c-accent,#E63946)' : 'var(--c-ink-3,rgba(29,53,87,.5))', onClick: () => this.go(t.key) })),
+
+      navItems: navMeta.map(n => ({
+        ...n, onClick: () => this.setState(n.key === 'temptation' ? { screen: 'temptation', tStage: 'intro' } : { screen: n.key }),
+        bg: screen === n.key ? 'rgba(230,57,70,.12)' : 'transparent',
+        fg: screen === n.key ? '#E63946' : 'rgba(29,53,87,.7)'
+      })),
+
+      themeSwatches: [
+        { i: 0, bg: '#FAFBF6', accent: '#E63946', name: 'Zen' },
+        { i: 1, bg: '#13243B', accent: '#E63946', name: 'Temple' },
+        { i: 2, bg: '#FFF3F1', accent: '#E63946', name: 'Coral' }
+      ].map(s => ({ ...s, ring: this.state.theme === s.i ? '#1D3557' : 'rgba(29,53,87,.14)', onClick: () => this.setState({ theme: s.i }) })),
+
+      setLangEs: () => this.setState({ lang: 'es' }), setLangEn: () => this.setState({ lang: 'en' }),
+      esBg: lang === 'es' ? '#1D3557' : '#FFFFFF', esFg: lang === 'es' ? '#FFFFFF' : '#1D3557',
+      enBg: lang === 'en' ? '#1D3557' : '#FFFFFF', enFg: lang === 'en' ? '#FFFFFF' : '#1D3557'
+    };
+  }
+}
+</script>
+</body>
+</html>

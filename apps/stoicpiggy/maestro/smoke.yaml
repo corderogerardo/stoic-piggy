@@ -1,0 +1,7 @@
+appId: com.stoicpiggy.app
+---
+- launchApp
+- assertVisible: "Add weekly allowance (+$5)"
+- tapOn: "Add weekly allowance (+$5)"
+- assertVisible:
+    text: "Coach tip"

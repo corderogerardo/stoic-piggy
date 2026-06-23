@@ -1,0 +1,66 @@
+name: stoic-piggy
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: stoicpiggy
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d stoicpiggy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/stoicpiggy
+      DIRECT_URL: postgresql://postgres:postgres@db:5432/stoicpiggy
+    # Sync the Prisma schema into the local DB on boot, then start the API.
+    # (Local dev uses `db push`; for real migrations use `prisma migrate deploy`.)
+    command:
+      - sh
+      - -c
+      - "npx --no-install prisma db push --schema=prisma/schema.prisma --skip-generate --accept-data-loss && node dist/main.js"
+    ports:
+      - "3001:3001"
+
+  landing:
+    build:
+      context: .
+      dockerfile: apps/landing/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+
+  parents:
+    build:
+      context: .
+      dockerfile: apps/parents/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+    ports:
+      - "3002:3002"
+
+volumes:
+  db-data:

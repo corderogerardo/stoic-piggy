@@ -1,0 +1,35 @@
+{
+  "name": "stoic-piggy",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stoic Piggy monorepo — landing, parents dashboard, mobile app, and backend.",
+  "packageManager": "pnpm@10.34.4",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "db:generate": "turbo run db:generate",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.0",
+    "@types/node": "^25.9.0",
+    "husky": "^9.1.0",
+    "lint-staged": "^17.0.0",
+    "turbo": "^2.9.0",
+    "typescript": "^5.9.0"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,jsonc,css,md}": "biome check --write --no-errors-on-unmatched"
+  }
+}

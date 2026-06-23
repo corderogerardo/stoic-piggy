@@ -1,0 +1,10 @@
+{
+  "extends": "@stoicpiggy/typescript-config/base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM"],
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src", "tsup.config.ts", "vitest.config.ts"],
+  "exclude": ["dist", "node_modules"]
+}

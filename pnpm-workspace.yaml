@@ -1,0 +1,15 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# pnpm v10 blocks dependency build scripts by default. Pre-approve the ones our
+# stack needs to run postinstall so installs are reproducible in CI.
+onlyBuiltDependencies:
+  - "@biomejs/biome"
+  - "@prisma/client"
+  - "@prisma/engines"
+  - "prisma"
+  - "esbuild"
+  - "core-js"
+  - "unrs-resolver"
+  - "sharp"

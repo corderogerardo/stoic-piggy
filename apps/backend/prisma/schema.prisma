@@ -1,0 +1,112 @@
+// Stoic Piggy — Prisma schema (PostgreSQL / Supabase)
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Parent {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  displayName String
+  children    Child[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Child {
+  id          String        @id @default(cuid())
+  parent      Parent        @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  parentId    String
+  displayName String
+  avatarUrl   String?
+  level          Int           @default(1)
+  xp             Int           @default(0)
+  age            Int?
+  allowanceCents Int           @default(0)
+  autopayEnabled Boolean       @default(false)
+  piggyBanks  PiggyBank[]
+  goals       SavingsGoal[]
+  quests      Quest[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([parentId])
+}
+
+model PiggyBank {
+  id           String        @id @default(cuid())
+  child        Child         @relation(fields: [childId], references: [id], onDelete: Cascade)
+  childId      String
+  name         String
+  balanceCents Int           @default(0)
+  currency     String        @default("USD")
+  transactions Transaction[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([childId])
+}
+
+enum TransactionType {
+  deposit
+  withdrawal
+  allowance
+  reward
+  goal_contribution
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  piggyBank   PiggyBank       @relation(fields: [piggyBankId], references: [id], onDelete: Cascade)
+  piggyBankId String
+  type        TransactionType
+  amountCents Int
+  note        String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([piggyBankId])
+}
+
+model SavingsGoal {
+  id          String    @id @default(cuid())
+  child       Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+  childId     String
+  title       String
+  targetCents Int
+  savedCents  Int       @default(0)
+  achievedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([childId])
+}
+
+enum QuestStatus {
+  available
+  in_progress
+  completed
+  claimed
+}
+
+model Quest {
+  id          String      @id @default(cuid())
+  child       Child       @relation(fields: [childId], references: [id], onDelete: Cascade)
+  childId     String
+  title       String
+  description String
+  rewardXp    Int         @default(0)
+  rewardCents Int         @default(0)
+  status      QuestStatus @default(available)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([childId])
+}

@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800;9..40,900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+    html, body { margin: 0; padding: 0; background: #FAFBF6; }
+    button, input { font-family: 'DM Sans', system-ui, sans-serif; }
+    ::-webkit-scrollbar { width: 9px; height: 9px; }
+    ::-webkit-scrollbar-thumb { background: rgba(29,53,87,.18); border-radius: 9999px; }
+    @keyframes spp-fade { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    @keyframes spp-pop { from { opacity: 0; transform: scale(.96) translateY(10px); } to { opacity: 1; transform: none; } }
+  </style>
+</helmet>
+
+<div style="display:flex;min-height:100vh;width:100%;background:#FAFBF6;color:#1D3557;font-family:'DM Sans',system-ui,sans-serif;">
+
+  <!-- ============ SIDEBAR ============ -->
+  <div style="width:248px;flex:none;background:#1D3557;color:#F1FAEE;display:flex;flex-direction:column;padding:22px 16px;position:sticky;top:0;height:100vh;">
+    <div style="display:flex;align-items:center;gap:11px;padding:4px 8px 22px;">
+      <div style="width:40px;height:40px;border-radius:12px;background:#E63946;display:flex;align-items:center;justify-content:center;flex:none;"><dc-import name="Piggy" mood="zen" size="28" hint-size="28px,28px"></dc-import></div>
+      <div style="line-height:1.1;"><div style="font-weight:800;font-size:16px;">Stoic Piggy</div><div style="font-size:10px;font-weight:800;letter-spacing:.6px;color:#A8DADC;">{{ c.parentTag }}</div></div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:3px;flex:1;">
+      <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="6">
+        <button onClick="{{ n.onClick }}" style="display:flex;align-items:center;gap:12px;text-align:left;padding:11px 13px;border-radius:12px;border:none;cursor:pointer;font-weight:700;font-size:14px;background:{{ n.bg }};color:{{ n.fg }};">
+          <i class="fa fa-{{ n.icon }}" style="font-size:15px;width:18px;"></i><span style="flex:1;">{{ n.label }}</span>
+          <sc-if value="{{ n.badge }}" hint-placeholder-val="{{ true }}"><span style="background:#E63946;color:#F1FAEE;min-width:20px;height:20px;padding:0 6px;border-radius:9999px;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;">{{ n.badge }}</span></sc-if>
+        </button>
+      </sc-for>
+    </div>
+
+    <div style="display:flex;gap:5px;background:rgba(255,255,255,.08);border-radius:11px;padding:4px;margin-bottom:12px;">
+      <button onClick="{{ setEs }}" style="flex:1;border:none;cursor:pointer;padding:8px 0;border-radius:8px;font-weight:800;font-size:11px;letter-spacing:.5px;background:{{ esBg }};color:{{ esFg }};">ES</button>
+      <button onClick="{{ setEn }}" style="flex:1;border:none;cursor:pointer;padding:8px 0;border-radius:8px;font-weight:800;font-size:11px;letter-spacing:.5px;background:{{ enBg }};color:{{ enFg }};">EN</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:11px;padding:10px;border-top:1px solid rgba(255,255,255,.12);">
+      <div style="width:38px;height:38px;border-radius:50%;background:#457B9D;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex:none;">P</div>
+      <div style="line-height:1.2;flex:1;"><div style="font-size:13.5px;font-weight:800;">Patricia</div><div style="font-size:11px;color:#A8DADC;">{{ c.parentRole }}</div></div>
+      <i class="fa fa-cog" style="color:#A8DADC;font-size:14px;"></i>
+    </div>
+  </div>
+
+  <!-- ============ MAIN ============ -->
+  <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
+
+    <!-- topbar -->
+    <div style="position:sticky;top:0;z-index:20;background:rgba(250,251,246,.9);backdrop-filter:blur(10px);border-bottom:1px solid rgba(29,53,87,.1);padding:18px 30px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;">
+      <div><h1 style="margin:0;font-size:24px;font-weight:800;letter-spacing:-.5px;">{{ pageTitle }}</h1><p style="margin:3px 0 0;font-size:13.5px;color:rgba(29,53,87,.6);">{{ pageSub }}</p></div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button style="width:42px;height:42px;border-radius:12px;border:1px solid rgba(29,53,87,.14);background:#fff;cursor:pointer;color:#1D3557;font-size:15px;position:relative;"><i class="fa fa-bell-o"></i><span style="position:absolute;top:9px;right:10px;width:7px;height:7px;border-radius:50%;background:#E63946;"></span></button>
+        <button onClick="{{ openModal }}" style="display:inline-flex;align-items:center;gap:9px;background:#E63946;color:#F1FAEE;border:none;cursor:pointer;padding:12px 18px;border-radius:12px;font-weight:800;font-size:14px;"><i class="fa fa-plus"></i>{{ c.newTask }}</button>
+      </div>
+    </div>
+
+    <!-- content -->
+    <div style="flex:1;overflow-y:auto;padding:28px 30px 60px;">
+
+      <!-- ===== OVERVIEW ===== -->
+      <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:26px;">
+          <!-- stats -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;">
+            <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+              <div style="background:{{ s.bg }};border:{{ s.border }};border-radius:18px;padding:20px;color:{{ s.ink }};">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                  <span style="font-size:10.5px;font-weight:800;letter-spacing:.5px;color:{{ s.label }};">{{ s.title }}</span>
+                  <div style="width:34px;height:34px;border-radius:10px;background:{{ s.iconBg }};display:flex;align-items:center;justify-content:center;"><i class="fa fa-{{ s.icon }}" style="font-size:15px;color:{{ s.iconFg }};"></i></div>
+                </div>
+                <div style="font-family:'Space Mono',monospace;font-size:30px;font-weight:700;letter-spacing:-1px;line-height:1;">{{ s.value }}</div>
+                <div style="font-size:12px;font-weight:600;color:{{ s.sub }};margin-top:7px;">{{ s.delta }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- kids -->
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <h2 style="margin:0;font-size:17px;font-weight:800;">{{ c.yourKids }}</h2>
+              <button onClick="{{ goKids }}" style="background:transparent;border:none;cursor:pointer;color:#E63946;font-weight:800;font-size:13px;">{{ c.manage }} <i class="fa fa-arrow-right"></i></button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
+              <sc-for list="{{ kidCards }}" as="k" hint-placeholder-count="2">
+                <div style="background:#fff;border:1px solid rgba(29,53,87,.12);border-radius:20px;padding:20px;">
+                  <div style="display:flex;align-items:center;gap:13px;margin-bottom:16px;">
+                    <div style="width:48px;height:48px;border-radius:14px;background:{{ k.color }};color:#F1FAEE;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;flex:none;">{{ k.initial }}</div>
+                    <div style="flex:1;"><div style="font-size:16.5px;font-weight:800;">{{ k.name }}</div><div style="font-size:12px;color:rgba(29,53,87,.6);">{{ k.age }} · {{ k.level }}</div></div>
+                    <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(230,57,70,.1);color:#E63946;padding:6px 10px;border-radius:9999px;font-size:10px;font-weight:800;"><i class="fa fa-fire"></i>{{ k.streak }}</span>
+                  </div>
+                  <div style="display:flex;gap:10px;margin-bottom:15px;">
+                    <div style="flex:1;background:#FAFBF6;border-radius:13px;padding:11px 13px;"><div style="font-size:9.5px;font-weight:800;letter-spacing:.4px;color:rgba(29,53,87,.5);">{{ c.balance }}</div><div style="font-family:'Space Mono',monospace;font-size:19px;font-weight:700;margin-top:3px;">{{ k.balance }}</div></div>
+                    <div style="flex:1;background:#FAFBF6;border-radius:13px;padding:11px 13px;"><div style="font-size:9.5px;font-weight:800;letter-spacing:.4px;color:rgba(29,53,87,.5);">{{ c.tasksDone }}</div><div style="font-family:'Space Mono',monospace;font-size:19px;font-weight:700;margin-top:3px;">{{ k.tasksDone }}</div></div>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;">
+                    <span style="font-size:11px;font-weight:800;letter-spacing:.3px;color:rgba(29,53,87,.6);"><i class="fa fa-bullseye" style="color:#E63946;"></i> {{ k.goalName }}</span>
+                    <span style="font-size:11.5px;font-weight:800;color:rgba(29,53,87,.5);">{{ k.goalText }}</span>
+                  </div>
+                  <div style="height:8px;border-radius:9999px;background:rgba(29,53,87,.1);overflow:hidden;"><div style="height:100%;width:{{ k.goalPct }};background:#E63946;border-radius:9999px;"></div></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- approvals + activity -->
+          <div style="display:flex;flex-wrap:wrap;gap:18px;">
+            <div style="flex:1 1 380px;min-width:300px;background:#fff;border:1px solid rgba(29,53,87,.12);border-radius:20px;padding:22px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                <h2 style="margin:0;font-size:16px;font-weight:800;">{{ c.pendingApproval }}</h2>
+                <span style="background:rgba(230,57,70,.1);color:#E63946;padding:5px 11px;border-radius:9999px;font-size:11px;font-weight:800;">{{ approvalsCount }}</span>
+              </div>
+              <sc-if value="{{ hasApprovals }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:11px;">
+                  <sc-for list="{{ pendingApprovals }}" as="a" hint-placeholder-count="3">
+                    <div style="display:flex;align-items:center;gap:13px;padding:13px;background:#FAFBF6;border-radius:14px;animation:spp-fade .25s ease-out;">
+                      <div style="width:40px;height:40px;border-radius:11px;background:rgba(168,218,220,.4);display:flex;align-items:center;justify-content:center;flex:none;"><i class="fa fa-{{ a.icon }}" style="color:#E63946;font-size:16px;"></i></div>
+                      <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:800;line-height:1.2;">{{ a.name }}</div><div style="font-size:11.5px;color:rgba(29,53,87,.6);">{{ a.kidName }} · {{ a.when }}</div></div>
+                      <span style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#457B9D;">{{ a.reward }}</span>
+                      <button onClick="{{ a.onReject }}" style="width:34px;height:34px;border-radius:10px;border:1px solid rgba(29,53,87,.15);background:#fff;cursor:pointer;color:rgba(29,53,87,.5);font-size:13px;flex:none;"><i class="fa fa-times"></i></button>
+                      <button onClick="{{ a.onApprove }}" style="width:34px;height:34px;border-radius:10px;border:none;background:#E63946;cursor:pointer;color:#F1FAEE;font-size:13px;flex:none;"><i class="fa fa-check"></i></button>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ noApprovals }}" hint-placeholder-val="{{ true }}">
+                <div style="text-align:center;padding:26px 10px;">
+                  <div style="display:inline-block;margin-bottom:10px;"><dc-import name="Piggy" mood="happy" size="60" hint-size="60px,60px"></dc-import></div>
+                  <div style="font-size:14px;font-weight:800;">{{ c.allClear }}</div>
+                  <div style="font-size:12.5px;color:rgba(29,53,87,.6);margin-top:3px;">{{ c.allClearSub }}</div>
+                </div>
+              </sc-if>
+            </div>
+
+            <div style="flex:1 1 300px;min-width:280px;background:#fff;border:1px solid rgba(29,53,87,.12);border-radius:20px;padding:22px;">
+              <h2 style="margin:0 0 16px;font-size:16px;font-weight:800;">{{ c.activity }}</h2>
+              <div style="display:flex;flex-direction:column;gap:2px;">
+                <sc-for list="{{ activityItems }}" as="a" hint-placeholder-count="5">
+                  <div style="display:flex;gap:13px;padding:9px 0;">
+                    <div style="display:flex;flex-direction:column;align-items:center;flex:none;">
+                      <div style="width:30px;height:30px;border-radius:9px;background:{{ a.bg }};display:flex;align-items:center;justify-content:center;"><i class="fa fa-{{ a.icon }}" style="font-size:12px;color:{{ a.fg }};"></i></div>
+                      <div style="width:2px;flex:1;background:rgba(29,53,87,.08);margin-top:4px;"></div>
+                    </div>
+                    <div style="flex:1;padding-bottom:6px;"><div style="font-size:13px;line-height:1.4;color:rgba(29,53,87,.85);">{{ a.text }}</div><div style="font-size:11px;color:rgba(29,53,87,.45);margin-top:2px;">{{ a.time }}</div></div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== TASKS ===== -->
+      <sc-if value="{{ isTasks }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:18px;">
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <sc-for list="{{ taskFilters }}" as="f" hint-placeholder-count="3">
+                <button onClick="{{ f.onClick }}" style="padding:9px 16px;border-radius:9999px;border:1.5px solid {{ f.border }};background:{{ f.bg }};color:{{ f.fg }};cursor:pointer;font-weight:800;font-size:12.5px;">{{ f.label }}</button>
+              </sc-for>
+            </div>
+            <button onClick="{{ openModal }}" style="display:inline-flex;align-items:center;gap:8px;background:transparent;border:2px solid #1D3557;cursor:pointer;padding:9px 16px;border-radius:11px;font-weight:800;font-size:13px;color:#1D3557;"><i class="fa fa-plus"></i>{{ c.newTask }}</button>
+          </div>
+
+          <div style="background:#fff;border:1px solid rgba(29,53,87,.12);border-radius:20px;overflow:hidden;">
+            <div style="display:flex;align-items:center;gap:14px;padding:13px 22px;border-bottom:1px solid rgba(29,53,87,.08);font-size:10.5px;font-weight:800;letter-spacing:.5px;color:rgba(29,53,87,.5);">
+              <span style="flex:1;">{{ c.colTask }}</span><span style="width:130px;">{{ c.colKid }}</span><span style="width:110px;">{{ c.colRecur }}</span><span style="width:90px;text-align:right;">{{ c.colReward }}</span><span style="width:110px;text-align:right;">{{ c.colStatus }}</span>
+            </div>
+            <sc-for list="{{ taskRows }}" as="t" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;gap:14px;padding:15px 22px;border-bottom:1px solid rgba(29,53,87,.06);">
+                <div style="flex:1;display:flex;align-items:center;gap:13px;min-width:0;">
+                  <div style="width:40px;height:40px;border-radius:11px;background:{{ t.iconBg }};display:flex;align-items:center;justify-content:center;flex:none;"><i class="fa fa-{{ t.icon }}" style="color:{{ t.iconFg }};font-size:16px;"></i></div>
+                  <div style="min-width:0;"><div style="font-size:14.5px;font-weight:800;line-height:1.2;">{{ t.name }}</div><div style="font-size:11.5px;color:rgba(29,53,87,.55);">{{ t.cat }}</div></div>
+                </div>
+                <div style="width:130px;display:flex;align-items:center;gap:8px;"><div style="width:26px;height:26px;border-radius:8px;background:{{ t.kidColor }};color:#F1FAEE;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex:none;">{{ t.kidInitial }}</div><span style="font-size:13px;font-weight:600;">{{ t.kidName }}</span></div>
+                <div style="width:110px;"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:rgba(29,53,87,.7);"><i class="fa fa-{{ t.recurIcon }}" style="font-size:11px;color:rgba(29,53,87,.4);"></i>{{ t.recur }}</span></div>
+                <div style="width:90px;text-align:right;font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:{{ t.rewardFg }};">{{ t.reward }}</div>
+                <div style="width:110px;text-align:right;"><span style="background:{{ t.statusBg }};color:{{ t.statusFg }};padding:5px 11px;border-radius:9999px;font-size:10px;font-weight:800;letter-spacing:.3px;">{{ t.status }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== APPROVALS ===== -->
+      <sc-if value="{{ isApprovals }}" hint-placeholder-val="{{ true }}">
+        <sc-if value="{{ hasApprovals }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px;">
+            <sc-for list="{{ pendingApprovals }}" as="a" hint-placeholder-count="3">
+              <div style="background:#fff;border:1px solid rgba(29,53,87,.12);border-radius:20px;padding:22px;animation:spp-fade .25s ease-out;">
+                <div style="display:flex;align-items:center;gap:13px;margin-bottom:16px;">
+                  <div style="width:48px;height:48px;border-radius:13px;background:rgba(168,218,220,.4);display:flex;align-items:center;justify-content:center;flex:none;"><i class="fa fa-{{ a.icon }}" style="color:#E63946;font-size:20px;"></i></div>
+                  <div style="flex:1;"><div style="font-size:16px;font-weight:800;line-height:1.2;">{{ a.name }}</div><div style="font-size:12px;color:rgba(29,53,87,.6);">{{ a.kidName }} · {{ a.when }}</div></div>
+                  <span style="font-family:'Space Mono',monospace;font-size:18px;font-weight:700;color:#457B9D;">{{ a.reward }}</span>
+                </div>
+                <div style="background:#FAFBF6;border-radius:13px;padding:13px 15px;font-size:13px;line-height:1.5;color:rgba(29,53,87,.7);margin-bottom:16px;display:flex;gap:10px;"><i class="fa fa-quote-left" style="color:rgba(29,53,87,.3);font-size:12px;margin-top:2px;"></i>{{ a.note }}</div>
+                <div style="display:flex;gap:10px;">
+                  <button onClick="{{ a.onReject }}" style="flex:1;padding:12px;border-radius:12px;border:2px solid rgba(29,53,87,.15);background:#fff;cursor:pointer;font-weight:800;font-size:13.5px;color:rgba(29,53,87,.7);">{{ c.sendBack }}</button>
+                  <button onClick="{{ a.onApprove }}" style="flex:1.4;padding:12px;border-radius:12px;border:none;background:#E63946;cursor:pointer;font-weight:800;font-size:13.5px;color:#F1FAEE;display:inline-flex;align-items:center;justify-content:center;gap:8px;"><i class="fa fa-check"></i>{{ a.approveLabel }}</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ noApprovals }}" hint-placeholder-val="{{ true }}">
+          <div style="text-align:center;padding:60px 20px;">
+            <div style="display:inline-block;margin-bottom:16px;animation:spp-fade .3s ease-out;"><dc-import name="Piggy" mood="happy" size="100" hint-size="100px,100px"></dc-import></div>
+            <div style="font-size:22px;font-weight:800;">{{ c.allClear }}</div>
+            <div style="font-size:14.5px;color:rgba(29,53,87,.6);margin-top:6px;">{{ c.allClearSub }}</div>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <!-- ===== KIDS ===== -->
+      <sc-if value="{{ isKids }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <sc-for list="{{ kidDetails }}" as="k" hint-placeholder-count="2">
+            <div style="background:#fff;border:1px solid rgba(29,53,87,.12);border-radius:22px;padding:24px;">
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:22px;">
+                <div style="width:58px;height:58px;border-radius:16px;background:{{ k.color }};color:#F1FAEE;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:24px;flex:none;">{{ k.initial }}</div>
+                <div style="flex:1;min-width:160px;"><div style="font-size:20px;font-weight:800;">{{ k.name }}</div><div style="font-size:13px;color:rgba(29,53,87,.6);">{{ k.age }} · {{ k.level }} · {{ k.streak }} {{ c.streakWord }}</div></div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                  <div style="background:#1D3557;color:#F1FAEE;border-radius:14px;padding:12px 18px;text-align:center;"><div style="font-size:9.5px;font-weight:800;letter-spacing:.4px;color:#A8DADC;">{{ c.balance }}</div><div style="font-family:'Space Mono',monospace;font-size:22px;font-weight:700;margin-top:3px;">{{ k.balance }}</div></div>
+                  <div style="background:#FAFBF6;border-radius:14px;padding:12px 18px;text-align:center;"><div style="font-size:9.5px;font-weight:800;letter-spacing:.4px;color:rgba(29,53,87,.5);">{{ c.resisted }}</div><div style="font-family:'Space Mono',monospace;font-size:22px;font-weight:700;margin-top:3px;color:#E63946;">{{ k.resisted }}</div></div>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-wrap:wrap;gap:18px;">
+                <div style="flex:1 1 280px;">
+                  <div style="font-size:11px;font-weight:800;letter-spacing:.5px;color:rgba(29,53,87,.5);margin-bottom:11px;">{{ c.savingsGoal }}</div>
+                  <div style="background:#FAFBF6;border-radius:16px;padding:18px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;">
+                      <span style="font-size:15px;font-weight:800;"><i class="fa fa-bullseye" style="color:#E63946;margin-right:7px;"></i>{{ k.goalName }}</span>
+                      <span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:rgba(29,53,87,.6);">{{ k.goalText }}</span>
+                    </div>
+                    <div style="height:10px;border-radius:9999px;background:rgba(29,53,87,.1);overflow:hidden;margin-bottom:10px;"><div style="height:100%;width:{{ k.goalPct }};background:#E63946;border-radius:9999px;"></div></div>
+                    <div style="font-size:12.5px;color:rgba(29,53,87,.6);">{{ k.goalRemain }}</div>
+                  </div>
+                </div>
+
+                <div style="flex:1 1 280px;">
+                  <div style="font-size:11px;font-weight:800;letter-spacing:.5px;color:rgba(29,53,87,.5);margin-bottom:11px;">{{ c.autoAllowance }}</div>
+                  <div style="background:#FAFBF6;border-radius:16px;padding:18px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                      <div><div style="font-size:14px;font-weight:800;">{{ k.allowanceText }}</div><div style="font-size:12px;color:rgba(29,53,87,.6);">{{ c.everyWeek }}</div></div>
+                      <button onClick="{{ k.onToggle }}" style="width:50px;height:28px;border-radius:9999px;border:none;cursor:pointer;background:{{ k.toggleBg }};position:relative;transition:background .2s;"><span style="position:absolute;top:3px;left:{{ k.toggleX }};width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s;"></span></button>
+                    </div>
+                    <div style="font-size:12.5px;line-height:1.5;color:rgba(29,53,87,.6);">{{ k.allowanceNote }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- ===== REPORTS ===== -->
+      <sc-if value="{{ isReports }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:22px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;">
+            <sc-for list="{{ reportStats }}" as="s" hint-placeholder-count="4">
+              <div style="background:#fff;border:1px solid rgba(29,53,87,.12);border-radius:18px;padding:20px;">
+                <div style="font-size:10.5px;font-weight:800;letter-spacing:.5px;color:rgba(29,53,87,.5);margin-bottom:12px;">{{ s.title }}</div>
+                <div style="font-family:'Space Mono',monospace;font-size:28px;font-weight:700;letter-spacing:-1px;">{{ s.value }}</div>
+                <div style="font-size:12px;font-weight:700;color:#457B9D;margin-top:6px;"><i class="fa fa-arrow-up"></i> {{ s.delta }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:18px;">
+            <div style="flex:1 1 420px;min-width:320px;background:#fff;border:1px solid rgba(29,53,87,.12);border-radius:20px;padding:24px;">
+              <h2 style="margin:0 0 4px;font-size:16px;font-weight:800;">{{ c.tasksThisWeek }}</h2>
+              <p style="margin:0 0 22px;font-size:13px;color:rgba(29,53,87,.6);">{{ c.tasksThisWeekSub }}</p>
+              <div style="display:flex;align-items:flex-end;gap:14px;height:170px;">
+                <sc-for list="{{ chartBars }}" as="b" hint-placeholder-count="7">
+                  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end;">
+                    <span style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:rgba(29,53,87,.5);">{{ b.val }}</span>
+                    <div style="width:100%;max-width:34px;height:{{ b.h }};background:{{ b.color }};border-radius:8px 8px 0 0;"></div>
+                    <span style="font-size:11px;font-weight:700;color:rgba(29,53,87,.5);">{{ b.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="flex:1 1 280px;min-width:280px;background:#1D3557;color:#F1FAEE;border-radius:20px;padding:24px;display:flex;flex-direction:column;">
+              <div style="display:inline-block;margin-bottom:14px;"><dc-import name="Piggy" mood="zen" size="56" hint-size="56px,56px"></dc-import></div>
+              <h2 style="margin:0 0 4px;font-size:16px;font-weight:800;">{{ c.impulseTitle }}</h2>
+              <p style="margin:0 0 20px;font-size:13px;line-height:1.5;color:rgba(241,250,238,.75);">{{ c.impulseSub }}</p>
+              <div style="display:flex;align-items:baseline;gap:8px;margin-top:auto;">
+                <span style="font-family:'Space Mono',monospace;font-size:46px;font-weight:700;letter-spacing:-2px;">$2,340</span>
+              </div>
+              <div style="font-size:12.5px;color:#A8DADC;font-weight:700;">{{ c.impulseSaved }}</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== SETTINGS ===== -->
+      <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ true }}">
+        <div style="max-width:620px;display:flex;flex-direction:column;gap:16px;">
+          <div style="background:#fff;border:1px solid rgba(29,53,87,.12);border-radius:20px;padding:24px;">
+            <h2 style="margin:0 0 4px;font-size:17px;font-weight:800;">{{ c.payoutTitle }}</h2>
+            <p style="margin:0 0 20px;font-size:13.5px;color:rgba(29,53,87,.6);line-height:1.5;">{{ c.payoutSub }}</p>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <sc-for list="{{ payoutMethods }}" as="m" hint-placeholder-count="3">
+                <div onClick="{{ m.onClick }}" style="display:flex;align-items:center;gap:14px;padding:15px;border:2px solid {{ m.border }};border-radius:14px;cursor:pointer;background:{{ m.bg }};">
+                  <div style="width:40px;height:40px;border-radius:11px;background:{{ m.iconBg }};display:flex;align-items:center;justify-content:center;flex:none;"><i class="fa fa-{{ m.icon }}" style="color:{{ m.iconFg }};font-size:16px;"></i></div>
+                  <div style="flex:1;"><div style="font-size:14.5px;font-weight:800;">{{ m.title }}</div><div style="font-size:12px;color:rgba(29,53,87,.6);">{{ m.desc }}</div></div>
+                  <div style="width:22px;height:22px;border-radius:50%;border:2px solid {{ m.dotBorder }};display:flex;align-items:center;justify-content:center;flex:none;"><span style="width:11px;height:11px;border-radius:50%;background:{{ m.dotBg }};"></span></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid rgba(29,53,87,.12);border-radius:20px;padding:24px;">
+            <h2 style="margin:0 0 18px;font-size:17px;font-weight:800;">{{ c.prefsTitle }}</h2>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <sc-for list="{{ prefs }}" as="p" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid rgba(29,53,87,.07);">
+                  <div style="flex:1;"><div style="font-size:14.5px;font-weight:700;">{{ p.title }}</div><div style="font-size:12.5px;color:rgba(29,53,87,.6);margin-top:2px;">{{ p.desc }}</div></div>
+                  <button onClick="{{ p.onToggle }}" style="width:50px;height:28px;border-radius:9999px;border:none;cursor:pointer;background:{{ p.bg }};position:relative;flex:none;"><span style="position:absolute;top:3px;left:{{ p.x }};width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s;"></span></button>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <!-- ============ TASK SETUP MODAL ============ -->
+  <sc-if value="{{ modalOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:fixed;inset:0;z-index:200;background:rgba(11,19,32,.5);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px;">
+      <div onClick="{{ stop }}" style="width:100%;max-width:520px;max-height:92vh;overflow-y:auto;background:#FAFBF6;border-radius:26px;box-shadow:0 30px 80px rgba(11,19,32,.4);animation:spp-pop .25s ease-out;">
+        <!-- modal header -->
+        <div style="position:sticky;top:0;background:#FAFBF6;padding:22px 26px 16px;border-bottom:1px solid rgba(29,53,87,.08);z-index:2;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div><div style="font-size:11px;font-weight:800;letter-spacing:.6px;color:#E63946;">{{ c.modalEyebrow }} · {{ modalStep }}/3</div><h2 style="margin:3px 0 0;font-size:21px;font-weight:800;">{{ stepTitle }}</h2></div>
+            <button onClick="{{ closeModal }}" style="width:38px;height:38px;border-radius:11px;border:1px solid rgba(29,53,87,.14);background:#fff;cursor:pointer;color:#1D3557;font-size:15px;flex:none;"><i class="fa fa-times"></i></button>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <sc-for list="{{ stepDots }}" as="d" hint-placeholder-count="3">
+              <div style="flex:1;height:5px;border-radius:9999px;background:{{ d.bg }};"></div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="padding:22px 26px 8px;">
+          <!-- STEP 1 -->
+          <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ true }}">
+            <div style="animation:spp-fade .2s ease-out;">
+              <label style="font-size:11px;font-weight:800;letter-spacing:.5px;color:rgba(29,53,87,.55);display:block;margin-bottom:8px;">{{ c.taskNameLabel }}</label>
+              <input value="{{ draftName }}" onInput="{{ setName }}" placeholder="{{ c.taskNamePh }}" style="width:100%;padding:14px 16px;border-radius:13px;border:2px solid rgba(29,53,87,.15);background:#fff;font-size:15px;font-weight:600;color:#1D3557;outline:none;margin-bottom:20px;">
+
+              <label style="font-size:11px;font-weight:800;letter-spacing:.5px;color:rgba(29,53,87,.55);display:block;margin-bottom:8px;">{{ c.categoryLabel }}</label>
+              <div style="display:flex;gap:10px;margin-bottom:20px;">
+                <sc-for list="{{ catOptions }}" as="o" hint-placeholder-count="2">
+                  <button onClick="{{ o.onClick }}" style="flex:1;padding:15px;border-radius:14px;border:2px solid {{ o.border }};background:{{ o.bg }};cursor:pointer;text-align:left;">
+                    <i class="fa fa-{{ o.icon }}" style="font-size:18px;color:{{ o.iconFg }};"></i>
+                    <div style="font-size:14px;font-weight:800;margin-top:8px;color:#1D3557;">{{ o.title }}</div>
+                    <div style="font-size:11.5px;color:rgba(29,53,87,.6);margin-top:2px;">{{ o.desc }}</div>
+                  </button>
+                </sc-for>
+              </div>
+
+              <label style="font-size:11px;font-weight:800;letter-spacing:.5px;color:rgba(29,53,87,.55);display:block;margin-bottom:8px;">{{ c.iconLabel }}</label>
+              <div style="display:flex;flex-wrap:wrap;gap:9px;">
+                <sc-for list="{{ iconOptions }}" as="i" hint-placeholder-count="8">
+                  <button onClick="{{ i.onClick }}" style="width:48px;height:48px;border-radius:13px;border:2px solid {{ i.border }};background:{{ i.bg }};cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fa fa-{{ i.icon }}" style="font-size:18px;color:{{ i.fg }};"></i></button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- STEP 2 -->
+          <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ true }}">
+            <div style="animation:spp-fade .2s ease-out;">
+              <label style="font-size:11px;font-weight:800;letter-spacing:.5px;color:rgba(29,53,87,.55);display:block;margin-bottom:8px;">{{ c.payTypeLabel }}</label>
+              <div style="display:flex;gap:8px;margin-bottom:22px;">
+                <sc-for list="{{ payOptions }}" as="o" hint-placeholder-count="3">
+                  <button onClick="{{ o.onClick }}" style="flex:1;padding:13px 8px;border-radius:13px;border:2px solid {{ o.border }};background:{{ o.bg }};cursor:pointer;font-weight:800;font-size:13px;color:{{ o.fg }};">{{ o.label }}</button>
+                </sc-for>
+              </div>
+
+              <sc-if value="{{ showMoney }}" hint-placeholder-val="{{ true }}">
+                <div style="margin-bottom:18px;">
+                  <label style="font-size:11px;font-weight:800;letter-spacing:.5px;color:rgba(29,53,87,.55);display:block;margin-bottom:10px;">{{ c.amountLabel }}</label>
+                  <div style="display:flex;align-items:center;gap:14px;background:#fff;border:2px solid rgba(29,53,87,.15);border-radius:14px;padding:12px 16px;">
+                    <button onClick="{{ amtDown }}" style="width:38px;height:38px;border-radius:10px;border:none;background:rgba(29,53,87,.07);cursor:pointer;font-size:18px;color:#1D3557;flex:none;"><i class="fa fa-minus"></i></button>
+                    <div style="flex:1;text-align:center;font-family:'Space Mono',monospace;font-size:30px;font-weight:700;color:#1D3557;">${{ draftAmount }}</div>
+                    <button onClick="{{ amtUp }}" style="width:38px;height:38px;border-radius:10px;border:none;background:#E63946;cursor:pointer;font-size:18px;color:#F1FAEE;flex:none;"><i class="fa fa-plus"></i></button>
+                  </div>
+                  <div style="display:flex;gap:8px;margin-top:10px;">
+                    <sc-for list="{{ amtPresets }}" as="p" hint-placeholder-count="4">
+                      <button onClick="{{ p.onClick }}" style="flex:1;padding:9px 0;border-radius:9999px;border:1.5px solid rgba(29,53,87,.15);background:#fff;cursor:pointer;font-weight:800;font-size:12.5px;color:rgba(29,53,87,.7);">${{ p.v }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ showXp }}" hint-placeholder-val="{{ true }}">
+                <div>
+                  <label style="font-size:11px;font-weight:800;letter-spacing:.5px;color:rgba(29,53,87,.55);display:block;margin-bottom:10px;">{{ c.xpLabel }}</label>
+                  <div style="display:flex;align-items:center;gap:14px;background:#fff;border:2px solid rgba(29,53,87,.15);border-radius:14px;padding:12px 16px;">
+                    <button onClick="{{ xpDown }}" style="width:38px;height:38px;border-radius:10px;border:none;background:rgba(29,53,87,.07);cursor:pointer;font-size:18px;color:#1D3557;flex:none;"><i class="fa fa-minus"></i></button>
+                    <div style="flex:1;text-align:center;font-family:'Space Mono',monospace;font-size:30px;font-weight:700;color:#457B9D;">{{ draftXp }} XP</div>
+                    <button onClick="{{ xpUp }}" style="width:38px;height:38px;border-radius:10px;border:none;background:#457B9D;cursor:pointer;font-size:18px;color:#F1FAEE;flex:none;"><i class="fa fa-plus"></i></button>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <!-- STEP 3 -->
+          <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{ true }}">
+            <div style="animation:spp-fade .2s ease-out;">
+              <label style="font-size:11px;font-weight:800;letter-spacing:.5px;color:rgba(29,53,87,.55);display:block;margin-bottom:8px;">{{ c.assignLabel }}</label>
+              <div style="display:flex;gap:10px;margin-bottom:22px;">
+                <sc-for list="{{ kidOptions }}" as="k" hint-placeholder-count="2">
+                  <button onClick="{{ k.onClick }}" style="flex:1;padding:14px;border-radius:14px;border:2px solid {{ k.border }};background:{{ k.bg }};cursor:pointer;display:flex;align-items:center;gap:11px;">
+                    <div style="width:38px;height:38px;border-radius:11px;background:{{ k.color }};color:#F1FAEE;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex:none;">{{ k.initial }}</div>
+                    <div style="text-align:left;"><div style="font-size:14px;font-weight:800;color:#1D3557;">{{ k.name }}</div><div style="font-size:11.5px;color:rgba(29,53,87,.6);">{{ k.age }}</div></div>
+                  </button>
+                </sc-for>
+              </div>
+
+              <label style="font-size:11px;font-weight:800;letter-spacing:.5px;color:rgba(29,53,87,.55);display:block;margin-bottom:8px;">{{ c.recurLabel }}</label>
+              <div style="display:flex;gap:8px;margin-bottom:24px;">
+                <sc-for list="{{ recurOptions }}" as="r" hint-placeholder-count="3">
+                  <button onClick="{{ r.onClick }}" style="flex:1;padding:12px 6px;border-radius:12px;border:2px solid {{ r.border }};background:{{ r.bg }};cursor:pointer;font-weight:800;font-size:12.5px;color:{{ r.fg }};"><i class="fa fa-{{ r.icon }}" style="margin-right:6px;font-size:11px;"></i>{{ r.label }}</button>
+                </sc-for>
+              </div>
+
+              <!-- summary -->
+              <div style="background:#1D3557;border-radius:16px;padding:18px;color:#F1FAEE;">
+                <div style="font-size:10px;font-weight:800;letter-spacing:.6px;color:#A8DADC;margin-bottom:12px;">{{ c.summaryLabel }}</div>
+                <div style="display:flex;align-items:center;gap:13px;">
+                  <div style="width:46px;height:46px;border-radius:13px;background:rgba(168,218,220,.2);display:flex;align-items:center;justify-content:center;flex:none;"><i class="fa fa-{{ draftIcon }}" style="font-size:20px;color:#A8DADC;"></i></div>
+                  <div style="flex:1;min-width:0;"><div style="font-size:16px;font-weight:800;">{{ summaryName }}</div><div style="font-size:12px;color:rgba(168,218,220,.85);">{{ summaryMeta }}</div></div>
+                  <span style="font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:#E63946;">{{ summaryReward }}</span>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
+        <!-- modal footer -->
+        <div style="position:sticky;bottom:0;background:#FAFBF6;padding:14px 26px 22px;border-top:1px solid rgba(29,53,87,.08);display:flex;gap:11px;">
+          <button onClick="{{ stepBack }}" style="padding:14px 20px;border-radius:13px;border:2px solid rgba(29,53,87,.15);background:#fff;cursor:pointer;font-weight:800;font-size:14px;color:rgba(29,53,87,.7);">{{ backLabel }}</button>
+          <button onClick="{{ stepNext }}" style="flex:1;padding:14px;border-radius:13px;border:none;background:{{ nextBg }};cursor:pointer;font-weight:800;font-size:14.5px;color:#F1FAEE;display:inline-flex;align-items:center;justify-content:center;gap:9px;">{{ nextLabel }}<i class="fa fa-{{ nextIcon }}"></i></button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:860}}">
+class Component extends DCLogic {
+  state = {
+    lang: 'es', view: 'overview',
+    modalOpen: false, step: 1,
+    draft: { name: '', icon: 'star', cat: 'chore', payType: 'money', amount: 30, xp: 50, assignee: 'marco', recur: 'once' },
+    payoutMethod: 'card',
+    prefs: { notify: true, weekly: true, autoApprove: false },
+    kids: [
+      { id: 'marco', name: 'Marco', age: 12, lvl: 7, balance: 340, streak: 7, resisted: 12, tasksDone: 18, color: '#E63946', initial: 'M', goalEs: 'Bici nueva', goalEn: 'New bike', goalTarget: 500, allowance: 50, autopay: true },
+      { id: 'sofia', name: 'Sofía', age: 9, lvl: 4, balance: 180, streak: 3, resisted: 5, tasksDone: 9, color: '#457B9D', initial: 'S', goalEs: 'Nintendo Switch', goalEn: 'Nintendo Switch', goalTarget: 1200, allowance: 30, autopay: false }
+    ],
+    tasks: [
+      { id: 1, es: 'Sacar la basura', en: 'Take out the trash', icon: 'trash-o', cat: 'chore', kid: 'marco', payType: 'money', amount: 20, recur: 'weekly', status: 'active' },
+      { id: 2, es: 'Tender la cama', en: 'Make the bed', icon: 'bed', cat: 'chore', kid: 'sofia', payType: 'money', amount: 10, recur: 'daily', status: 'active' },
+      { id: 3, es: 'Leer 20 minutos', en: 'Read for 20 minutes', icon: 'book', cat: 'lesson', kid: 'marco', payType: 'xp', xp: 50, recur: 'daily', status: 'active' },
+      { id: 4, es: 'Lavar los platos', en: 'Wash the dishes', icon: 'cutlery', cat: 'chore', kid: 'sofia', payType: 'money', amount: 15, recur: 'weekly', status: 'active' },
+      { id: 5, es: 'Lección: ahorro', en: 'Lesson: saving', icon: 'graduation-cap', cat: 'lesson', kid: 'sofia', payType: 'xp', xp: 80, recur: 'once', status: 'active' },
+      { id: 6, es: 'Pasear al perro', en: 'Walk the dog', icon: 'paw', cat: 'chore', kid: 'marco', payType: 'money', amount: 25, recur: 'daily', status: 'active' }
+    ],
+    approvals: [
+      { id: 101, es: 'Pintar la cerca', en: 'Paint the fence', icon: 'paint-brush', kid: 'marco', amount: 50, payType: 'money', whenEs: 'Hace 1 h', whenEn: '1 h ago', noteEs: '"Ya quedó lista, le tomé foto."', noteEn: '"All done, I took a photo."' },
+      { id: 102, es: 'Lavar el coche', en: 'Wash the car', icon: 'car', kid: 'sofia', amount: 40, payType: 'money', whenEs: 'Hace 3 h', whenEn: '3 h ago', noteEs: '"Lo dejé brillando 🚗"', noteEn: '"Left it shining."' },
+      { id: 103, es: 'Terminar misión: presupuesto', en: 'Finish quest: budget', icon: 'pie-chart', kid: 'marco', xp: 120, payType: 'xp', whenEs: 'Hoy', whenEn: 'Today', noteEs: '"Completé las 5 lecciones."', noteEn: '"Finished all 5 lessons."' }
+    ],
+    activity: [
+      { es: 'Marco completó "Leer 20 min" (+50 XP)', en: 'Marco completed "Read 20 min" (+50 XP)', icon: 'book', tone: 'blue', timeEs: 'Hace 20 min', timeEn: '20 min ago' },
+      { es: 'Sofía resistió un impulso de $300', en: 'Sofía resisted a $300 impulse', icon: 'snowflake-o', tone: 'red', timeEs: 'Hace 1 h', timeEn: '1 h ago' },
+      { es: 'Aprobaste "Tender la cama" (+$10)', en: 'You approved "Make the bed" (+$10)', icon: 'check', tone: 'green', timeEs: 'Hace 2 h', timeEn: '2 h ago' },
+      { es: 'Marco subió a Nivel 7', en: 'Marco reached Level 7', icon: 'bolt', tone: 'red', timeEs: 'Ayer', timeEn: 'Yesterday' },
+      { es: 'Mesada semanal depositada a Marco', en: 'Weekly allowance sent to Marco', icon: 'refresh', tone: 'blue', timeEs: 'Lunes', timeEn: 'Monday' }
+    ]
+  };
+
+  STR = {
+    es: {
+      parentTag: 'PADRES', parentRole: 'Cuenta familiar', newTask: 'Nueva tarea',
+      yourKids: 'Tus hijos', manage: 'Gestionar', balance: 'AHORRADO', tasksDone: 'TAREAS', resisted: 'RESISTIDOS',
+      pendingApproval: 'Por aprobar', activity: 'Actividad reciente', allClear: 'Todo al día', allClearSub: 'No hay tareas pendientes de aprobar.',
+      colTask: 'TAREA', colKid: 'ASIGNADA A', colRecur: 'FRECUENCIA', colReward: 'PREMIO', colStatus: 'ESTADO',
+      sendBack: 'Devolver', everyWeek: 'Cada semana', streakWord: 'de racha', savingsGoal: 'META DE AHORRO', autoAllowance: 'MESADA AUTOMÁTICA',
+      tasksThisWeek: 'Tareas completadas', tasksThisWeekSub: 'Esta semana, por día', impulseTitle: 'Impulsos resistidos', impulseSub: 'Lo que tus hijos decidieron NO gastar, gracias a la cochinita.', impulseSaved: 'ahorrado en impulsos este año',
+      payoutTitle: 'Cómo se paga', payoutSub: 'Elige cómo entregas el dinero cuando apruebas una tarea o liberas un ahorro.', prefsTitle: 'Preferencias',
+      modalEyebrow: 'NUEVA TAREA', taskNameLabel: 'NOMBRE DE LA TAREA', taskNamePh: 'Ej. Sacar la basura', categoryLabel: 'TIPO', iconLabel: 'ÍCONO',
+      payTypeLabel: '¿CÓMO SE PAGA?', amountLabel: 'CANTIDAD', xpLabel: 'EXPERIENCIA', assignLabel: 'ASIGNAR A', recurLabel: 'FRECUENCIA', summaryLabel: 'RESUMEN',
+      stepTitles: ['¿Qué hay que hacer?', '¿Cuánto vale?', '¿Para quién y cuándo?'],
+      cats: [ { id: 'chore', icon: 'home', title: 'Tarea del hogar', desc: 'Paga en dinero' }, { id: 'lesson', icon: 'graduation-cap', title: 'Lección', desc: 'Da experiencia' } ],
+      pays: [ { id: 'money', label: 'Dinero' }, { id: 'xp', label: 'Experiencia' }, { id: 'both', label: 'Ambos' } ],
+      recurs: [ { id: 'once', icon: 'calendar-o', label: 'Una vez' }, { id: 'daily', icon: 'sun-o', label: 'Diario' }, { id: 'weekly', icon: 'refresh', label: 'Semanal' } ],
+      back: 'Atrás', next: 'Siguiente', create: 'Crear tarea',
+      recurLabels: { once: 'Una vez', daily: 'Diario', weekly: 'Semanal' }, catLabels: { chore: 'Tarea del hogar', lesson: 'Lección' },
+      statusLabels: { active: 'ACTIVA' }, approve: 'Aprobar y pagar', approveXp: 'Aprobar',
+      payouts: [ { id: 'card', icon: 'credit-card', title: 'Tarjeta vinculada', desc: 'Visa ···· 4821' }, { id: 'transfer', icon: 'bank', title: 'Transferencia', desc: 'A la cuenta de tu hijo' }, { id: 'cash', icon: 'money', title: 'Efectivo', desc: 'Tú entregas a mano' } ],
+      prefsList: [ { id: 'notify', title: 'Notificaciones', desc: 'Avísame cuando haya algo por aprobar' }, { id: 'weekly', title: 'Resumen semanal', desc: 'Recibe un reporte cada domingo' }, { id: 'autoApprove', title: 'Aprobar lecciones solas', desc: 'Las misiones de finanzas se aprueban automático' } ],
+      reportStats: [ { t: 'TAREAS / SEMANA', v: '27', d: '+18%' }, { t: 'AHORRO TOTAL', v: '$2,340', d: '+12%' }, { t: 'IMPULSOS RESISTIDOS', v: '17', d: '+5' }, { t: 'NIVEL PROMEDIO', v: '5.5', d: '+1' } ],
+      days: ['L', 'M', 'M', 'J', 'V', 'S', 'D'], goalOf: 'de'
+    },
+    en: {
+      parentTag: 'PARENTS', parentRole: 'Family account', newTask: 'New task',
+      yourKids: 'Your kids', manage: 'Manage', balance: 'SAVED', tasksDone: 'TASKS', resisted: 'RESISTED',
+      pendingApproval: 'To approve', activity: 'Recent activity', allClear: 'All caught up', allClearSub: 'No tasks waiting for approval.',
+      colTask: 'TASK', colKid: 'ASSIGNED TO', colRecur: 'FREQUENCY', colReward: 'REWARD', colStatus: 'STATUS',
+      sendBack: 'Send back', everyWeek: 'Every week', streakWord: 'streak', savingsGoal: 'SAVINGS GOAL', autoAllowance: 'AUTO ALLOWANCE',
+      tasksThisWeek: 'Tasks completed', tasksThisWeekSub: 'This week, by day', impulseTitle: 'Impulses resisted', impulseSub: 'What your kids chose NOT to spend, thanks to the piggy.', impulseSaved: 'saved from impulses this year',
+      payoutTitle: 'How payouts work', payoutSub: 'Choose how you hand over money when you approve a task or release savings.', prefsTitle: 'Preferences',
+      modalEyebrow: 'NEW TASK', taskNameLabel: 'TASK NAME', taskNamePh: 'e.g. Take out the trash', categoryLabel: 'TYPE', iconLabel: 'ICON',
+      payTypeLabel: 'HOW DOES IT PAY?', amountLabel: 'AMOUNT', xpLabel: 'EXPERIENCE', assignLabel: 'ASSIGN TO', recurLabel: 'FREQUENCY', summaryLabel: 'SUMMARY',
+      stepTitles: ['What needs doing?', 'What is it worth?', 'For who and when?'],
+      cats: [ { id: 'chore', icon: 'home', title: 'Household chore', desc: 'Pays in money' }, { id: 'lesson', icon: 'graduation-cap', title: 'Lesson', desc: 'Gives XP' } ],
+      pays: [ { id: 'money', label: 'Money' }, { id: 'xp', label: 'XP' }, { id: 'both', label: 'Both' } ],
+      recurs: [ { id: 'once', icon: 'calendar-o', label: 'Once' }, { id: 'daily', icon: 'sun-o', label: 'Daily' }, { id: 'weekly', icon: 'refresh', label: 'Weekly' } ],
+      back: 'Back', next: 'Next', create: 'Create task',
+      recurLabels: { once: 'Once', daily: 'Daily', weekly: 'Weekly' }, catLabels: { chore: 'Household chore', lesson: 'Lesson' },
+      statusLabels: { active: 'ACTIVE' }, approve: 'Approve & pay', approveXp: 'Approve',
+      payouts: [ { id: 'card', icon: 'credit-card', title: 'Linked card', desc: 'Visa ···· 4821' }, { id: 'transfer', icon: 'bank', title: 'Bank transfer', desc: "To your kid's account" }, { id: 'cash', icon: 'money', title: 'Cash', desc: 'You hand it over' } ],
+      prefsList: [ { id: 'notify', title: 'Notifications', desc: 'Tell me when something needs approval' }, { id: 'weekly', title: 'Weekly summary', desc: 'Get a report every Sunday' }, { id: 'autoApprove', title: 'Auto-approve lessons', desc: 'Finance quests get approved automatically' } ],
+      reportStats: [ { t: 'TASKS / WEEK', v: '27', d: '+18%' }, { t: 'TOTAL SAVED', v: '$2,340', d: '+12%' }, { t: 'IMPULSES RESISTED', v: '17', d: '+5' }, { t: 'AVG LEVEL', v: '5.5', d: '+1' } ],
+      days: ['M', 'T', 'W', 'T', 'F', 'S', 'S'], goalOf: 'of'
+    }
+  };
+
+  TONE = { red: ['rgba(230,57,70,.12)', '#E63946'], blue: ['rgba(69,123,157,.16)', '#457B9D'], green: ['rgba(47,174,107,.16)', '#2Fae6b'] };
+
+  go = (v) => this.setState({ view: v });
+  kidOf = (id) => this.state.kids.find(k => k.id === id);
+
+  openModal = () => this.setState({ modalOpen: true, step: 1, draft: { name: '', icon: 'star', cat: 'chore', payType: 'money', amount: 30, xp: 50, assignee: 'marco', recur: 'once' } });
+  closeModal = () => this.setState({ modalOpen: false });
+  setD = (patch) => this.setState({ draft: { ...this.state.draft, ...patch } });
+
+  stepNext = () => {
+    if (this.state.step < 3) { this.setState({ step: this.state.step + 1 }); return; }
+    // create
+    const d = this.state.draft;
+    const lang = this.state.lang;
+    const name = d.name.trim() || (lang === 'es' ? 'Tarea nueva' : 'New task');
+    const id = Date.now();
+    const task = { id, es: name, en: name, icon: d.icon, cat: d.cat, kid: d.assignee, payType: d.payType, amount: d.amount, xp: d.xp, recur: d.recur, status: 'active' };
+    const kid = this.kidOf(d.assignee);
+    const act = { es: `Creaste "${name}" para ${kid.name}`, en: `You created "${name}" for ${kid.name}`, icon: d.icon, tone: 'blue', timeEs: 'Ahora', timeEn: 'Now' };
+    this.setState({ tasks: [task, ...this.state.tasks], activity: [act, ...this.state.activity], modalOpen: false, view: 'tasks' });
+  };
+  stepBack = () => { if (this.state.step > 1) this.setState({ step: this.state.step - 1 }); else this.closeModal(); };
+
+  approve = (id) => {
+    const a = this.state.approvals.find(x => x.id === id);
+    if (!a) return;
+    const kids = this.state.kids.map(k => k.id === a.kid && a.payType !== 'xp' ? { ...k, balance: k.balance + a.amount } : k);
+    const kid = this.kidOf(a.kid);
+    const lang = this.state.lang;
+    const rw = a.payType === 'xp' ? `+${a.xp} XP` : `+$${a.amount}`;
+    const act = { es: `Aprobaste "${a.es}" para ${kid.name} (${rw})`, en: `You approved "${a.en}" for ${kid.name} (${rw})`, icon: 'check', tone: 'green', timeEs: 'Ahora', timeEn: 'Now' };
+    this.setState({ approvals: this.state.approvals.filter(x => x.id !== id), kids, activity: [act, ...this.state.activity] });
+  };
+  reject = (id) => {
+    const a = this.state.approvals.find(x => x.id === id);
+    if (!a) return;
+    const kid = this.kidOf(a.kid);
+    const act = { es: `Devolviste "${a.es}" a ${kid.name}`, en: `You sent "${a.en}" back to ${kid.name}`, icon: 'undo', tone: 'red', timeEs: 'Ahora', timeEn: 'Now' };
+    this.setState({ approvals: this.state.approvals.filter(x => x.id !== id), activity: [act, ...this.state.activity] });
+  };
+
+  togglePref = (id) => this.setState({ prefs: { ...this.state.prefs, [id]: !this.state.prefs[id] } });
+  toggleAuto = (id) => this.setState({ kids: this.state.kids.map(k => k.id === id ? { ...k, autopay: !k.autopay } : k) });
+
+  renderVals() {
+    const lang = this.state.lang;
+    const c = this.STR[lang];
+    const v = this.state.view;
+    const d = this.state.draft;
+    const tx = (o) => o[lang];
+    const goalName = (k) => k['goal' + (lang === 'es' ? 'Es' : 'En')];
+    const reward = (o) => o.payType === 'xp' ? `+${o.xp} XP` : (o.payType === 'both' ? `+$${o.amount}` : `+$${o.amount}`);
+
+    const views = ['overview', 'tasks', 'approvals', 'kids', 'reports', 'settings'];
+    const navMeta = [
+      { key: 'overview', icon: 'th-large' }, { key: 'tasks', icon: 'list-ul' }, { key: 'approvals', icon: 'check-square-o' },
+      { key: 'kids', icon: 'users' }, { key: 'reports', icon: 'bar-chart' }, { key: 'settings', icon: 'cog' }
+    ];
+    const navLabel = { es: { overview: 'Inicio', tasks: 'Tareas', approvals: 'Aprobaciones', kids: 'Hijos', reports: 'Reportes', settings: 'Ajustes' },
+                       en: { overview: 'Overview', tasks: 'Tasks', approvals: 'Approvals', kids: 'Kids', reports: 'Reports', settings: 'Settings' } }[lang];
+    const titles = { es: { overview: ['Inicio', 'Aquí está tu familia de un vistazo'], tasks: ['Tareas', 'Crea y asigna tareas para tus hijos'], approvals: ['Aprobaciones', 'Revisa y libera el dinero ganado'], kids: ['Hijos', 'Saldos, metas y mesada de cada hijo'], reports: ['Reportes', 'Cómo va tu familia con el dinero'], settings: ['Ajustes', 'Pagos y preferencias de la cuenta'] },
+                     en: { overview: ['Overview', "Here's your family at a glance"], tasks: ['Tasks', 'Create and assign tasks for your kids'], approvals: ['Approvals', 'Review and release earned money'], kids: ['Kids', "Each kid's balance, goals and allowance"], reports: ['Reports', 'How your family is doing with money'], settings: ['Settings', 'Account payouts and preferences'] } }[lang];
+
+    const approvals = this.state.approvals;
+    const pendingApprovals = approvals.map(a => ({
+      id: a.id, name: tx(a), icon: a.icon, kidName: this.kidOf(a.kid).name, when: lang === 'es' ? a.whenEs : a.whenEn,
+      reward: a.payType === 'xp' ? `+${a.xp} XP` : `+$${a.amount}`, note: lang === 'es' ? a.noteEs : a.noteEn,
+      approveLabel: a.payType === 'xp' ? c.approveXp : c.approve,
+      onApprove: () => this.approve(a.id), onReject: () => this.reject(a.id)
+    }));
+
+    const stats = [
+      { key: 'toApprove', icon: 'check-square-o', value: approvals.length, deltaEs: 'tareas esperando', deltaEn: 'tasks waiting', accent: true },
+      { key: 'paid', icon: 'money', value: '$1,240', deltaEs: 'pagado este mes', deltaEn: 'paid this month' },
+      { key: 'saved', icon: 'bank', value: '$520', deltaEs: 'ahorrado por tus hijos', deltaEn: 'saved by your kids' },
+      { key: 'active', icon: 'list-ul', value: this.state.tasks.length, deltaEs: 'tareas activas', deltaEn: 'active tasks' }
+    ];
+    const statTitle = { es: { toApprove: 'POR APROBAR', paid: 'PAGADO', saved: 'AHORRADO', active: 'TAREAS ACTIVAS' }, en: { toApprove: 'TO APPROVE', paid: 'PAID', saved: 'SAVED', active: 'ACTIVE TASKS' } }[lang];
+    const statCards = stats.map(s => s.accent ? {
+      title: statTitle[s.key], value: s.value, delta: lang === 'es' ? s.deltaEs : s.deltaEn, icon: s.icon,
+      bg: '#E63946', border: 'none', ink: '#F1FAEE', label: 'rgba(241,250,238,.8)', sub: 'rgba(241,250,238,.8)', iconBg: 'rgba(255,255,255,.18)', iconFg: '#F1FAEE'
+    } : {
+      title: statTitle[s.key], value: s.value, delta: lang === 'es' ? s.deltaEs : s.deltaEn, icon: s.icon,
+      bg: '#fff', border: '1px solid rgba(29,53,87,.12)', ink: '#1D3557', label: 'rgba(29,53,87,.5)', sub: 'rgba(29,53,87,.6)', iconBg: 'rgba(168,218,220,.4)', iconFg: '#E63946'
+    });
+
+    const kidCards = this.state.kids.map(k => {
+      const pct = Math.min(100, Math.round(k.balance / k.goalTarget * 100));
+      return { initial: k.initial, color: k.color, name: k.name, age: lang === 'es' ? `${k.age} años` : `Age ${k.age}`, level: `Nivel ${k.lvl}`.replace('Nivel', lang === 'es' ? 'Nivel' : 'Level'),
+        streak: lang === 'es' ? `${k.streak} días` : `${k.streak}d`, balance: `$${k.balance}`, tasksDone: k.tasksDone,
+        goalName: goalName(k), goalText: `$${k.balance} / $${k.goalTarget}`, goalPct: pct + '%' };
+    });
+
+    const kidDetails = this.state.kids.map(k => {
+      const pct = Math.min(100, Math.round(k.balance / k.goalTarget * 100));
+      return { initial: k.initial, color: k.color, name: k.name, age: lang === 'es' ? `${k.age} años` : `Age ${k.age}`,
+        level: (lang === 'es' ? 'Nivel ' : 'Level ') + k.lvl, streak: k.streak, balance: `$${k.balance}`, resisted: k.resisted,
+        goalName: goalName(k), goalText: `$${k.balance} / $${k.goalTarget}`, goalPct: pct + '%',
+        goalRemain: (lang === 'es' ? `Faltan $${k.goalTarget - k.balance} · ${pct}% logrado` : `$${k.goalTarget - k.balance} to go · ${pct}% there`),
+        allowanceText: `$${k.allowance}`, allowanceNote: k.autopay ? (lang === 'es' ? 'Se deposita cada lunes automáticamente.' : 'Auto-deposited every Monday.') : (lang === 'es' ? 'Mesada automática desactivada.' : 'Auto allowance is off.'),
+        toggleBg: k.autopay ? '#E63946' : 'rgba(29,53,87,.18)', toggleX: k.autopay ? '25px' : '3px', onToggle: () => this.toggleAuto(k.id) };
+    });
+
+    const filterDefs = [ { id: 'all', es: 'Todas', en: 'All' }, { id: 'chore', es: 'Hogar', en: 'Chores' }, { id: 'lesson', es: 'Lecciones', en: 'Lessons' } ];
+    const taskFilter = this.state.taskFilter || 'all';
+    const taskFilters = filterDefs.map(f => ({ label: f[lang], onClick: () => this.setState({ taskFilter: f.id }),
+      bg: taskFilter === f.id ? '#1D3557' : 'transparent', fg: taskFilter === f.id ? '#F1FAEE' : '#1D3557', border: taskFilter === f.id ? '#1D3557' : 'rgba(29,53,87,.2)' }));
+    const recurIcon = { once: 'calendar-o', daily: 'sun-o', weekly: 'refresh' };
+    const taskRows = this.state.tasks.filter(t => taskFilter === 'all' || t.cat === taskFilter).map(t => {
+      const k = this.kidOf(t.kid); const isXp = t.payType === 'xp';
+      return { name: tx(t), icon: t.icon, cat: c.catLabels[t.cat], iconBg: t.cat === 'lesson' ? 'rgba(69,123,157,.16)' : 'rgba(168,218,220,.4)', iconFg: t.cat === 'lesson' ? '#457B9D' : '#E63946',
+        kidName: k.name, kidInitial: k.initial, kidColor: k.color, recur: c.recurLabels[t.recur], recurIcon: recurIcon[t.recur],
+        reward: isXp ? `+${t.xp} XP` : `+$${t.amount}`, rewardFg: isXp ? '#457B9D' : '#1D3557',
+        status: c.statusLabels.active, statusBg: 'rgba(47,174,107,.14)', statusFg: '#2Fae6b' };
+    });
+
+    const activityItems = this.state.activity.slice(0, 6).map(a => ({ text: tx(a), time: lang === 'es' ? a.timeEs : a.timeEn, icon: a.icon, bg: this.TONE[a.tone][0], fg: this.TONE[a.tone][1] }));
+
+    // modal
+    const stepDots = [1, 2, 3].map(n => ({ bg: n <= this.state.step ? '#E63946' : 'rgba(29,53,87,.12)' }));
+    const catOptions = c.cats.map(o => ({ icon: o.icon, title: o.title, desc: o.desc, iconFg: d.cat === o.id ? '#E63946' : 'rgba(29,53,87,.5)',
+      border: d.cat === o.id ? '#E63946' : 'rgba(29,53,87,.15)', bg: d.cat === o.id ? 'rgba(230,57,70,.07)' : '#fff', onClick: () => this.setD({ cat: o.id, payType: o.id === 'lesson' ? 'xp' : 'money' }) }));
+    const iconList = ['star', 'trash-o', 'bed', 'book', 'cutlery', 'paw', 'car', 'paint-brush', 'leaf', 'shopping-basket', 'pencil', 'graduation-cap'];
+    const iconOptions = iconList.map(ic => ({ icon: ic, fg: d.icon === ic ? '#F1FAEE' : 'rgba(29,53,87,.6)', bg: d.icon === ic ? '#E63946' : '#fff', border: d.icon === ic ? '#E63946' : 'rgba(29,53,87,.12)', onClick: () => this.setD({ icon: ic }) }));
+    const payOptions = c.pays.map(o => ({ label: o.label, fg: d.payType === o.id ? '#F1FAEE' : '#1D3557', bg: d.payType === o.id ? '#1D3557' : '#fff', border: d.payType === o.id ? '#1D3557' : 'rgba(29,53,87,.15)', onClick: () => this.setD({ payType: o.id }) }));
+    const amtPresets = [10, 20, 50, 100].map(val => ({ v: val, onClick: () => this.setD({ amount: val }) }));
+    const recurOptions = c.recurs.map(o => ({ label: o.label, icon: o.icon, fg: d.recur === o.id ? '#F1FAEE' : '#1D3557', bg: d.recur === o.id ? '#E63946' : '#fff', border: d.recur === o.id ? '#E63946' : 'rgba(29,53,87,.15)', onClick: () => this.setD({ recur: o.id }) }));
+    const kidOptions = this.state.kids.map(k => ({ name: k.name, initial: k.initial, color: k.color, age: lang === 'es' ? `${k.age} años` : `Age ${k.age}`,
+      border: d.assignee === k.id ? '#1D3557' : 'rgba(29,53,87,.15)', bg: d.assignee === k.id ? 'rgba(29,53,87,.05)' : '#fff', onClick: () => this.setD({ assignee: k.id }) }));
+
+    const summaryReward = d.payType === 'xp' ? `+${d.xp} XP` : (d.payType === 'both' ? `+$${d.amount} · +${d.xp} XP` : `+$${d.amount}`);
+    const sumKid = this.kidOf(d.assignee);
+    const summaryMeta = `${sumKid.name} · ${c.recurLabels[d.recur]}`;
+
+    const payoutMethods = c.payouts.map(p => ({ icon: p.icon, title: p.title, desc: p.desc, onClick: () => this.setState({ payoutMethod: p.id }),
+      border: this.state.payoutMethod === p.id ? '#E63946' : 'rgba(29,53,87,.12)', bg: this.state.payoutMethod === p.id ? 'rgba(230,57,70,.05)' : '#fff',
+      iconBg: this.state.payoutMethod === p.id ? '#E63946' : 'rgba(168,218,220,.4)', iconFg: this.state.payoutMethod === p.id ? '#F1FAEE' : '#457B9D',
+      dotBorder: this.state.payoutMethod === p.id ? '#E63946' : 'rgba(29,53,87,.2)', dotBg: this.state.payoutMethod === p.id ? '#E63946' : 'transparent' }));
+    const prefs = c.prefsList.map(p => ({ title: p.title, desc: p.desc, onToggle: () => this.togglePref(p.id), bg: this.state.prefs[p.id] ? '#E63946' : 'rgba(29,53,87,.18)', x: this.state.prefs[p.id] ? '25px' : '3px' }));
+
+    const reportStats = c.reportStats.map(s => ({ title: s.t, value: s.v, delta: s.d }));
+    const barVals = [4, 6, 3, 7, 5, 8, 6]; const maxB = 8;
+    const chartBars = barVals.map((val, i) => ({ val, label: c.days[i], h: Math.round(val / maxB * 130) + 'px', color: i === 5 ? '#E63946' : 'rgba(69,123,157,.55)' }));
+
+    return {
+      c, navItems: navMeta.map(n => ({ icon: n.icon, label: navLabel[n.key], badge: n.key === 'approvals' && approvals.length ? approvals.length : 0,
+        bg: v === n.key ? 'rgba(255,255,255,.12)' : 'transparent', fg: v === n.key ? '#F1FAEE' : 'rgba(241,250,238,.7)', onClick: () => this.go(n.key) })),
+      pageTitle: titles[v][0], pageSub: titles[v][1],
+      setEs: () => this.setState({ lang: 'es' }), setEn: () => this.setState({ lang: 'en' }),
+      esBg: lang === 'es' ? '#E63946' : 'transparent', esFg: lang === 'es' ? '#F1FAEE' : 'rgba(241,250,238,.7)',
+      enBg: lang === 'en' ? '#E63946' : 'transparent', enFg: lang === 'en' ? '#F1FAEE' : 'rgba(241,250,238,.7)',
+      openModal: this.openModal,
+
+      isOverview: v === 'overview', isTasks: v === 'tasks', isApprovals: v === 'approvals', isKids: v === 'kids', isReports: v === 'reports', isSettings: v === 'settings',
+      goKids: () => this.go('kids'),
+      stats: statCards, kidCards, kidDetails, pendingApprovals, activityItems,
+      approvalsCount: approvals.length, hasApprovals: approvals.length > 0, noApprovals: approvals.length === 0,
+      taskFilters, taskRows, payoutMethods, prefs, reportStats, chartBars,
+
+      modalOpen: this.state.modalOpen, modalStep: this.state.step, closeModal: this.closeModal, stop: (e) => e.stopPropagation(),
+      stepTitle: c.stepTitles[this.state.step - 1], stepDots,
+      isStep1: this.state.step === 1, isStep2: this.state.step === 2, isStep3: this.state.step === 3,
+      draftName: d.name, setName: (e) => this.setD({ name: e.target.value }),
+      draftAmount: d.amount, draftXp: d.xp, draftIcon: d.icon,
+      catOptions, iconOptions, payOptions, amtPresets, recurOptions, kidOptions,
+      showMoney: d.payType === 'money' || d.payType === 'both', showXp: d.payType === 'xp' || d.payType === 'both',
+      amtUp: () => this.setD({ amount: d.amount + 5 }), amtDown: () => this.setD({ amount: Math.max(0, d.amount - 5) }),
+      xpUp: () => this.setD({ xp: d.xp + 10 }), xpDown: () => this.setD({ xp: Math.max(0, d.xp - 10) }),
+      summaryName: d.name.trim() || c.stepTitles[0], summaryMeta, summaryReward,
+      stepBack: this.stepBack, stepNext: this.stepNext,
+      backLabel: c.back, nextLabel: this.state.step === 3 ? c.create : c.next, nextIcon: this.state.step === 3 ? 'check' : 'arrow-right', nextBg: '#E63946'
+    };
+  }
+}
+</script>
+</body>
+</html>
