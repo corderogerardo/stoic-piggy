@@ -1,0 +1,30 @@
+# Render Blueprint for the Stoic Piggy backend (NestJS + Prisma + tRPC).
+# Deploy: Render Dashboard → New → Blueprint → connect this repo.
+# Set DATABASE_URL and DIRECT_URL (from Supabase → Project Settings → Database)
+# in the service's Environment tab — they are marked sync:false so they are NOT
+# stored in the repo.
+#
+# Free web services sleep after ~15 min idle and cold-start in ~30s.
+services:
+  - type: web
+    name: stoic-piggy-api
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    # Install the whole workspace, generate the Prisma client on Render's Linux
+    # box (correct query-engine binary), then build only the backend + its deps.
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm db:generate && pnpm turbo run build --filter=@stoicpiggy/backend
+    startCommand: node apps/backend/dist/main.js
+    healthCheckPath: /api
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      # Set these in the Render dashboard (Supabase connection strings):
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
