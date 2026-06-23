@@ -44,8 +44,7 @@ export function createApiClient(options: ApiClientOptions) {
 
   return {
     health: () => request<{ status: string }>('/health'),
-    listPiggyBanks: (childId: string) =>
-      request<PiggyBank[]>(`/children/${childId}/piggy-banks`),
+    listPiggyBanks: (childId: string) => request<PiggyBank[]>(`/children/${childId}/piggy-banks`),
     createTransaction: (input: CreateTransactionInput) =>
       request<Transaction>('/transactions', {
         method: 'POST',

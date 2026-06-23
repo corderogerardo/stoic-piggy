@@ -30,9 +30,18 @@ export function TabBar({ screen, onTab }: { screen: string; onTab: (key: string)
         const active = screen === tab.k;
         const color = active ? colors.accent : colors.ink3;
         return (
-          <Pressable key={tab.k} onPress={() => onTab(tab.k)} style={{ flex: 1, alignItems: 'center', gap: 5, paddingVertical: 4 }}>
+          <Pressable
+            key={tab.k}
+            onPress={() => onTab(tab.k)}
+            style={{ flex: 1, alignItems: 'center', gap: 5, paddingVertical: 4 }}
+          >
             <Icon name={tab.i} size={19} color={color} />
-            <Txt w="800" style={{ fontSize: 10, letterSpacing: 0.4, color, textTransform: 'uppercase' }}>{tab.l}</Txt>
+            <Txt
+              w="800"
+              style={{ fontSize: 10, letterSpacing: 0.4, color, textTransform: 'uppercase' }}
+            >
+              {tab.l}
+            </Txt>
           </Pressable>
         );
       })}

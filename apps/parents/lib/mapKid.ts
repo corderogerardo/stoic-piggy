@@ -19,7 +19,7 @@ export function mapDashboardChildToKid(dc: DashboardChild, index: number): Kid {
     streak: 0,
     resisted: 0,
     tasksDone: 0,
-    color: PALETTE[index % PALETTE.length],
+    color: PALETTE[index % PALETTE.length] ?? '#E63946',
     initial: (dc.displayName.charAt(0) || '?').toUpperCase(),
     goalEs: dc.goal?.title ?? 'Meta de ahorro',
     goalEn: dc.goal?.title ?? 'Savings goal',

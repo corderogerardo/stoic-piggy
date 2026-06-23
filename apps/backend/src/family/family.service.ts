@@ -5,15 +5,15 @@ import { PrismaService } from '../prisma/prisma.service';
 export class FamilyService {
   constructor(private readonly prisma: PrismaService) {}
 
-  listChildren(parentId: string) {
+  async listChildren(parentId: string) {
     return this.prisma.child.findMany({ where: { parentId }, orderBy: { createdAt: 'asc' } });
   }
 
-  listGoals(childId: string) {
+  async listGoals(childId: string) {
     return this.prisma.savingsGoal.findMany({ where: { childId }, orderBy: { createdAt: 'asc' } });
   }
 
-  listQuests(childId: string) {
+  async listQuests(childId: string) {
     return this.prisma.quest.findMany({ where: { childId }, orderBy: { createdAt: 'asc' } });
   }
 
@@ -36,7 +36,9 @@ export class FamilyService {
         balanceCents: k.piggyBanks.reduce((sum, b) => sum + b.balanceCents, 0),
         allowanceCents: k.allowanceCents,
         autopayEnabled: k.autopayEnabled,
-        goal: goal ? { title: goal.title, targetCents: goal.targetCents, savedCents: goal.savedCents } : null,
+        goal: goal
+          ? { title: goal.title, targetCents: goal.targetCents, savedCents: goal.savedCents }
+          : null,
       };
     });
   }

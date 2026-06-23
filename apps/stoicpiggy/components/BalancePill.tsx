@@ -1,5 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
 import { formatMoney } from '@stoicpiggy/shared';
+import { StyleSheet, Text, View } from 'react-native';
 
 export function BalancePill({ amountCents }: { amountCents: number }) {
   return (
