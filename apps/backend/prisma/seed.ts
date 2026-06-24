@@ -1,6 +1,10 @@
 import { PrismaClient } from '@prisma/client';
+import { hashPassword } from '../src/auth/password';
 
 const prisma = new PrismaClient();
+
+// Every seeded account shares this password so the demo is easy to drive.
+const DEMO_PASSWORD = 'piggy1234';
 
 type QuestStatusLiteral = 'available' | 'in_progress' | 'completed' | 'claimed';
 
@@ -14,6 +18,7 @@ interface SeedQuest {
 interface SeedChild {
   id: string;
   displayName: string;
+  username: string;
   age: number;
   level: number;
   xp: number;
@@ -40,6 +45,7 @@ const FAMILIES: SeedFamily[] = [
       {
         id: 'seed-marco',
         displayName: 'Marco',
+        username: 'marco',
         age: 12,
         level: 7,
         xp: 1240,
@@ -67,6 +73,7 @@ const FAMILIES: SeedFamily[] = [
       {
         id: 'seed-sofia',
         displayName: 'Sofía',
+        username: 'sofia',
         age: 9,
         level: 4,
         xp: 540,
@@ -85,6 +92,7 @@ const FAMILIES: SeedFamily[] = [
       {
         id: 'seed-lucas',
         displayName: 'Lucas',
+        username: 'lucas',
         age: 14,
         level: 9,
         xp: 1680,
@@ -105,6 +113,7 @@ const FAMILIES: SeedFamily[] = [
       {
         id: 'seed-emma',
         displayName: 'Emma',
+        username: 'emma',
         age: 7,
         level: 2,
         xp: 220,
@@ -116,6 +125,7 @@ const FAMILIES: SeedFamily[] = [
       {
         id: 'seed-mateo',
         displayName: 'Mateo',
+        username: 'mateo',
         age: 10,
         level: 5,
         xp: 760,
@@ -134,6 +144,7 @@ const FAMILIES: SeedFamily[] = [
       {
         id: 'seed-valeria',
         displayName: 'Valeria',
+        username: 'valeria',
         age: 11,
         level: 6,
         xp: 980,
@@ -156,21 +167,30 @@ const FAMILIES: SeedFamily[] = [
 ];
 
 async function main(): Promise<void> {
+  const passwordHash = await hashPassword(DEMO_PASSWORD);
+
   for (const family of FAMILIES) {
     const parent = await prisma.parent.upsert({
       where: { email: family.email },
-      update: { displayName: family.displayName },
-      create: { id: family.id, email: family.email, displayName: family.displayName },
+      update: { displayName: family.displayName, passwordHash },
+      create: {
+        id: family.id,
+        email: family.email,
+        displayName: family.displayName,
+        passwordHash,
+      },
     });
 
     for (const kid of family.children) {
       await prisma.child.upsert({
         where: { id: kid.id },
-        update: {},
+        update: { username: kid.username, passwordHash },
         create: {
           id: kid.id,
           parentId: parent.id,
           displayName: kid.displayName,
+          username: kid.username,
+          passwordHash,
           age: kid.age,
           level: kid.level,
           xp: kid.xp,

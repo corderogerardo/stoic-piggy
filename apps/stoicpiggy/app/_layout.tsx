@@ -15,7 +15,9 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider } from '@/lib/auth';
 import { AppProviders } from '@/lib/providers';
+import { getToken } from '@/lib/token-store';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -43,11 +45,13 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <ApiProvider url={API_URL}>
-          <AppProviders>
-            <Stack screenOptions={{ headerShown: false }} />
-            <StatusBar style="auto" />
-          </AppProviders>
+        <ApiProvider url={API_URL} getToken={getToken}>
+          <AuthProvider>
+            <AppProviders>
+              <Stack screenOptions={{ headerShown: false }} />
+              <StatusBar style="auto" />
+            </AppProviders>
+          </AuthProvider>
         </ApiProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

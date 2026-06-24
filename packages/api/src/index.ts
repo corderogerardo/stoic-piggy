@@ -1,11 +1,18 @@
+export { isAuthError } from './auth-error';
 export { type CreateClientOptions, createTrpcClient, makeQueryClient } from './client';
 export {
   useApiHealth,
-  useChildren,
+  useChildHome,
+  useCreateChild,
   useCreateTransaction,
-  useDashboardChildren,
+  useLoginChild,
+  useLoginParent,
+  useMe,
+  useMyChildren,
+  useMyDashboard,
   usePiggyBanks,
   useQuests,
+  useRegisterParent,
   useSavingsGoals,
 } from './hooks';
 export { ApiProvider, type ApiProviderProps } from './provider';

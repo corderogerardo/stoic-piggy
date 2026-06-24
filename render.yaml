@@ -17,14 +17,22 @@ services:
     buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm db:generate && pnpm turbo run build --filter=@stoicpiggy/backend
     startCommand: node apps/backend/dist/main.js
     healthCheckPath: /api
-    autoDeploy: true
+    # Deploys are driven by GitHub Actions (.github/workflows/deploy.yml) after CI
+    # passes and DB migrations are applied, via a Render Deploy Hook — so the API
+    # never boots against an un-migrated schema. Keep this false.
+    autoDeploy: false
     envVars:
       - key: NODE_VERSION
         value: "22"
       - key: NODE_ENV
         value: production
-      # Set these in the Render dashboard (Supabase connection strings):
+      # Set these in the Render dashboard (Neon Postgres connection strings;
+      # DIRECT_URL should be the non-pooled endpoint for migrations):
       - key: DATABASE_URL
         sync: false
       - key: DIRECT_URL
+        sync: false
+      # Secret for signing JWT auth tokens — set in the Render dashboard. The API
+      # refuses to boot in production without it.
+      - key: JWT_SECRET
         sync: false

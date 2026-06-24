@@ -43,6 +43,62 @@ jobs:
       - name: Build
         run: pnpm build
 
+  # Backend integration tests against a real Postgres: exercises the full auth
+  # flow (register → create kid → kid login → me) through Prisma + tRPC.
+  backend-integration:
+    name: Backend integration (Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: stoicpiggy_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d stoicpiggy_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/stoicpiggy_test
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/stoicpiggy_test
+      JWT_SECRET: ci-test-secret
+      # Force the integration spec to FAIL (not silently skip) if the DB is
+      # unreachable, so a broken Postgres service can't turn the job green.
+      REQUIRE_DB: "1"
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
+      # The backend imports `@stoicpiggy/shared` from its built dist (types + JS),
+      # so build the workspace deps before ts-jest type-checks the e2e suite.
+      - name: Build backend dependencies
+        run: pnpm --filter @stoicpiggy/shared build
+
+      - name: Apply migrations to the test database
+        working-directory: apps/backend
+        run: pnpm exec prisma migrate deploy
+
+      - name: Backend e2e + integration tests
+        run: pnpm --filter @stoicpiggy/backend test:e2e
+
   # End-to-end suites need browsers (Playwright) or a device/emulator (Maestro),
   # so they're kept out of the default fast CI. Enable as needed:
   #

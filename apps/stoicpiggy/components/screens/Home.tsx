@@ -1,13 +1,31 @@
+import { formatMoney } from '@stoicpiggy/shared';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useLang, useTheme } from '@/lib/providers';
 import { Icon } from '../Icon';
 import { Piggy } from '../Piggy';
 import { Txt } from '../Txt';
 
-export function Home({ go, onChallenge }: { go: (s: string) => void; onChallenge: () => void }) {
+interface HomeProps {
+  go: (s: string) => void;
+  onChallenge: () => void;
+  onLogout?: () => void;
+  /** Real signed-in kid data (falls back to demo values when offline). */
+  kidName?: string;
+  balanceCents?: number;
+  goal?: { title: string; targetCents: number; savedCents: number };
+}
+
+export function Home({ go, onChallenge, onLogout, kidName, balanceCents, goal }: HomeProps) {
   const { colors } = useTheme();
   const { t } = useLang();
   const h = t.home;
+
+  const name = kidName ?? 'Marco';
+  const balanceLabel = balanceCents != null ? formatMoney(balanceCents) : '$2,340';
+  const goalPct =
+    goal && goal.targetCents > 0
+      ? Math.min(100, Math.round((goal.savedCents / goal.targetCents) * 100))
+      : null;
 
   return (
     <ScrollView contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 8, paddingBottom: 24 }}>
@@ -26,24 +44,44 @@ export function Home({ go, onChallenge }: { go: (s: string) => void; onChallenge
             {h.hi}
           </Txt>
           <Txt w="800" style={{ fontSize: 27, color: colors.ink }}>
-            Marco
+            {name}
           </Txt>
         </View>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 6,
-            backgroundColor: colors.accent,
-            paddingHorizontal: 13,
-            paddingVertical: 7,
-            borderRadius: 9999,
-          }}
-        >
-          <Icon name="bolt" size={11} color={colors.accentInk} />
-          <Txt w="800" style={{ fontSize: 10, letterSpacing: 0.5, color: colors.accentInk }}>
-            {h.level}
-          </Txt>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+              backgroundColor: colors.accent,
+              paddingHorizontal: 13,
+              paddingVertical: 7,
+              borderRadius: 9999,
+            }}
+          >
+            <Icon name="bolt" size={11} color={colors.accentInk} />
+            <Txt w="800" style={{ fontSize: 10, letterSpacing: 0.5, color: colors.accentInk }}>
+              {h.level}
+            </Txt>
+          </View>
+          {onLogout && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Sign out"
+              onPress={onLogout}
+              hitSlop={8}
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 9999,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: colors.chip,
+              }}
+            >
+              <Icon name="sign-out" size={14} color={colors.ink3} />
+            </Pressable>
+          )}
         </View>
       </View>
 
@@ -83,14 +121,16 @@ export function Home({ go, onChallenge }: { go: (s: string) => void; onChallenge
           mono
           style={{ fontSize: 42, letterSpacing: -1.5, color: colors.darkInk, marginBottom: 18 }}
         >
-          $2,340
+          {balanceLabel}
         </Txt>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 }}>
           <Txt w="800" style={{ fontSize: 10, letterSpacing: 0.5, color: colors.darkInk2 }}>
-            {h.xp}
+            {goalPct != null ? goal?.title : h.xp}
           </Txt>
           <Txt w="800" style={{ fontSize: 11, color: colors.darkInk }}>
-            1,240 / 2,000 XP
+            {goalPct != null && goal
+              ? `${formatMoney(goal.savedCents)} / ${formatMoney(goal.targetCents)}`
+              : '1,240 / 2,000 XP'}
           </Txt>
         </View>
         <View
@@ -102,7 +142,12 @@ export function Home({ go, onChallenge }: { go: (s: string) => void; onChallenge
           }}
         >
           <View
-            style={{ height: '100%', width: '62%', backgroundColor: '#E63946', borderRadius: 9999 }}
+            style={{
+              height: '100%',
+              width: `${goalPct ?? 62}%`,
+              backgroundColor: '#E63946',
+              borderRadius: 9999,
+            }}
           />
         </View>
       </View>

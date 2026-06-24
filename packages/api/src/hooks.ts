@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { isAuthError } from './auth-error';
 import { useTRPC } from './trpc';
 
 /**
@@ -12,20 +13,68 @@ export function useApiHealth() {
   return useQuery(trpc.health.queryOptions());
 }
 
-export function useChildren(parentId: string) {
+// ---- Auth ----
+
+/** Register a new parent. Returns an `AuthSession` ({ token, user }). */
+export function useRegisterParent() {
+  const trpc = useTRPC();
+  return useMutation(trpc.auth.registerParent.mutationOptions());
+}
+
+/** Log a parent in by email + password. */
+export function useLoginParent() {
+  const trpc = useTRPC();
+  return useMutation(trpc.auth.loginParent.mutationOptions());
+}
+
+/** Log a kid in by username + password. */
+export function useLoginChild() {
+  const trpc = useTRPC();
+  return useMutation(trpc.auth.loginChild.mutationOptions());
+}
+
+/** Resolve the currently signed-in user. Disable until a token is present. */
+export function useMe(enabled = true) {
   const trpc = useTRPC();
   return useQuery(
-    trpc.children.listByParent.queryOptions({ parentId }, { enabled: parentId.length > 0 }),
+    trpc.auth.me.queryOptions(undefined, {
+      enabled,
+      // Don't retry a real 401 (token is bad), but do retry transient errors
+      // (e.g. a Render free-tier cold start) so a hiccup doesn't drop the session.
+      retry: (count, error) => !isAuthError(error) && count < 3,
+    }),
   );
 }
 
-/** Aggregated per-child dashboard rows (balance + goal) for a parent. */
-export function useDashboardChildren(parentId: string) {
+// ---- Parent dashboard (token-scoped) ----
+
+/** Aggregated per-child rows for the signed-in parent. */
+export function useMyDashboard(enabled = true) {
   const trpc = useTRPC();
-  return useQuery(
-    trpc.children.dashboardByParent.queryOptions({ parentId }, { enabled: parentId.length > 0 }),
-  );
+  return useQuery(trpc.children.dashboard.queryOptions(undefined, { enabled }));
 }
+
+/** The signed-in parent's children. */
+export function useMyChildren(enabled = true) {
+  const trpc = useTRPC();
+  return useQuery(trpc.children.list.queryOptions(undefined, { enabled }));
+}
+
+/** Create a kid login account (+ starter piggy bank) for the signed-in parent. */
+export function useCreateChild() {
+  const trpc = useTRPC();
+  return useMutation(trpc.children.create.mutationOptions());
+}
+
+// ---- Kid app (token-scoped) ----
+
+/** The signed-in kid's home payload (balance + goal + quests). */
+export function useChildHome(enabled = true) {
+  const trpc = useTRPC();
+  return useQuery(trpc.me.home.queryOptions(undefined, { enabled }));
+}
+
+// ---- Per-child reads (parent or owning kid) ----
 
 export function usePiggyBanks(childId: string) {
   const trpc = useTRPC();
