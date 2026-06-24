@@ -66,6 +66,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # parents → @stoicpiggy/api → @stoicpiggy/backend, so turbo's ^build builds
+      # the backend too — which needs the Prisma client generated first.
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
       # NEXT_PUBLIC_API_URL is inlined at build time; it's part of turbo's cache key.
       - name: Build dashboard (static export)
         run: pnpm turbo run build --filter=@stoicpiggy/parents
