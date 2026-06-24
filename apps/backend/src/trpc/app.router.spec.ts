@@ -92,6 +92,7 @@ const family: FamilyPort = {
         balanceCents: 34000,
         allowanceCents: 5000,
         autopayEnabled: true,
+        active: true,
         goal: { title: 'Bici', targetCents: 50000, savedCents: 34000 },
       },
       {
@@ -104,6 +105,7 @@ const family: FamilyPort = {
         balanceCents: 18000,
         allowanceCents: 3000,
         autopayEnabled: false,
+        active: false,
         goal: null,
       },
     ];
@@ -112,6 +114,43 @@ const family: FamilyPort = {
   async childParentId(childId) {
     return childId === 'c1' ? 'p1' : null;
   },
+  async updateChild(input) {
+    return {
+      id: input.childId,
+      parentId: 'p1',
+      displayName: input.displayName ?? 'Marco',
+      avatarUrl: null,
+      level: 7,
+      xp: 1240,
+      createdAt: now,
+      updatedAt: now,
+    };
+  },
+  async updateAllowance(input) {
+    return {
+      id: input.childId,
+      parentId: 'p1',
+      displayName: 'Marco',
+      avatarUrl: null,
+      level: 7,
+      xp: 1240,
+      createdAt: now,
+      updatedAt: now,
+    };
+  },
+  async setChildActive(input) {
+    return {
+      id: input.childId,
+      parentId: 'p1',
+      displayName: 'Marco',
+      avatarUrl: null,
+      level: 7,
+      xp: 1240,
+      createdAt: now,
+      updatedAt: now,
+    };
+  },
+  async deleteChild(_childId) {},
 };
 
 const auth: AuthPort = {
@@ -210,6 +249,9 @@ const auth: AuthPort = {
       createdAt: now,
       updatedAt: now,
     };
+  },
+  async resetChildPassword(_input) {
+    return { ok: true };
   },
   async childHome(childId) {
     return {
@@ -322,6 +364,8 @@ describe('appRouter', () => {
       expect(rows).toHaveLength(2);
       expect(rows[0]?.balanceCents).toBe(34000);
       expect(rows[0]?.autopayEnabled).toBe(true);
+      expect(rows[0]?.active).toBe(true);
+      expect(rows[1]?.active).toBe(false);
       expect(rows[1]?.goal).toBeUndefined();
     });
 
@@ -339,6 +383,33 @@ describe('appRouter', () => {
       });
       expect(kid.displayName).toBe('Nina');
       expect(kid.parentId).toBe('p1');
+    });
+
+    it('updates an owned child; blocks unowned + non-parent callers', async () => {
+      const updated = await parent.children.update({ childId: 'c1', displayName: 'Marco A.' });
+      expect(updated.displayName).toBe('Marco A.');
+      await expect(parent.children.update({ childId: 'c2', displayName: 'x' })).rejects.toThrow(
+        /not your/i,
+      );
+      await expect(child.children.update({ childId: 'c1', displayName: 'x' })).rejects.toThrow(
+        /parents only/i,
+      );
+    });
+
+    it('sets allowance, resets password, toggles active, and deletes (owner only)', async () => {
+      const al = await parent.children.updateAllowance({
+        childId: 'c1',
+        allowanceCents: 5000,
+        autopayEnabled: true,
+      });
+      expect(al.id).toBe('c1');
+      expect(
+        await parent.children.resetPassword({ childId: 'c1', password: 'password123' }),
+      ).toEqual({ ok: true });
+      const deact = await parent.children.setActive({ childId: 'c1', active: false });
+      expect(deact.id).toBe('c1');
+      expect(await parent.children.delete({ childId: 'c1' })).toEqual({ ok: true });
+      await expect(parent.children.delete({ childId: 'c2' })).rejects.toThrow(/not your/i);
     });
   });
 

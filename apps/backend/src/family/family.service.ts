@@ -1,4 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import type {
+  SetChildActiveInput,
+  UpdateAllowanceInput,
+  UpdateChildInput,
+} from '@stoicpiggy/shared';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -7,6 +12,36 @@ export class FamilyService {
 
   async listChildren(parentId: string) {
     return this.prisma.child.findMany({ where: { parentId }, orderBy: { createdAt: 'asc' } });
+  }
+
+  /** Edit a kid's profile. Ownership is authorized by the router before this runs. */
+  async updateChild(input: UpdateChildInput) {
+    return this.prisma.child.update({
+      where: { id: input.childId },
+      // `undefined` leaves a field unchanged; `age: null` clears it.
+      data: { displayName: input.displayName, age: input.age },
+    });
+  }
+
+  /** Set a kid's allowance amount + autopay flag. */
+  async updateAllowance(input: UpdateAllowanceInput) {
+    return this.prisma.child.update({
+      where: { id: input.childId },
+      data: { allowanceCents: input.allowanceCents, autopayEnabled: input.autopayEnabled },
+    });
+  }
+
+  /** Deactivate (blocks kid login) or reactivate a kid. */
+  async setChildActive(input: SetChildActiveInput) {
+    return this.prisma.child.update({
+      where: { id: input.childId },
+      data: { deactivatedAt: input.active ? null : new Date() },
+    });
+  }
+
+  /** Permanently delete a kid. Piggy banks, goals, quests + tasks cascade (schema). */
+  async deleteChild(childId: string): Promise<void> {
+    await this.prisma.child.delete({ where: { id: childId } });
   }
 
   /** The owning parent's id for a child, or null if the child doesn't exist. */
@@ -45,6 +80,7 @@ export class FamilyService {
         balanceCents: k.piggyBanks.reduce((sum, b) => sum + b.balanceCents, 0),
         allowanceCents: k.allowanceCents,
         autopayEnabled: k.autopayEnabled,
+        active: k.deactivatedAt === null,
         goal: goal
           ? { title: goal.title, targetCents: goal.targetCents, savedCents: goal.savedCents }
           : null,

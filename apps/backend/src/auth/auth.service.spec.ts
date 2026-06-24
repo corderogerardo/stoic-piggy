@@ -8,7 +8,7 @@ import { hashToken } from './tokens';
 
 type FakePrisma = {
   parent: { findUnique: jest.Mock; create: jest.Mock; update: jest.Mock };
-  child: { findUnique: jest.Mock; create: jest.Mock };
+  child: { findUnique: jest.Mock; create: jest.Mock; update: jest.Mock };
   emailVerificationToken: {
     create: jest.Mock;
     findUnique: jest.Mock;
@@ -28,7 +28,7 @@ type FakePrisma = {
 function makePrisma(): FakePrisma {
   return {
     parent: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
-    child: { findUnique: jest.fn(), create: jest.fn() },
+    child: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
     emailVerificationToken: {
       create: jest.fn().mockResolvedValue({ id: 'evt1' }),
       findUnique: jest.fn(),
@@ -416,6 +416,30 @@ describe('AuthService.loginChild', () => {
     await expect(service.loginChild({ username: 'marco', password: 'nope' })).rejects.toThrow(
       /wrong username or password/i,
     );
+  });
+
+  it('rejects a deactivated kid even with the right password', async () => {
+    prisma.child.findUnique.mockResolvedValue({
+      id: 'c1',
+      parentId: 'p1',
+      username: 'marco',
+      displayName: 'Marco',
+      passwordHash: await hashPassword('piggy1234'),
+      deactivatedAt: new Date(),
+    });
+    await expect(service.loginChild({ username: 'marco', password: 'piggy1234' })).rejects.toThrow(
+      /deactivated/i,
+    );
+  });
+});
+
+describe('AuthService.resetChildPassword', () => {
+  it('writes a new hash (not the plaintext) for the given child', async () => {
+    prisma.child.update.mockResolvedValue({ id: 'c1' });
+    await service.resetChildPassword({ childId: 'c1', password: 'newpassword123' });
+    const arg = prisma.child.update.mock.calls[0][0];
+    expect(arg.where.id).toBe('c1');
+    expect(arg.data.passwordHash).not.toBe('newpassword123');
   });
 });
 

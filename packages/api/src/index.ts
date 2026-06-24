@@ -5,6 +5,7 @@ export {
   useChildHome,
   useCreateChild,
   useCreateTransaction,
+  useDeleteChild,
   useLoginChild,
   useLoginParent,
   useMe,
@@ -15,8 +16,12 @@ export {
   useRegisterParent,
   useRequestPasswordReset,
   useResendVerification,
+  useResetKidPassword,
   useResetPassword,
   useSavingsGoals,
+  useSetChildActive,
+  useUpdateAllowance,
+  useUpdateChild,
   useVerifyEmail,
 } from './hooks';
 export { ApiProvider, type ApiProviderProps } from './provider';

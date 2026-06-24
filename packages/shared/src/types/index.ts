@@ -119,5 +119,7 @@ export interface DashboardChild {
   balanceCents: number;
   allowanceCents: number;
   autopayEnabled: boolean;
+  /** False when the parent has deactivated the kid (login blocked, shown dimmed). */
+  active: boolean;
   goal?: DashboardGoal;
 }

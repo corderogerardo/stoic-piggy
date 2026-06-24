@@ -90,6 +90,36 @@ export function useCreateChild() {
   return useMutation(trpc.children.create.mutationOptions());
 }
 
+/** Edit a kid's profile (display name / age). */
+export function useUpdateChild() {
+  const trpc = useTRPC();
+  return useMutation(trpc.children.update.mutationOptions());
+}
+
+/** Set a kid's allowance amount + autopay flag. */
+export function useUpdateAllowance() {
+  const trpc = useTRPC();
+  return useMutation(trpc.children.updateAllowance.mutationOptions());
+}
+
+/** Set a new password for one of the parent's kids. */
+export function useResetKidPassword() {
+  const trpc = useTRPC();
+  return useMutation(trpc.children.resetPassword.mutationOptions());
+}
+
+/** Deactivate (block login) or reactivate a kid. */
+export function useSetChildActive() {
+  const trpc = useTRPC();
+  return useMutation(trpc.children.setActive.mutationOptions());
+}
+
+/** Permanently delete a kid (cascades their data). */
+export function useDeleteChild() {
+  const trpc = useTRPC();
+  return useMutation(trpc.children.delete.mutationOptions());
+}
+
 // ---- Kid app (token-scoped) ----
 
 /** The signed-in kid's home payload (balance + goal + quests). */

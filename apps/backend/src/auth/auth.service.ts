@@ -10,6 +10,7 @@ import type {
   LoginParentInput,
   RegisterParentInput,
   RequestPasswordResetInput,
+  ResetChildPasswordInput,
   ResetPasswordInput,
   VerifyEmailInput,
 } from '@stoicpiggy/shared';
@@ -218,6 +219,12 @@ export class AuthService {
     if (!child || !(await verifyPassword(input.password, child.passwordHash))) {
       throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Wrong username or password.' });
     }
+    if (child.deactivatedAt) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'This account is deactivated. Ask your parent to turn it back on.',
+      });
+    }
     return { token: this.sign(this.childClaims(child)), user: this.toAuthChild(child) };
   }
 
@@ -241,6 +248,18 @@ export class AuthService {
       }
       throw error;
     }
+  }
+
+  /**
+   * A parent sets a new password for one of their kids. Ownership is authorized by
+   * the router (parentProcedure + authorizeChildAccess) before this is called.
+   */
+  async resetChildPassword(input: ResetChildPasswordInput): Promise<{ ok: true }> {
+    await this.prisma.child.update({
+      where: { id: input.childId },
+      data: { passwordHash: await hashPassword(input.password) },
+    });
+    return { ok: true };
   }
 
   // ---- Shared ----

@@ -96,3 +96,43 @@ export const createChildAccountSchema = z.object({
   avatarUrl: z.string().url().optional(),
 });
 export type CreateChildAccountInput = z.infer<typeof createChildAccountSchema>;
+
+/**
+ * A parent edits a kid's profile. `childId` is validated against ownership on the
+ * server. `age: null` clears the age; omitting a field leaves it unchanged.
+ */
+export const updateChildSchema = z.object({
+  childId: z.string().min(1),
+  displayName: z.string().trim().min(1).max(60).optional(),
+  age: z.number().int().min(1).max(25).nullable().optional(),
+});
+export type UpdateChildInput = z.infer<typeof updateChildSchema>;
+
+/** A parent sets a kid's weekly allowance amount + whether it auto-deposits. */
+export const updateAllowanceSchema = z.object({
+  childId: z.string().min(1),
+  // Cap at $100k to reject fat-finger / overflow input; cents are non-negative.
+  allowanceCents: z.number().int().min(0).max(100_000_00),
+  autopayEnabled: z.boolean(),
+});
+export type UpdateAllowanceInput = z.infer<typeof updateAllowanceSchema>;
+
+/** A parent sets a new password for their kid (kids forget passwords). */
+export const resetChildPasswordSchema = z.object({
+  childId: z.string().min(1),
+  password: passwordSchema,
+});
+export type ResetChildPasswordInput = z.infer<typeof resetChildPasswordSchema>;
+
+/** A parent deactivates (active=false, blocks login) or reactivates a kid. */
+export const setChildActiveSchema = z.object({
+  childId: z.string().min(1),
+  active: z.boolean(),
+});
+export type SetChildActiveInput = z.infer<typeof setChildActiveSchema>;
+
+/** A parent permanently deletes a kid (cascades piggy banks, goals, quests, tasks). */
+export const deleteChildSchema = z.object({
+  childId: z.string().min(1),
+});
+export type DeleteChildInput = z.infer<typeof deleteChildSchema>;

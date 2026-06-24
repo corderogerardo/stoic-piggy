@@ -8,6 +8,7 @@ import {
   createChildAccountSchema,
   createTransactionSchema,
   type DashboardChild,
+  deleteChildSchema,
   type LoginChildInput,
   type LoginParentInput,
   loginChildSchema,
@@ -17,13 +18,21 @@ import {
   type QuestStatus,
   type RegisterParentInput,
   type RequestPasswordResetInput,
+  type ResetChildPasswordInput,
   type ResetPasswordInput,
   registerParentSchema,
   requestPasswordResetSchema,
+  resetChildPasswordSchema,
   resetPasswordSchema,
   type SavingsGoal,
+  type SetChildActiveInput,
+  setChildActiveSchema,
   type Transaction,
   type TransactionType,
+  type UpdateAllowanceInput,
+  type UpdateChildInput,
+  updateAllowanceSchema,
+  updateChildSchema,
   type VerifyEmailInput,
   verifyEmailSchema,
 } from '@stoicpiggy/shared';
@@ -100,6 +109,7 @@ interface DashboardChildRow {
   balanceCents: number;
   allowanceCents: number;
   autopayEnabled: boolean;
+  active: boolean;
   goal: { title: string; targetCents: number; savedCents: number } | null;
 }
 
@@ -116,6 +126,10 @@ export interface FamilyPort {
   dashboardByParent(parentId: string): Promise<DashboardChildRow[]>;
   /** The owning parent's id for a child, or null if the child doesn't exist. */
   childParentId(childId: string): Promise<string | null>;
+  updateChild(input: UpdateChildInput): Promise<ChildRow>;
+  updateAllowance(input: UpdateAllowanceInput): Promise<ChildRow>;
+  setChildActive(input: SetChildActiveInput): Promise<ChildRow>;
+  deleteChild(childId: string): Promise<void>;
 }
 export interface AuthPort {
   registerParent(input: RegisterParentInput): Promise<AuthSession>;
@@ -127,6 +141,7 @@ export interface AuthPort {
   resetPassword(input: ResetPasswordInput): Promise<{ ok: true }>;
   me(claims: AuthClaims): Promise<AuthUser>;
   createChild(parentId: string, input: CreateChildAccountInput): Promise<ChildRow>;
+  resetChildPassword(input: ResetChildPasswordInput): Promise<{ ok: true }>;
   childHome(childId: string): Promise<ChildHome>;
 }
 export interface RouterServices {
@@ -196,6 +211,7 @@ const toDashboardChild = (r: DashboardChildRow): DashboardChild => ({
   balanceCents: r.balanceCents,
   allowanceCents: r.allowanceCents,
   autopayEnabled: r.autopayEnabled,
+  active: r.active,
   goal: r.goal ?? undefined,
 });
 
@@ -271,6 +287,42 @@ export function createAppRouter({ piggy, family, auth }: RouterServices) {
           async ({ ctx, input }): Promise<Child> =>
             toChild(await auth.createChild(ctx.user.sub, input)),
         ),
+      // Edit a kid's profile (name / age). Ownership enforced before the write.
+      update: parentProcedure
+        .input(updateChildSchema)
+        .mutation(async ({ ctx, input }): Promise<Child> => {
+          await authorizeChildAccess(ctx.user, input.childId);
+          return toChild(await family.updateChild(input));
+        }),
+      // Set a kid's allowance amount + autopay flag.
+      updateAllowance: parentProcedure
+        .input(updateAllowanceSchema)
+        .mutation(async ({ ctx, input }): Promise<Child> => {
+          await authorizeChildAccess(ctx.user, input.childId);
+          return toChild(await family.updateAllowance(input));
+        }),
+      // Set a new password for a kid (kids forget passwords).
+      resetPassword: parentProcedure
+        .input(resetChildPasswordSchema)
+        .mutation(async ({ ctx, input }): Promise<{ ok: true }> => {
+          await authorizeChildAccess(ctx.user, input.childId);
+          return auth.resetChildPassword(input);
+        }),
+      // Deactivate (block login) or reactivate a kid.
+      setActive: parentProcedure
+        .input(setChildActiveSchema)
+        .mutation(async ({ ctx, input }): Promise<Child> => {
+          await authorizeChildAccess(ctx.user, input.childId);
+          return toChild(await family.setChildActive(input));
+        }),
+      // Permanently delete a kid (cascades their banks, goals, quests, tasks).
+      delete: parentProcedure
+        .input(deleteChildSchema)
+        .mutation(async ({ ctx, input }): Promise<{ ok: true }> => {
+          await authorizeChildAccess(ctx.user, input.childId);
+          await family.deleteChild(input.childId);
+          return { ok: true };
+        }),
     }),
 
     // The signed-in kid's own home payload.
