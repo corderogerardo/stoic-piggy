@@ -33,6 +33,30 @@ export function useLoginChild() {
   return useMutation(trpc.auth.loginChild.mutationOptions());
 }
 
+/** Redeem an email-verification token. Returns a fresh (verified) `AuthSession`. */
+export function useVerifyEmail() {
+  const trpc = useTRPC();
+  return useMutation(trpc.auth.verifyEmail.mutationOptions());
+}
+
+/** Re-send the verification email to the signed-in parent. */
+export function useResendVerification() {
+  const trpc = useTRPC();
+  return useMutation(trpc.auth.resendVerification.mutationOptions());
+}
+
+/** Start a password reset by email. Always resolves OK (no account enumeration). */
+export function useRequestPasswordReset() {
+  const trpc = useTRPC();
+  return useMutation(trpc.auth.requestPasswordReset.mutationOptions());
+}
+
+/** Complete a password reset with the token from the email + a new password. */
+export function useResetPassword() {
+  const trpc = useTRPC();
+  return useMutation(trpc.auth.resetPassword.mutationOptions());
+}
+
 /** Resolve the currently signed-in user. Disable until a token is present. */
 export function useMe(enabled = true) {
   const trpc = useTRPC();

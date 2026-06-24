@@ -62,6 +62,25 @@ export const loginParentSchema = z.object({
 });
 export type LoginParentInput = z.infer<typeof loginParentSchema>;
 
+/** Confirm ownership of an email via the token from the verification link. */
+export const verifyEmailSchema = z.object({
+  token: z.string().min(1),
+});
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+
+/** Start a password reset. We never reveal whether the email exists. */
+export const requestPasswordResetSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+});
+export type RequestPasswordResetInput = z.infer<typeof requestPasswordResetSchema>;
+
+/** Complete a password reset with the token from the email + a new password. */
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: passwordSchema,
+});
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
 export const loginChildSchema = z.object({
   username: usernameSchema,
   password: z.string().min(1),

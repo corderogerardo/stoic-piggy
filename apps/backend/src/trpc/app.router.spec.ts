@@ -118,7 +118,13 @@ const auth: AuthPort = {
   async registerParent(input) {
     return {
       token: 'tok-parent',
-      user: { role: 'parent', id: 'p1', email: input.email, displayName: input.displayName },
+      user: {
+        role: 'parent',
+        id: 'p1',
+        email: input.email,
+        displayName: input.displayName,
+        emailVerifiedAt: null,
+      },
     };
   },
   async loginParent(input) {
@@ -127,7 +133,13 @@ const auth: AuthPort = {
     }
     return {
       token: 'tok-parent',
-      user: { role: 'parent', id: 'p1', email: input.email, displayName: 'Patricia' },
+      user: {
+        role: 'parent',
+        id: 'p1',
+        email: input.email,
+        displayName: 'Patricia',
+        emailVerifiedAt: null,
+      },
     };
   },
   async loginChild(input) {
@@ -142,9 +154,42 @@ const auth: AuthPort = {
       },
     };
   },
+  async verifyEmail(input) {
+    if (input.token === 'bad') {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: 'This verification link is invalid.' });
+    }
+    return {
+      token: 'tok-parent',
+      user: {
+        role: 'parent',
+        id: 'p1',
+        email: 'p@x.dev',
+        displayName: 'Patricia',
+        emailVerifiedAt: '2026-06-24T00:00:00.000Z',
+      },
+    };
+  },
+  async resendVerification(_parentId) {
+    return { ok: true };
+  },
+  async requestPasswordReset(_input) {
+    return { ok: true };
+  },
+  async resetPassword(input) {
+    if (input.token === 'bad') {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: 'This reset link is invalid.' });
+    }
+    return { ok: true };
+  },
   async me(claims) {
     if (claims.role === 'parent') {
-      return { role: 'parent', id: claims.sub, email: 'p@x.dev', displayName: 'Patricia' };
+      return {
+        role: 'parent',
+        id: claims.sub,
+        email: 'p@x.dev',
+        displayName: 'Patricia',
+        emailVerifiedAt: null,
+      };
     }
     return {
       role: 'child',
@@ -220,6 +265,37 @@ describe('appRouter', () => {
       const s = await anon.auth.loginChild({ username: 'marco', password: 'piggy1234' });
       expect(s.user.role).toBe('child');
       if (s.user.role === 'child') expect(s.user.username).toBe('marco');
+    });
+
+    it('verifies an email token (public) and returns a verified session', async () => {
+      const s = await anon.auth.verifyEmail({ token: 'good' });
+      expect(s.user.role).toBe('parent');
+      if (s.user.role === 'parent') expect(s.user.emailVerifiedAt).not.toBeNull();
+    });
+
+    it('rejects a bad verification token', async () => {
+      await expect(anon.auth.verifyEmail({ token: 'bad' })).rejects.toThrow(/invalid/i);
+    });
+
+    it('resendVerification is parents-only', async () => {
+      await expect(anon.auth.resendVerification()).rejects.toThrow();
+      await expect(child.auth.resendVerification()).rejects.toThrow(/parents only/i);
+      expect(await parent.auth.resendVerification()).toEqual({ ok: true });
+    });
+
+    it('requestPasswordReset is public and always returns ok', async () => {
+      expect(await anon.auth.requestPasswordReset({ email: 'whoever@x.dev' })).toEqual({
+        ok: true,
+      });
+    });
+
+    it('resetPassword accepts a good token and rejects a bad one', async () => {
+      expect(await anon.auth.resetPassword({ token: 'good', password: 'password123' })).toEqual({
+        ok: true,
+      });
+      await expect(
+        anon.auth.resetPassword({ token: 'bad', password: 'password123' }),
+      ).rejects.toThrow(/invalid/i);
     });
 
     it('me requires a token', async () => {

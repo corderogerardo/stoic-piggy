@@ -4,7 +4,10 @@ import {
   loginChildSchema,
   passwordSchema,
   registerParentSchema,
+  requestPasswordResetSchema,
+  resetPasswordSchema,
   usernameSchema,
+  verifyEmailSchema,
 } from './index';
 
 describe('usernameSchema', () => {
@@ -50,6 +53,34 @@ describe('registerParentSchema', () => {
       registerParentSchema.safeParse({ email: 'a@b.dev', password: 'short', displayName: 'X' })
         .success,
     ).toBe(false);
+  });
+});
+
+describe('verifyEmailSchema', () => {
+  it('requires a non-empty token', () => {
+    expect(verifyEmailSchema.safeParse({ token: '' }).success).toBe(false);
+    expect(verifyEmailSchema.safeParse({ token: 'abc' }).success).toBe(true);
+  });
+});
+
+describe('requestPasswordResetSchema', () => {
+  it('normalizes the email and rejects bad ones', () => {
+    expect(requestPasswordResetSchema.parse({ email: ' PARENT@X.DEV ' }).email).toBe(
+      'parent@x.dev',
+    );
+    expect(requestPasswordResetSchema.safeParse({ email: 'nope' }).success).toBe(false);
+  });
+});
+
+describe('resetPasswordSchema', () => {
+  it('requires a token and a strong password', () => {
+    expect(resetPasswordSchema.safeParse({ token: 't', password: 'password123' }).success).toBe(
+      true,
+    );
+    expect(resetPasswordSchema.safeParse({ token: '', password: 'password123' }).success).toBe(
+      false,
+    );
+    expect(resetPasswordSchema.safeParse({ token: 't', password: 'short' }).success).toBe(false);
   });
 });
 

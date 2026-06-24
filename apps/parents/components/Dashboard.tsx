@@ -20,6 +20,7 @@ import {
 import { mapDashboardChildToKid } from '@/lib/mapKid';
 import { ApiStatus } from './ApiStatus';
 import { CreateKidForm } from './CreateKidForm';
+import { VerifyEmailBanner } from './VerifyEmailBanner';
 
 const VIEWS: View[] = ['overview', 'tasks', 'approvals', 'kids', 'reports', 'settings'];
 const NAV_ICON: Record<View, string> = {
@@ -339,6 +340,7 @@ export function Dashboard() {
 
       {/* ============ MAIN ============ */}
       <div className="flex min-w-0 flex-1 flex-col">
+        <VerifyEmailBanner lang={lang} />
         {/* topbar */}
         <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-[18px] border-b border-navy/10 bg-canvas/90 px-[30px] py-[18px] backdrop-blur-[10px]">
           <div>

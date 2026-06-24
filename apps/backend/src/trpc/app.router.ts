@@ -16,10 +16,16 @@ import {
   type Quest,
   type QuestStatus,
   type RegisterParentInput,
+  type RequestPasswordResetInput,
+  type ResetPasswordInput,
   registerParentSchema,
+  requestPasswordResetSchema,
+  resetPasswordSchema,
   type SavingsGoal,
   type Transaction,
   type TransactionType,
+  type VerifyEmailInput,
+  verifyEmailSchema,
 } from '@stoicpiggy/shared';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -115,6 +121,10 @@ export interface AuthPort {
   registerParent(input: RegisterParentInput): Promise<AuthSession>;
   loginParent(input: LoginParentInput): Promise<AuthSession>;
   loginChild(input: LoginChildInput): Promise<AuthSession>;
+  verifyEmail(input: VerifyEmailInput): Promise<AuthSession>;
+  resendVerification(parentId: string): Promise<{ ok: true }>;
+  requestPasswordReset(input: RequestPasswordResetInput): Promise<{ ok: true }>;
+  resetPassword(input: ResetPasswordInput): Promise<{ ok: true }>;
   me(claims: AuthClaims): Promise<AuthUser>;
   createChild(parentId: string, input: CreateChildAccountInput): Promise<ChildRow>;
   childHome(childId: string): Promise<ChildHome>;
@@ -226,6 +236,22 @@ export function createAppRouter({ piggy, family, auth }: RouterServices) {
       loginChild: publicProcedure
         .input(loginChildSchema)
         .mutation(({ input }): Promise<AuthSession> => auth.loginChild(input)),
+      // Redeem the link from the verification email; signs the parent in verified.
+      verifyEmail: publicProcedure
+        .input(verifyEmailSchema)
+        .mutation(({ input }): Promise<AuthSession> => auth.verifyEmail(input)),
+      // Re-send the verification email to the signed-in parent (throttled).
+      resendVerification: parentProcedure.mutation(
+        ({ ctx }): Promise<{ ok: true }> => auth.resendVerification(ctx.user.sub),
+      ),
+      // Start a password reset (always resolves OK — no account enumeration).
+      requestPasswordReset: publicProcedure
+        .input(requestPasswordResetSchema)
+        .mutation(({ input }): Promise<{ ok: true }> => auth.requestPasswordReset(input)),
+      // Finish a password reset with the token from the email + a new password.
+      resetPassword: publicProcedure
+        .input(resetPasswordSchema)
+        .mutation(({ input }): Promise<{ ok: true }> => auth.resetPassword(input)),
       me: protectedProcedure.query(({ ctx }): Promise<AuthUser> => auth.me(ctx.user)),
     }),
 

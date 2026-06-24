@@ -1,6 +1,15 @@
 'use client';
 
-import { isAuthError, useLoginParent, useMe, useRegisterParent } from '@stoicpiggy/api';
+import {
+  isAuthError,
+  useLoginParent,
+  useMe,
+  useRegisterParent,
+  useRequestPasswordReset,
+  useResendVerification,
+  useResetPassword,
+  useVerifyEmail,
+} from '@stoicpiggy/api';
 import type { AuthParent } from '@stoicpiggy/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
@@ -13,6 +22,14 @@ interface AuthContextValue {
   parent: AuthParent | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, displayName: string) => Promise<void>;
+  /** Redeem a verification token (from the email link) and sign in verified. */
+  verifyEmail: (token: string) => Promise<void>;
+  /** Ask the backend to re-send the verification email to the signed-in parent. */
+  resendVerification: () => Promise<void>;
+  /** Start a password reset for an email (always resolves; no account enumeration). */
+  requestPasswordReset: (email: string) => Promise<void>;
+  /** Complete a password reset with the token from the email + a new password. */
+  resetPassword: (token: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -28,6 +45,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useLoginParent();
   const registerMutation = useRegisterParent();
+  const verifyMutation = useVerifyEmail();
+  const resendMutation = useResendVerification();
+  const requestResetMutation = useRequestPasswordReset();
+  const resetMutation = useResetPassword();
   const me = useMe(hydrated && hasToken);
 
   useEffect(() => {
@@ -81,6 +102,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session.user.role === 'parent') setParent(session.user);
         setHasToken(true);
       },
+      async verifyEmail(token) {
+        const session = await verifyMutation.mutateAsync({ token });
+        setToken(session.token);
+        if (session.user.role === 'parent') setParent(session.user);
+        setHasToken(true);
+      },
+      async resendVerification() {
+        await resendMutation.mutateAsync();
+      },
+      async requestPasswordReset(email) {
+        await requestResetMutation.mutateAsync({ email });
+      },
+      async resetPassword(token, password) {
+        await resetMutation.mutateAsync({ token, password });
+      },
       logout() {
         setToken(null);
         setHasToken(false);
@@ -88,7 +124,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         queryClient.clear();
       },
     }),
-    [status, parent, loginMutation, registerMutation, queryClient],
+    [
+      status,
+      parent,
+      loginMutation,
+      registerMutation,
+      verifyMutation,
+      resendMutation,
+      requestResetMutation,
+      resetMutation,
+      queryClient,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

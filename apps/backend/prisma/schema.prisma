@@ -17,9 +17,43 @@ model Parent {
   // bcrypt hash of the parent's password. Set on register; never returned to clients.
   passwordHash String
   displayName  String
+  // Null until the parent confirms ownership of their email via the verification
+  // link. We soft-gate: an unverified parent can still use the dashboard.
+  emailVerifiedAt DateTime?
   children     Child[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+// Single-use email-verification tokens. We store only a SHA-256 hash of the raw
+// token (the raw value lives only in the emailed link), so a DB leak can't be
+// replayed. `consumedAt` makes a token one-shot; `expiresAt` bounds its lifetime.
+model EmailVerificationToken {
+  id         String    @id @default(cuid())
+  parent     Parent    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  parentId   String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([parentId])
+}
+
+// Single-use password-reset tokens. Same hashed, expiring, one-shot design as
+// EmailVerificationToken (shorter TTL — a reset link is more sensitive).
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  parent     Parent    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  parentId   String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([parentId])
 }
 
 model Child {
