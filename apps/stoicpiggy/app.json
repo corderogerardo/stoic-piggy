@@ -2,6 +2,7 @@
   "expo": {
     "name": "Stoic Piggy",
     "slug": "stoicpiggy",
+    "owner": "noofficelocation",
     "scheme": "stoicpiggy",
     "version": "0.0.1",
     "orientation": "portrait",
@@ -18,6 +19,12 @@
     "plugins": ["expo-router"],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d8d04ac6-6a90-495b-bb71-a6e01992ac48"
+      }
     }
   }
 }
