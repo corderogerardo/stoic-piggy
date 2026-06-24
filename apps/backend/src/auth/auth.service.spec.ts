@@ -129,6 +129,45 @@ describe('AuthService.registerParent', () => {
   });
 });
 
+describe('AuthService APP_URL guard', () => {
+  const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
+  afterEach(() => {
+    process.env.NODE_ENV = ORIGINAL_NODE_ENV;
+    delete process.env.APP_URL;
+  });
+
+  function construct(): void {
+    new AuthService(prisma as unknown as PrismaService, mail as unknown as MailService);
+  }
+
+  it('logs an error at boot in production when APP_URL is unset', () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.APP_URL;
+    const errorLog = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    construct();
+    expect(errorLog).toHaveBeenCalledWith(expect.stringMatching(/APP_URL is not set/i));
+    errorLog.mockRestore();
+  });
+
+  it('stays quiet in production when APP_URL is set', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.APP_URL = 'https://stoic-piggy-parents.noofficelocation.com';
+    const errorLog = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    construct();
+    expect(errorLog).not.toHaveBeenCalled();
+    errorLog.mockRestore();
+  });
+
+  it('stays quiet outside production even when APP_URL is unset', () => {
+    process.env.NODE_ENV = 'test';
+    delete process.env.APP_URL;
+    const errorLog = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    construct();
+    expect(errorLog).not.toHaveBeenCalled();
+    errorLog.mockRestore();
+  });
+});
+
 describe('AuthService.verifyEmail', () => {
   it('marks the parent verified, consumes the token, and signs them in', async () => {
     const raw = 'raw-token';
