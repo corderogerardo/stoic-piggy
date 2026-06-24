@@ -1,0 +1,30 @@
+{
+  "cli": {
+    "version": ">= 20.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://stoic-piggy-api.onrender.com/trpc"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://stoic-piggy-api.onrender.com/trpc"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
