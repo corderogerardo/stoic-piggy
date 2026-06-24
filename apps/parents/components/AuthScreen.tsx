@@ -1,7 +1,7 @@
 'use client';
 
 import { Piggy } from '@stoicpiggy/ui';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 
 type Mode = 'login' | 'register' | 'forgot';
@@ -16,6 +16,11 @@ export function AuthScreen() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
+
+  // Arriving from the landing "Empezar gratis" CTA (?signup) opens sign-up directly.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has('signup')) setMode('register');
+  }, []);
 
   const go = (next: Mode) => {
     setMode(next);

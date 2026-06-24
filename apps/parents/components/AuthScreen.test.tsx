@@ -24,6 +24,14 @@ describe('AuthScreen', () => {
     login.mockClear();
     register.mockClear();
     requestPasswordReset.mockClear();
+    window.history.pushState({}, '', '/'); // reset URL between tests
+  });
+
+  it('opens directly in sign-up mode when arriving with ?signup', async () => {
+    window.history.pushState({}, '', '/?signup=1');
+    render(<AuthScreen />);
+    // The NOMBRE field only renders in register mode.
+    expect(await screen.findByPlaceholderText(/tu nombre/i)).toBeInTheDocument();
   });
 
   it('logs in with email and password', async () => {
