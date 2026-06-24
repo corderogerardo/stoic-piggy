@@ -13,7 +13,11 @@ export {
   usePiggyBanks,
   useQuests,
   useRegisterParent,
+  useRequestPasswordReset,
+  useResendVerification,
+  useResetPassword,
   useSavingsGoals,
+  useVerifyEmail,
 } from './hooks';
 export { ApiProvider, type ApiProviderProps } from './provider';
 export {

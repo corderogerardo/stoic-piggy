@@ -49,7 +49,17 @@ const piggyStub: Pick<PiggyService, 'listPiggyBanks' | 'createTransaction' | 'pi
 
 const authStub: Pick<
   AuthService,
-  'verify' | 'registerParent' | 'loginParent' | 'loginChild' | 'me' | 'createChild' | 'childHome'
+  | 'verify'
+  | 'registerParent'
+  | 'loginParent'
+  | 'loginChild'
+  | 'verifyEmail'
+  | 'resendVerification'
+  | 'requestPasswordReset'
+  | 'resetPassword'
+  | 'me'
+  | 'createChild'
+  | 'childHome'
 > = {
   verify: (token: string): AuthClaims | null => {
     if (token === 'parent-token') return { sub: 'p1', role: 'parent' };
@@ -58,11 +68,23 @@ const authStub: Pick<
   },
   registerParent: async (input) => ({
     token: 'parent-token',
-    user: { role: 'parent', id: 'p1', email: input.email, displayName: input.displayName },
+    user: {
+      role: 'parent',
+      id: 'p1',
+      email: input.email,
+      displayName: input.displayName,
+      emailVerifiedAt: null,
+    },
   }),
   loginParent: async () => ({
     token: 'parent-token',
-    user: { role: 'parent', id: 'p1', email: 'p@x.dev', displayName: 'Patricia' },
+    user: {
+      role: 'parent',
+      id: 'p1',
+      email: 'p@x.dev',
+      displayName: 'Patricia',
+      emailVerifiedAt: null,
+    },
   }),
   loginChild: async (input) => ({
     token: 'child-token',
@@ -74,9 +96,28 @@ const authStub: Pick<
       displayName: 'Marco',
     },
   }),
+  verifyEmail: async () => ({
+    token: 'parent-token',
+    user: {
+      role: 'parent',
+      id: 'p1',
+      email: 'p@x.dev',
+      displayName: 'Patricia',
+      emailVerifiedAt: '2026-06-24T00:00:00.000Z',
+    },
+  }),
+  resendVerification: async () => ({ ok: true }),
+  requestPasswordReset: async () => ({ ok: true }),
+  resetPassword: async () => ({ ok: true }),
   me: async (claims) =>
     claims.role === 'parent'
-      ? { role: 'parent', id: 'p1', email: 'p@x.dev', displayName: 'Patricia' }
+      ? {
+          role: 'parent',
+          id: 'p1',
+          email: 'p@x.dev',
+          displayName: 'Patricia',
+          emailVerifiedAt: null,
+        }
       : { role: 'child', id: 'c1', parentId: 'p1', username: 'marco', displayName: 'Marco' },
   createChild: async () => {
     throw new Error('not exercised');

@@ -13,6 +13,8 @@ export interface AuthParent {
   id: ID;
   email: string;
   displayName: string;
+  /** ISO timestamp of email verification, or null if still unverified (soft-gated). */
+  emailVerifiedAt: ISODateString | null;
 }
 
 /** The authenticated kid, as returned to clients. */

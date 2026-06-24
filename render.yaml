@@ -36,3 +36,14 @@ services:
       # refuses to boot in production without it.
       - key: JWT_SECRET
         sync: false
+      # Resend API key for verification + password-reset emails. If unset, the API
+      # boots but logs links instead of sending — set this for real delivery.
+      - key: RESEND_API_KEY
+        sync: false
+      # Verified sender address (e.g. "Stoic Piggy <no-reply@yourdomain>").
+      - key: EMAIL_FROM
+        sync: false
+      # Public origin of the parents dashboard (used to build email links),
+      # e.g. https://stoic-piggy-parents.pages.dev
+      - key: APP_URL
+        sync: false

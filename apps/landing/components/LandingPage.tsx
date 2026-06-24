@@ -24,6 +24,12 @@ const FEAT_FG = [
   'text-blue',
 ];
 
+// "Empezar gratis" sends visitors to the parents dashboard's sign-up screen.
+// Overridable at build time (e.g. for previews) via NEXT_PUBLIC_DASHBOARD_URL.
+const DASHBOARD_URL =
+  process.env.NEXT_PUBLIC_DASHBOARD_URL ?? 'https://stoic-piggy-parents.noofficelocation.com';
+const SIGNUP_URL = `${DASHBOARD_URL}/?signup=1`;
+
 export function LandingPage() {
   const [lang, setLang] = useState<Lang>('es');
   const [openFaq, setOpenFaq] = useState(0);
@@ -74,7 +80,7 @@ export function LandingPage() {
               </button>
             </div>
             <a
-              href="#how"
+              href={SIGNUP_URL}
               className="rounded-[11px] bg-navy px-[19px] py-[11px] text-[13.5px] font-extrabold text-cream"
             >
               {c.nav.cta}
@@ -103,7 +109,7 @@ export function LandingPage() {
           </p>
           <div className="mt-8 flex flex-wrap gap-[13px]">
             <a
-              href="#how"
+              href={SIGNUP_URL}
               className="inline-flex items-center gap-[9px] rounded-[14px] bg-accent px-[26px] py-4 text-base font-extrabold text-cream"
             >
               {c.hero.cta1}
@@ -456,7 +462,7 @@ export function LandingPage() {
           </p>
           <div className="mt-[34px] flex flex-wrap justify-center gap-[13px]">
             <a
-              href="#top"
+              href={SIGNUP_URL}
               className="inline-flex items-center gap-[9px] rounded-[14px] bg-accent px-7 py-4 text-base font-extrabold text-cream"
             >
               {c.footer.cta1}

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import type {
   AuthChild,
   AuthParent,
@@ -9,17 +9,32 @@ import type {
   LoginChildInput,
   LoginParentInput,
   RegisterParentInput,
+  RequestPasswordResetInput,
+  ResetPasswordInput,
+  VerifyEmailInput,
 } from '@stoicpiggy/shared';
 import { TRPCError } from '@trpc/server';
+import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { type AuthClaims, signToken, verifyToken } from './jwt';
 import { hashPassword, verifyPassword } from './password';
+import {
+  hashToken,
+  newToken,
+  RESEND_THROTTLE_MS,
+  RESET_TTL_MS,
+  VERIFICATION_TTL_MS,
+} from './tokens';
 
 @Injectable()
 export class AuthService {
   private readonly secret: string;
+  private readonly logger = new Logger(AuthService.name);
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mail: MailService,
+  ) {
     this.secret = resolveJwtSecret();
   }
 
@@ -42,13 +57,87 @@ export class AuthService {
         passwordHash: await hashPassword(input.password),
       },
     });
-    const user: AuthParent = {
-      role: 'parent',
-      id: parent.id,
-      email: parent.email,
-      displayName: parent.displayName,
+    // Soft gate: send the verification email but never let a mail hiccup fail
+    // sign-up — the parent is signed in immediately and can resend from the app.
+    await this.sendVerificationEmail(parent);
+    return {
+      token: this.sign({ sub: parent.id, role: 'parent' }),
+      user: this.toAuthParent(parent),
     };
-    return { token: this.sign({ sub: parent.id, role: 'parent' }), user };
+  }
+
+  /** Redeem an email-verification token: mark the parent verified and sign them in. */
+  async verifyEmail(input: VerifyEmailInput): Promise<AuthSession> {
+    const token = await this.prisma.emailVerificationToken.findUnique({
+      where: { tokenHash: hashToken(input.token) },
+      include: { parent: true },
+    });
+    if (!token || token.consumedAt || token.expiresAt < new Date()) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'This verification link is invalid or has expired.',
+      });
+    }
+    // Consume the token (one-shot), then stamp the parent verified, preserving an
+    // earlier verification time if they somehow verified before.
+    await this.prisma.emailVerificationToken.update({
+      where: { id: token.id },
+      data: { consumedAt: new Date() },
+    });
+    const parent = token.parent.emailVerifiedAt
+      ? token.parent
+      : await this.prisma.parent.update({
+          where: { id: token.parentId },
+          data: { emailVerifiedAt: new Date() },
+        });
+    return {
+      token: this.sign({ sub: parent.id, role: 'parent' }),
+      user: this.toAuthParent(parent),
+    };
+  }
+
+  /** Re-send the verification email for the signed-in parent (throttled). */
+  async resendVerification(parentId: string): Promise<{ ok: true }> {
+    const parent = await this.prisma.parent.findUnique({ where: { id: parentId } });
+    if (!parent) {
+      throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Account no longer exists.' });
+    }
+    if (parent.emailVerifiedAt) return { ok: true }; // already verified — nothing to do
+
+    const recent = await this.prisma.emailVerificationToken.findFirst({
+      where: { parentId, createdAt: { gt: new Date(Date.now() - RESEND_THROTTLE_MS) } },
+    });
+    if (recent) {
+      throw new TRPCError({
+        code: 'TOO_MANY_REQUESTS',
+        message: 'Please wait a moment before requesting another email.',
+      });
+    }
+    // Invalidate any outstanding tokens so only the newest link works.
+    await this.prisma.emailVerificationToken.updateMany({
+      where: { parentId, consumedAt: null },
+      data: { consumedAt: new Date() },
+    });
+    await this.sendVerificationEmail(parent);
+    return { ok: true };
+  }
+
+  /** Mint + email a fresh verification link. Best-effort: logs but never throws. */
+  private async sendVerificationEmail(parent: { id: string; email: string }): Promise<void> {
+    try {
+      const { raw, hash } = newToken();
+      await this.prisma.emailVerificationToken.create({
+        data: {
+          parentId: parent.id,
+          tokenHash: hash,
+          expiresAt: new Date(Date.now() + VERIFICATION_TTL_MS),
+        },
+      });
+      const link = `${resolveAppUrl()}/verify-email?token=${raw}`;
+      await this.mail.sendVerificationEmail(parent.email, link);
+    } catch (error) {
+      this.logger.error(`Failed to send verification email to ${parent.email}`, error as Error);
+    }
   }
 
   async loginParent(input: LoginParentInput): Promise<AuthSession> {
@@ -56,13 +145,69 @@ export class AuthService {
     if (!parent || !(await verifyPassword(input.password, parent.passwordHash))) {
       throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Wrong email or password.' });
     }
-    const user: AuthParent = {
-      role: 'parent',
-      id: parent.id,
-      email: parent.email,
-      displayName: parent.displayName,
+    return {
+      token: this.sign({ sub: parent.id, role: 'parent' }),
+      user: this.toAuthParent(parent),
     };
-    return { token: this.sign({ sub: parent.id, role: 'parent' }), user };
+  }
+
+  /**
+   * Begin a password reset. Always resolves OK regardless of whether the email
+   * exists, so an attacker can't enumerate accounts. A reset email is sent only
+   * when the parent exists and isn't being throttled.
+   */
+  async requestPasswordReset(input: RequestPasswordResetInput): Promise<{ ok: true }> {
+    const parent = await this.prisma.parent.findUnique({ where: { email: input.email } });
+    if (!parent) return { ok: true };
+
+    const recent = await this.prisma.passwordResetToken.findFirst({
+      where: { parentId: parent.id, createdAt: { gt: new Date(Date.now() - RESEND_THROTTLE_MS) } },
+    });
+    if (recent) return { ok: true }; // silently throttle — still no signal to the caller
+
+    await this.sendResetEmail(parent);
+    return { ok: true };
+  }
+
+  /** Complete a password reset: set the new password and invalidate the token. */
+  async resetPassword(input: ResetPasswordInput): Promise<{ ok: true }> {
+    const token = await this.prisma.passwordResetToken.findUnique({
+      where: { tokenHash: hashToken(input.token) },
+    });
+    if (!token || token.consumedAt || token.expiresAt < new Date()) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'This reset link is invalid or has expired.',
+      });
+    }
+    await this.prisma.parent.update({
+      where: { id: token.parentId },
+      data: { passwordHash: await hashPassword(input.password) },
+    });
+    // Consume this token and invalidate any other outstanding reset tokens.
+    await this.prisma.passwordResetToken.updateMany({
+      where: { parentId: token.parentId, consumedAt: null },
+      data: { consumedAt: new Date() },
+    });
+    return { ok: true };
+  }
+
+  /** Mint + email a fresh password-reset link. Best-effort: logs but never throws. */
+  private async sendResetEmail(parent: { id: string; email: string }): Promise<void> {
+    try {
+      const { raw, hash } = newToken();
+      await this.prisma.passwordResetToken.create({
+        data: {
+          parentId: parent.id,
+          tokenHash: hash,
+          expiresAt: new Date(Date.now() + RESET_TTL_MS),
+        },
+      });
+      const link = `${resolveAppUrl()}/reset-password?token=${raw}`;
+      await this.mail.sendPasswordResetEmail(parent.email, link);
+    } catch (error) {
+      this.logger.error(`Failed to send password-reset email to ${parent.email}`, error as Error);
+    }
   }
 
   // ---- Kids ----
@@ -105,12 +250,7 @@ export class AuthService {
       const parent = await this.prisma.parent.findUnique({ where: { id: claims.sub } });
       if (!parent)
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Account no longer exists.' });
-      return {
-        role: 'parent',
-        id: parent.id,
-        email: parent.email,
-        displayName: parent.displayName,
-      };
+      return this.toAuthParent(parent);
     }
     const child = await this.prisma.child.findUnique({ where: { id: claims.sub } });
     if (!child) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Account no longer exists.' });
@@ -163,6 +303,21 @@ export class AuthService {
     return { sub: child.id, role: 'child', parentId: child.parentId };
   }
 
+  private toAuthParent(parent: {
+    id: string;
+    email: string;
+    displayName: string;
+    emailVerifiedAt: Date | null;
+  }): AuthParent {
+    return {
+      role: 'parent',
+      id: parent.id,
+      email: parent.email,
+      displayName: parent.displayName,
+      emailVerifiedAt: parent.emailVerifiedAt?.toISOString() ?? null,
+    };
+  }
+
   private toAuthChild(child: {
     id: string;
     parentId: string;
@@ -196,6 +351,16 @@ function resolveJwtSecret(): string {
     return 'dev-secret-change-me';
   }
   throw new Error('JWT_SECRET must be set (no insecure fallback outside development/test).');
+}
+
+/**
+ * Public origin of the parents dashboard, used to build links in emails. Defaults
+ * to the local dashboard port so dev/test flows produce a clickable link; set
+ * APP_URL in any real deployment so links point at the live dashboard.
+ */
+function resolveAppUrl(): string {
+  const url = process.env.APP_URL;
+  return (url && url.length > 0 ? url : 'http://localhost:3002').replace(/\/+$/, '');
 }
 
 /** Prisma throws P2002 on a unique-constraint violation (e.g. duplicate username). */
