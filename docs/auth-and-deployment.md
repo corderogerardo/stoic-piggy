@@ -33,8 +33,9 @@ How parent/kid authentication works, and how CI ships the backend + Postgres.
 
 Backend (`apps/backend/.env`):
 
-- `DATABASE_URL` — pooled Postgres (runtime).
-- `DIRECT_URL` — direct Postgres (migrations).
+- `DATABASE_URL` — pooled Postgres connection (runtime).
+- `DIRECT_URL` — direct (non-pooled) Postgres connection (migrations). On Neon this
+  is the endpoint host **without** the `-pooler` suffix.
 - `JWT_SECRET` — **required in production** (the API refuses to boot without it).
   Generate: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`
 
@@ -53,13 +54,18 @@ Render `autoDeploy` is **off** so deploys are gated on CI + migrations.
 
 | Secret                   | Used by            | What                                                       |
 | ------------------------ | ------------------ | --------------------------------------------------------- |
-| `PROD_DIRECT_URL`        | `backend-migrate`  | Supabase **direct** (5432) connection string.             |
+| `PROD_DIRECT_URL`        | `backend-migrate`  | Postgres connection string for migrations. We use **Neon** — prefer the **direct (non-pooled)** endpoint (host without `-pooler`) so `migrate deploy` can take advisory locks. |
 | `RENDER_DEPLOY_HOOK_URL` | `backend-deploy`   | Render → Service → Settings → **Deploy Hook** URL.        |
 | `CLOUDFLARE_API_TOKEN_STOIC_PIGGY` | pages      | (existing) Cloudflare Pages deploy token.                 |
 
 Also set `JWT_SECRET` in the Render dashboard for the API service.
 
 ## One-time production migration baseline
+
+> **Status:** ✅ Done — the `0_init` baseline was applied to the Neon prod DB on
+> 2026-06-24, so `_prisma_migrations` now records `0_init`. `add_auth` is still
+> pending and will be applied automatically by `deploy.yml`'s `backend-migrate`
+> job on the next deploy (or run `pnpm exec prisma migrate deploy` manually).
 
 The production DB predates Prisma Migrate (it was created with `db push`), so the
 tables for the `0_init` migration already exist. Mark that baseline as applied

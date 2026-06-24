@@ -26,7 +26,8 @@ services:
         value: "22"
       - key: NODE_ENV
         value: production
-      # Set these in the Render dashboard (Supabase connection strings):
+      # Set these in the Render dashboard (Neon Postgres connection strings;
+      # DIRECT_URL should be the non-pooled endpoint for migrations):
       - key: DATABASE_URL
         sync: false
       - key: DIRECT_URL
