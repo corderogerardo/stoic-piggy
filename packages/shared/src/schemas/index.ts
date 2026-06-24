@@ -136,3 +136,33 @@ export const deleteChildSchema = z.object({
   childId: z.string().min(1),
 });
 export type DeleteChildInput = z.infer<typeof deleteChildSchema>;
+
+// ---- Tasks (parent-assigned chores/lessons with an approval loop) ----
+
+export const taskCategorySchema = z.enum(['chore', 'lesson']);
+export const taskPayTypeSchema = z.enum(['money', 'xp', 'both']);
+export const taskRecurrenceSchema = z.enum(['once', 'daily', 'weekly']);
+
+/** A parent assigns a task to one of their kids. */
+export const createTaskSchema = z.object({
+  childId: z.string().min(1),
+  title: z.string().trim().min(1).max(120),
+  category: taskCategorySchema,
+  payType: taskPayTypeSchema,
+  // Money reward (cents, capped at $100k) and/or XP reward.
+  amountCents: z.number().int().min(0).max(100_000_00),
+  rewardXp: z.number().int().min(0).max(100_000),
+  recurrence: taskRecurrenceSchema,
+});
+export type CreateTaskInput = z.infer<typeof createTaskSchema>;
+
+/** Reference a single task (approve / reject / delete). */
+export const taskIdSchema = z.object({ taskId: z.string().min(1) });
+export type TaskIdInput = z.infer<typeof taskIdSchema>;
+
+/** A kid marks a task done, optionally with a note for the parent. */
+export const submitTaskSchema = z.object({
+  taskId: z.string().min(1),
+  note: z.string().max(280).optional(),
+});
+export type SubmitTaskInput = z.infer<typeof submitTaskSchema>;

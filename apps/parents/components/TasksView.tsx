@@ -1,0 +1,438 @@
+'use client';
+
+import { useCreateTask, useDeleteTask, useMyDashboard, useTasks, useTRPC } from '@stoicpiggy/api';
+import {
+  centsToDollars,
+  type DashboardChild,
+  dollarsToCents,
+  type Task,
+  type TaskCategory,
+  type TaskPayType,
+  type TaskRecurrence,
+} from '@stoicpiggy/shared';
+import { useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+
+type Lang = 'es' | 'en';
+
+const T = {
+  es: {
+    title: 'Tareas',
+    new: 'Nueva tarea',
+    loading: 'Cargando…',
+    empty: 'No hay tareas todavía. Crea la primera para uno de tus hijos.',
+    noKids: 'Primero crea una cuenta de hijo para poder asignar tareas.',
+    colTask: 'TAREA',
+    colKid: 'HIJO',
+    colRecur: 'FRECUENCIA',
+    colReward: 'RECOMPENSA',
+    colStatus: 'ESTADO',
+    cat: { chore: 'Quehacer', lesson: 'Lección' } as Record<TaskCategory, string>,
+    recur: { once: 'Una vez', daily: 'Diario', weekly: 'Semanal' } as Record<
+      TaskRecurrence,
+      string
+    >,
+    status: {
+      active: 'Activa',
+      submitted: 'Por aprobar',
+      approved: 'Aprobada',
+      rejected: 'Rechazada',
+    },
+    // modal
+    name: 'NOMBRE DE LA TAREA',
+    namePh: 'p. ej. Sacar la basura',
+    assignee: 'ASIGNAR A',
+    category: 'TIPO',
+    pay: 'PAGO',
+    money: 'Dinero',
+    xp: 'XP',
+    both: 'Ambos',
+    amount: 'MONTO ($)',
+    xpAmount: 'XP',
+    frequency: 'FRECUENCIA',
+    create: 'Crear tarea',
+    creating: 'Creando…',
+    cancel: 'Cancelar',
+    del: 'Eliminar',
+  },
+  en: {
+    title: 'Tasks',
+    new: 'New task',
+    loading: 'Loading…',
+    empty: 'No tasks yet. Create the first one for one of your kids.',
+    noKids: 'Create a kid account first so you can assign tasks.',
+    colTask: 'TASK',
+    colKid: 'KID',
+    colRecur: 'FREQUENCY',
+    colReward: 'REWARD',
+    colStatus: 'STATUS',
+    cat: { chore: 'Chore', lesson: 'Lesson' } as Record<TaskCategory, string>,
+    recur: { once: 'Once', daily: 'Daily', weekly: 'Weekly' } as Record<TaskRecurrence, string>,
+    status: {
+      active: 'Active',
+      submitted: 'To approve',
+      approved: 'Approved',
+      rejected: 'Rejected',
+    },
+    name: 'TASK NAME',
+    namePh: 'e.g. Take out the trash',
+    assignee: 'ASSIGN TO',
+    category: 'TYPE',
+    pay: 'PAY',
+    money: 'Money',
+    xp: 'XP',
+    both: 'Both',
+    amount: 'AMOUNT ($)',
+    xpAmount: 'XP',
+    frequency: 'FREQUENCY',
+    create: 'Create task',
+    creating: 'Creating…',
+    cancel: 'Cancel',
+    del: 'Delete',
+  },
+} as const;
+
+const PALETTE = ['#E63946', '#457B9D', '#1D3557', '#2FAE6B', '#E9A23B'];
+
+const STATUS_STYLE: Record<Task['status'], string> = {
+  active: 'bg-success/15 text-success',
+  submitted: 'bg-accent/15 text-accent',
+  approved: 'bg-blue/15 text-blue',
+  rejected: 'bg-navy/10 text-navy/50',
+};
+
+export function rewardLabel(t: Pick<Task, 'payType' | 'amountCents' | 'rewardXp'>): string {
+  const money = `$${Math.round(centsToDollars(t.amountCents))}`;
+  const xp = `+${t.rewardXp} XP`;
+  if (t.payType === 'xp') return xp;
+  if (t.payType === 'money') return money;
+  return `${money} · ${xp}`;
+}
+
+export function TasksView({ lang }: { lang: Lang }) {
+  const t = T[lang];
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const tasks = useTasks();
+  const dash = useMyDashboard();
+  const deleteTask = useDeleteTask();
+  const [creating, setCreating] = useState(false);
+
+  const kids = useMemo(() => (dash.data ?? []).filter((k) => k.active), [dash.data]);
+  const kidById = useMemo(() => {
+    const m = new Map<string, { name: string; color: string }>();
+    for (const [i, k] of kids.entries()) {
+      m.set(k.id, { name: k.displayName, color: PALETTE[i % PALETTE.length] ?? '#E63946' });
+    }
+    return m;
+  }, [kids]);
+
+  const refresh = () =>
+    queryClient.invalidateQueries({ queryKey: trpc.tasks.listByParent.queryKey() });
+
+  return (
+    <div className="flex flex-col gap-[18px]">
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          onClick={() => setCreating(true)}
+          disabled={kids.length === 0}
+          className="inline-flex items-center gap-2 rounded-[11px] border-2 border-navy bg-transparent px-4 py-[9px] text-[13px] font-extrabold text-navy disabled:opacity-40"
+        >
+          <i className="fa fa-plus" />
+          {t.new}
+        </button>
+      </div>
+
+      {tasks.isPending && <p className="px-1 text-[13.5px] text-navy/55">{t.loading}</p>}
+      {!tasks.isPending && (tasks.data?.length ?? 0) === 0 && (
+        <p className="px-1 text-[13.5px] text-navy/55">{kids.length === 0 ? t.noKids : t.empty}</p>
+      )}
+
+      {(tasks.data?.length ?? 0) > 0 && (
+        <div className="overflow-hidden rounded-[20px] border border-navy/10 bg-white">
+          <div className="flex items-center gap-[14px] border-b border-navy/[0.08] px-[22px] py-[13px] text-[10.5px] font-extrabold tracking-[0.5px] text-navy/50">
+            <span className="flex-1">{t.colTask}</span>
+            <span className="w-[130px]">{t.colKid}</span>
+            <span className="w-[110px]">{t.colRecur}</span>
+            <span className="w-[110px] text-right">{t.colReward}</span>
+            <span className="w-[110px] text-right">{t.colStatus}</span>
+            <span className="w-[34px]" />
+          </div>
+          {(tasks.data ?? []).map((task) => {
+            const kid = kidById.get(task.childId);
+            return (
+              <div
+                key={task.id}
+                className="flex items-center gap-[14px] border-b border-navy/[0.06] px-[22px] py-[15px]"
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-[13px]">
+                  <span
+                    className={`flex h-10 w-10 flex-none items-center justify-center rounded-[11px] ${task.category === 'lesson' ? 'bg-blue/20' : 'bg-teal/40'}`}
+                  >
+                    <i
+                      className={`fa fa-${task.category === 'lesson' ? 'graduation-cap' : 'check'} text-base ${task.category === 'lesson' ? 'text-blue' : 'text-accent'}`}
+                    />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-[14.5px] font-extrabold leading-tight">{task.title}</div>
+                    <div className="text-[11.5px] text-navy/55">{t.cat[task.category]}</div>
+                  </div>
+                </div>
+                <div className="flex w-[130px] items-center gap-2">
+                  <span
+                    className="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-lg text-[11px] font-extrabold text-cream"
+                    style={{ background: kid?.color ?? '#1D3557' }}
+                  >
+                    {(kid?.name.charAt(0) ?? '?').toUpperCase()}
+                  </span>
+                  <span className="truncate text-[13px] font-semibold">{kid?.name ?? '—'}</span>
+                </div>
+                <div className="w-[110px] text-xs font-bold text-navy/70">
+                  {t.recur[task.recurrence]}
+                </div>
+                <div className="w-[110px] text-right font-mono text-sm font-bold text-navy">
+                  {rewardLabel(task)}
+                </div>
+                <div className="w-[110px] text-right">
+                  <span
+                    className={`rounded-full px-[11px] py-[5px] text-[10px] font-extrabold tracking-[0.3px] ${STATUS_STYLE[task.status]}`}
+                  >
+                    {t.status[task.status]}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  aria-label={t.del}
+                  disabled={deleteTask.isPending}
+                  onClick={async () => {
+                    await deleteTask.mutateAsync({ taskId: task.id });
+                    await refresh();
+                  }}
+                  className="h-[34px] w-[34px] flex-none rounded-[10px] border border-navy/15 bg-white text-[13px] text-navy/40 hover:border-accent hover:text-accent"
+                >
+                  <i className="fa fa-trash-o" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {creating && (
+        <CreateTaskModal
+          lang={lang}
+          kids={kids}
+          close={() => setCreating(false)}
+          afterCreate={refresh}
+        />
+      )}
+    </div>
+  );
+}
+
+function CreateTaskModal({
+  lang,
+  kids,
+  close,
+  afterCreate,
+}: {
+  lang: Lang;
+  kids: DashboardChild[];
+  close: () => void;
+  afterCreate: () => Promise<void> | void;
+}) {
+  const t = T[lang];
+  const createTask = useCreateTask();
+  const [title, setTitle] = useState('');
+  const [childId, setChildId] = useState(kids[0]?.id ?? '');
+  const [category, setCategory] = useState<TaskCategory>('chore');
+  const [payType, setPayType] = useState<TaskPayType>('money');
+  const [amount, setAmount] = useState('20');
+  const [xp, setXp] = useState('50');
+  const [recurrence, setRecurrence] = useState<TaskRecurrence>('once');
+  const [error, setError] = useState<string | null>(null);
+
+  const input =
+    'w-full rounded-[12px] border-2 border-navy/15 bg-white px-3.5 py-2.5 text-[14px] font-semibold text-navy outline-none focus:border-accent';
+  const label = 'text-[11px] font-extrabold tracking-[0.5px] text-navy/55';
+  const pill = (on: boolean) =>
+    `flex-1 rounded-[11px] border-2 px-3 py-2 text-[12.5px] font-extrabold ${on ? 'border-accent bg-accent/5 text-accent' : 'border-navy/15 bg-white text-navy/60'}`;
+
+  const submit = async () => {
+    setError(null);
+    if (!childId) {
+      setError(lang === 'es' ? 'Elige un hijo.' : 'Pick a kid.');
+      return;
+    }
+    try {
+      await createTask.mutateAsync({
+        childId,
+        title: title.trim() || (lang === 'es' ? 'Tarea nueva' : 'New task'),
+        category,
+        payType,
+        amountCents: payType === 'xp' ? 0 : dollarsToCents(Number(amount) || 0),
+        rewardXp: payType === 'money' ? 0 : Number(xp) || 0,
+        recurrence,
+      });
+      await afterCreate();
+      close();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not create the task.');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/40 p-4">
+      <button
+        type="button"
+        aria-label={t.cancel}
+        onClick={close}
+        className="absolute inset-0 h-full w-full cursor-default bg-transparent"
+      />
+      <div
+        className="relative flex w-full max-w-[460px] flex-col gap-3 rounded-[22px] bg-white p-6"
+        role="dialog"
+        aria-modal="true"
+      >
+        <h2 className="m-0 text-[17px] font-extrabold">{t.new}</h2>
+
+        <label className="flex flex-col gap-1.5">
+          <span className={label}>{t.name}</span>
+          <input
+            className={input}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={t.namePh}
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5">
+          <span className={label}>{t.assignee}</span>
+          <select className={input} value={childId} onChange={(e) => setChildId(e.target.value)}>
+            {kids.map((k) => (
+              <option key={k.id} value={k.id}>
+                {k.displayName}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="flex flex-col gap-1.5">
+          <span className={label}>{t.category}</span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className={pill(category === 'chore')}
+              onClick={() => setCategory('chore')}
+            >
+              {t.cat.chore}
+            </button>
+            <button
+              type="button"
+              className={pill(category === 'lesson')}
+              onClick={() => setCategory('lesson')}
+            >
+              {t.cat.lesson}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <span className={label}>{t.pay}</span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className={pill(payType === 'money')}
+              onClick={() => setPayType('money')}
+            >
+              {t.money}
+            </button>
+            <button
+              type="button"
+              className={pill(payType === 'xp')}
+              onClick={() => setPayType('xp')}
+            >
+              {t.xp}
+            </button>
+            <button
+              type="button"
+              className={pill(payType === 'both')}
+              onClick={() => setPayType('both')}
+            >
+              {t.both}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          {payType !== 'xp' && (
+            <label className="flex flex-1 flex-col gap-1.5">
+              <span className={label}>{t.amount}</span>
+              <input
+                className={input}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                inputMode="numeric"
+              />
+            </label>
+          )}
+          {payType !== 'money' && (
+            <label className="flex flex-1 flex-col gap-1.5">
+              <span className={label}>{t.xpAmount}</span>
+              <input
+                className={input}
+                value={xp}
+                onChange={(e) => setXp(e.target.value.replace(/[^0-9]/g, ''))}
+                inputMode="numeric"
+              />
+            </label>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <span className={label}>{t.frequency}</span>
+          <div className="flex gap-2">
+            {(['once', 'daily', 'weekly'] as const).map((r) => (
+              <button
+                key={r}
+                type="button"
+                className={pill(recurrence === r)}
+                onClick={() => setRecurrence(r)}
+              >
+                {t.recur[r]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {error && (
+          <div
+            role="alert"
+            className="rounded-[11px] bg-accent/10 px-3.5 py-2.5 text-[13px] font-semibold text-accent"
+          >
+            {error}
+          </div>
+        )}
+
+        <div className="mt-2 flex gap-2.5">
+          <button
+            type="button"
+            onClick={close}
+            className="flex-1 rounded-[12px] border-2 border-navy/15 bg-white py-3 text-[14px] font-extrabold text-navy/70"
+          >
+            {t.cancel}
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={createTask.isPending}
+            className="flex-1 rounded-[12px] bg-accent py-3 text-[14px] font-extrabold text-cream disabled:opacity-60"
+          >
+            {createTask.isPending ? t.creating : t.create}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

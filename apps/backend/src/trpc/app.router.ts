@@ -4,8 +4,10 @@ import {
   type Child,
   type ChildHome,
   type CreateChildAccountInput,
+  type CreateTaskInput,
   type CreateTransactionInput,
   createChildAccountSchema,
+  createTaskSchema,
   createTransactionSchema,
   type DashboardChild,
   deleteChildSchema,
@@ -26,9 +28,17 @@ import {
   resetPasswordSchema,
   type SavingsGoal,
   type SetChildActiveInput,
+  type SubmitTaskInput,
   setChildActiveSchema,
+  submitTaskSchema,
+  type Task,
+  type TaskCategory,
+  type TaskPayType,
+  type TaskRecurrence,
+  type TaskStatus,
   type Transaction,
   type TransactionType,
+  taskIdSchema,
   type UpdateAllowanceInput,
   type UpdateChildInput,
   updateAllowanceSchema,
@@ -99,6 +109,22 @@ interface QuestRow {
   createdAt: Date;
   updatedAt: Date;
 }
+interface TaskRow {
+  id: string;
+  childId: string;
+  title: string;
+  category: TaskCategory;
+  payType: TaskPayType;
+  amountCents: number;
+  rewardXp: number;
+  recurrence: TaskRecurrence;
+  status: TaskStatus;
+  note: string | null;
+  submittedAt: Date | null;
+  resolvedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 interface DashboardChildRow {
   id: string;
   displayName: string;
@@ -131,6 +157,17 @@ export interface FamilyPort {
   setChildActive(input: SetChildActiveInput): Promise<ChildRow>;
   deleteChild(childId: string): Promise<void>;
 }
+export interface TaskPort {
+  taskChildId(taskId: string): Promise<string | null>;
+  createTask(input: CreateTaskInput): Promise<TaskRow>;
+  listByParent(parentId: string): Promise<TaskRow[]>;
+  pendingApprovals(parentId: string): Promise<TaskRow[]>;
+  listByChild(childId: string): Promise<TaskRow[]>;
+  submitTask(input: SubmitTaskInput): Promise<TaskRow>;
+  approveTask(taskId: string): Promise<TaskRow>;
+  rejectTask(taskId: string): Promise<TaskRow>;
+  deleteTask(taskId: string): Promise<void>;
+}
 export interface AuthPort {
   registerParent(input: RegisterParentInput): Promise<AuthSession>;
   loginParent(input: LoginParentInput): Promise<AuthSession>;
@@ -148,6 +185,7 @@ export interface RouterServices {
   piggy: PiggyPort;
   family: FamilyPort;
   auth: AuthPort;
+  task: TaskPort;
 }
 
 const iso = (d: Date) => d.toISOString();
@@ -201,6 +239,22 @@ const toQuest = (r: QuestRow): Quest => ({
   createdAt: iso(r.createdAt),
   updatedAt: iso(r.updatedAt),
 });
+const toTask = (r: TaskRow): Task => ({
+  id: r.id,
+  childId: r.childId,
+  title: r.title,
+  category: r.category,
+  payType: r.payType,
+  amountCents: r.amountCents,
+  rewardXp: r.rewardXp,
+  recurrence: r.recurrence,
+  status: r.status,
+  note: r.note ?? undefined,
+  submittedAt: r.submittedAt ? iso(r.submittedAt) : undefined,
+  resolvedAt: r.resolvedAt ? iso(r.resolvedAt) : undefined,
+  createdAt: iso(r.createdAt),
+  updatedAt: iso(r.updatedAt),
+});
 const toDashboardChild = (r: DashboardChildRow): DashboardChild => ({
   id: r.id,
   displayName: r.displayName,
@@ -217,7 +271,7 @@ const toDashboardChild = (r: DashboardChildRow): DashboardChild => ({
 
 const childIdInput = z.object({ childId: z.string().min(1) });
 
-export function createAppRouter({ piggy, family, auth }: RouterServices) {
+export function createAppRouter({ piggy, family, auth, task }: RouterServices) {
   /**
    * Authorize access to a specific child's data: a kid may only touch their own,
    * a parent only their own children. Throws FORBIDDEN otherwise.
@@ -233,6 +287,15 @@ export function createAppRouter({ piggy, family, auth }: RouterServices) {
     if (parentId !== user.sub) {
       throw new TRPCError({ code: 'FORBIDDEN', message: 'Not your child.' });
     }
+  }
+
+  /** Authorize access to a task by resolving its owning child, then reusing the child check. */
+  async function authorizeTaskAccess(user: AuthClaims, taskId: string): Promise<void> {
+    const childId = await task.taskChildId(taskId);
+    if (!childId) {
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'Task not found.' });
+    }
+    await authorizeChildAccess(user, childId);
   }
 
   return router({
@@ -321,6 +384,60 @@ export function createAppRouter({ piggy, family, auth }: RouterServices) {
         .mutation(async ({ ctx, input }): Promise<{ ok: true }> => {
           await authorizeChildAccess(ctx.user, input.childId);
           await family.deleteChild(input.childId);
+          return { ok: true };
+        }),
+    }),
+
+    tasks: router({
+      // A parent assigns a task to one of their kids.
+      create: parentProcedure
+        .input(createTaskSchema)
+        .mutation(async ({ ctx, input }): Promise<Task> => {
+          await authorizeChildAccess(ctx.user, input.childId);
+          return toTask(await task.createTask(input));
+        }),
+      // All tasks across the signed-in parent's kids.
+      listByParent: parentProcedure.query(
+        async ({ ctx }): Promise<Task[]> => (await task.listByParent(ctx.user.sub)).map(toTask),
+      ),
+      // Submitted tasks awaiting the parent's approval.
+      pendingApprovals: parentProcedure.query(
+        async ({ ctx }): Promise<Task[]> => (await task.pendingApprovals(ctx.user.sub)).map(toTask),
+      ),
+      // A kid's own tasks (parent or owning kid).
+      listByChild: protectedProcedure
+        .input(childIdInput)
+        .query(async ({ ctx, input }): Promise<Task[]> => {
+          await authorizeChildAccess(ctx.user, input.childId);
+          return (await task.listByChild(input.childId)).map(toTask);
+        }),
+      // A kid marks their task done → submitted.
+      submit: childProcedure
+        .input(submitTaskSchema)
+        .mutation(async ({ ctx, input }): Promise<Task> => {
+          await authorizeTaskAccess(ctx.user, input.taskId);
+          return toTask(await task.submitTask(input));
+        }),
+      // A parent approves a submitted task (credits the kid + awards xp).
+      approve: parentProcedure
+        .input(taskIdSchema)
+        .mutation(async ({ ctx, input }): Promise<Task> => {
+          await authorizeTaskAccess(ctx.user, input.taskId);
+          return toTask(await task.approveTask(input.taskId));
+        }),
+      // A parent sends a submitted task back to the kid.
+      reject: parentProcedure
+        .input(taskIdSchema)
+        .mutation(async ({ ctx, input }): Promise<Task> => {
+          await authorizeTaskAccess(ctx.user, input.taskId);
+          return toTask(await task.rejectTask(input.taskId));
+        }),
+      // A parent deletes a task.
+      delete: parentProcedure
+        .input(taskIdSchema)
+        .mutation(async ({ ctx, input }): Promise<{ ok: true }> => {
+          await authorizeTaskAccess(ctx.user, input.taskId);
+          await task.deleteTask(input.taskId);
           return { ok: true };
         }),
     }),

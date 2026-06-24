@@ -102,6 +102,27 @@ export interface Quest extends BaseEntity {
   status: QuestStatus;
 }
 
+export type TaskCategory = 'chore' | 'lesson';
+export type TaskPayType = 'money' | 'xp' | 'both';
+export type TaskRecurrence = 'once' | 'daily' | 'weekly';
+/** active → kid submits → submitted → parent approves/rejects. */
+export type TaskStatus = 'active' | 'submitted' | 'approved' | 'rejected';
+
+/** A parent-assigned chore/lesson with an approval + pay loop (distinct from Quest). */
+export interface Task extends BaseEntity {
+  childId: ID;
+  title: string;
+  category: TaskCategory;
+  payType: TaskPayType;
+  amountCents: number;
+  rewardXp: number;
+  recurrence: TaskRecurrence;
+  status: TaskStatus;
+  note?: string;
+  submittedAt?: ISODateString;
+  resolvedAt?: ISODateString;
+}
+
 export interface DashboardGoal {
   title: string;
   targetCents: number;
