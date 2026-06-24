@@ -87,6 +87,11 @@ jobs:
       - name: Generate Prisma client
         run: pnpm db:generate
 
+      # The backend imports `@stoicpiggy/shared` from its built dist (types + JS),
+      # so build the workspace deps before ts-jest type-checks the e2e suite.
+      - name: Build backend dependencies
+        run: pnpm --filter @stoicpiggy/shared build
+
       - name: Apply migrations to the test database
         working-directory: apps/backend
         run: pnpm exec prisma migrate deploy
