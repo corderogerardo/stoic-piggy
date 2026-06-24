@@ -1,24 +1,48 @@
+import { useChildHome } from '@stoicpiggy/api';
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Coach } from '@/components/screens/Coach';
 import { Home } from '@/components/screens/Home';
+import { Login } from '@/components/screens/Login';
 import { Onboarding } from '@/components/screens/Onboarding';
 import { Quests } from '@/components/screens/Quests';
 import { Tasks } from '@/components/screens/Tasks';
 import { Temptation } from '@/components/screens/Temptation';
 import { Wins } from '@/components/screens/Wins';
 import { TabBar } from '@/components/TabBar';
+import { useAuth } from '@/lib/auth';
 import { REPLIES } from '@/lib/content';
 import { useLang, useTheme } from '@/lib/providers';
 
 type ChatMsg = { role: 'me' | 'piggy'; es: string; en: string };
 type Status = 'todo' | 'pending' | 'done';
 
-export default function AppRoot() {
+/** Route entry: gate the kid app behind sign-in. */
+export default function Index() {
+  const { colors } = useTheme();
+  const { status } = useAuth();
+
+  if (status === 'loading') {
+    return <View style={{ flex: 1, backgroundColor: colors.canvas }} />;
+  }
+  if (status !== 'authenticated') {
+    return (
+      <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.canvas }}>
+        <Login />
+      </SafeAreaView>
+    );
+  }
+  return <KidApp />;
+}
+
+function KidApp() {
   const { colors } = useTheme();
   const { t, lang } = useLang();
-  const [screen, setScreen] = useState('onboarding');
+  const { child, logout } = useAuth();
+  const home = useChildHome();
+
+  const [screen, setScreen] = useState('home');
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const [tStage, setTStage] = useState('intro');
   const [resisted, setResisted] = useState(12);
@@ -76,7 +100,16 @@ export default function AppRoot() {
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.canvas }}>
       <View style={{ flex: 1 }}>
         {screen === 'onboarding' && <Onboarding onStart={() => setScreen('home')} />}
-        {screen === 'home' && <Home go={setScreen} onChallenge={takeChallenge} />}
+        {screen === 'home' && (
+          <Home
+            go={setScreen}
+            onChallenge={takeChallenge}
+            onLogout={logout}
+            kidName={home.data?.child.displayName ?? child?.displayName}
+            balanceCents={home.data?.balanceCents}
+            goal={home.data?.goal}
+          />
+        )}
         {screen === 'coach' && (
           <Coach messages={messages} suggestions={suggestions} onSend={send} />
         )}

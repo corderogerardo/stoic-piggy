@@ -1,8 +1,9 @@
 'use client';
 
-import { useDashboardChildren } from '@stoicpiggy/api';
+import { useMyDashboard } from '@stoicpiggy/api';
 import { Piggy } from '@stoicpiggy/ui';
 import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@/lib/auth';
 import {
   ACTIVITY,
   type ActivityItem,
@@ -18,6 +19,7 @@ import {
 } from '@/lib/content';
 import { mapDashboardChildToKid } from '@/lib/mapKid';
 import { ApiStatus } from './ApiStatus';
+import { CreateKidForm } from './CreateKidForm';
 
 const VIEWS: View[] = ['overview', 'tasks', 'approvals', 'kids', 'reports', 'settings'];
 const NAV_ICON: Record<View, string> = {
@@ -99,6 +101,7 @@ const newDraft = (): Draft => ({
 });
 
 export function Dashboard() {
+  const { parent, logout } = useAuth();
   const [lang, setLang] = useState<Lang>('es');
   const [view, setView] = useState<View>('overview');
   const [kids, setKids] = useState<Kid[]>(KIDS);
@@ -112,9 +115,8 @@ export function Dashboard() {
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState<Draft>(newDraft());
 
-  // Live data: swap seed kids for the demo parent's real children once the API responds.
-  const demoParentId = process.env.NEXT_PUBLIC_DEMO_PARENT_ID ?? 'seed-parent';
-  const liveChildren = useDashboardChildren(demoParentId);
+  // Live data: the signed-in parent's real children (token-scoped on the server).
+  const liveChildren = useMyDashboard();
   const liveKids = useMemo(
     () =>
       liveChildren.data && liveChildren.data.length > 0
@@ -315,13 +317,23 @@ export function Dashboard() {
         </div>
         <div className="flex items-center gap-[11px] border-t border-white/15 p-2.5">
           <span className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full bg-blue text-[15px] font-extrabold text-cream">
-            P
+            {(parent?.displayName ?? 'P').charAt(0).toUpperCase()}
           </span>
-          <div className="flex-1 leading-tight">
-            <div className="text-[13.5px] font-extrabold">Patricia</div>
+          <div className="min-w-0 flex-1 leading-tight">
+            <div className="truncate text-[13.5px] font-extrabold">
+              {parent?.displayName ?? 'Patricia'}
+            </div>
             <div className="text-[11px] text-teal">{c.parentRole}</div>
           </div>
-          <i className="fa fa-cog text-sm text-teal" />
+          <button
+            type="button"
+            onClick={logout}
+            aria-label={lang === 'es' ? 'Cerrar sesión' : 'Sign out'}
+            title={lang === 'es' ? 'Cerrar sesión' : 'Sign out'}
+            className="flex h-8 w-8 flex-none items-center justify-center rounded-lg text-sm text-teal hover:bg-white/10"
+          >
+            <i className="fa fa-sign-out" />
+          </button>
         </div>
       </aside>
 
@@ -694,6 +706,7 @@ export function Dashboard() {
           {/* ===== KIDS ===== */}
           {view === 'kids' && (
             <div className="flex flex-col gap-4">
+              <CreateKidForm lang={lang} />
               {kids.map((k) => {
                 const pct = Math.min(100, Math.round((k.balance / k.goalTarget) * 100));
                 return (

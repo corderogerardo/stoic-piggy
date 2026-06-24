@@ -17,7 +17,10 @@ services:
     buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm db:generate && pnpm turbo run build --filter=@stoicpiggy/backend
     startCommand: node apps/backend/dist/main.js
     healthCheckPath: /api
-    autoDeploy: true
+    # Deploys are driven by GitHub Actions (.github/workflows/deploy.yml) after CI
+    # passes and DB migrations are applied, via a Render Deploy Hook — so the API
+    # never boots against an un-migrated schema. Keep this false.
+    autoDeploy: false
     envVars:
       - key: NODE_VERSION
         value: "22"
@@ -27,4 +30,8 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: DIRECT_URL
+        sync: false
+      # Secret for signing JWT auth tokens — set in the Render dashboard. The API
+      # refuses to boot in production without it.
+      - key: JWT_SECRET
         sync: false

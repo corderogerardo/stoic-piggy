@@ -12,12 +12,14 @@ datasource db {
 }
 
 model Parent {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  displayName String
-  children    Child[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  email        String   @unique
+  // bcrypt hash of the parent's password. Set on register; never returned to clients.
+  passwordHash String
+  displayName  String
+  children     Child[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Child {
@@ -25,6 +27,10 @@ model Child {
   parent      Parent        @relation(fields: [parentId], references: [id], onDelete: Cascade)
   parentId    String
   displayName String
+  // Globally-unique login handle the kid types in the mobile app. Created by a parent.
+  username     String        @unique
+  // bcrypt hash of the kid's password (set by the parent on account creation).
+  passwordHash String
   avatarUrl   String?
   level          Int           @default(1)
   xp             Int           @default(0)

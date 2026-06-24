@@ -12,11 +12,88 @@ on:
 permissions:
   contents: read
 
+# Never cancel an in-flight run: a cancelled `prisma migrate deploy` can leave the
+# production schema half-applied (P3009) and strand all future deploys. Concurrent
+# runs queue instead.
 concurrency:
-  group: deploy-pages
-  cancel-in-progress: true
+  group: stoic-piggy-deploy
+  cancel-in-progress: false
 
 jobs:
+  # 1. Apply any pending Prisma migrations to the production (Supabase) database
+  #    BEFORE the API ships, so the running code never sees an un-migrated schema.
+  backend-migrate:
+    name: Backend → Migrate Postgres
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
+      # `migrate deploy` only applies migrations that haven't run yet, so this is a
+      # no-op when the schema is unchanged. Uses the DIRECT (non-pooled) connection.
+      - name: Apply migrations (prisma migrate deploy)
+        working-directory: apps/backend
+        run: pnpm exec prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DIRECT_URL }}
+          DIRECT_URL: ${{ secrets.PROD_DIRECT_URL }}
+
+  # 2. Trigger the Render deploy once migrations are in place.
+  backend-deploy:
+    name: Backend → Render
+    runs-on: ubuntu-latest
+    needs: backend-migrate
+    steps:
+      - name: Trigger Render deploy hook
+        run: |
+          if [ -z "${RENDER_DEPLOY_HOOK_URL}" ]; then
+            echo "::error::RENDER_DEPLOY_HOOK_URL secret is not set."
+            exit 1
+          fi
+          curl -fsSL -X POST "${RENDER_DEPLOY_HOOK_URL}"
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+
+      # The hook returns immediately, so verify the new build actually came up
+      # healthy (catches a crash-looping image, e.g. a missing env var). Set the
+      # repo variable BACKEND_HEALTH_URL (e.g. https://stoic-piggy-api.onrender.com/api)
+      # to enable; skipped with a notice if unset.
+      - name: Verify deploy health
+        env:
+          HEALTH_URL: ${{ vars.BACKEND_HEALTH_URL }}
+        run: |
+          if [ -z "${HEALTH_URL}" ]; then
+            echo "::notice::BACKEND_HEALTH_URL not set — skipping post-deploy health check."
+            exit 0
+          fi
+          echo "Waiting for ${HEALTH_URL} to report healthy (up to ~5 min)…"
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "${HEALTH_URL}" || echo 000)
+            if [ "${code}" = "200" ]; then
+              echo "Healthy after ${i} attempt(s) (HTTP 200)."
+              exit 0
+            fi
+            echo "attempt ${i}: HTTP ${code} — retrying in 10s"
+            sleep 10
+          done
+          echo "::error::Backend did not report healthy after the deploy."
+          exit 1
+
   landing:
     name: Landing → Cloudflare Pages
     runs-on: ubuntu-latest

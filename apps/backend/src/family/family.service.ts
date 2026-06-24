@@ -9,6 +9,15 @@ export class FamilyService {
     return this.prisma.child.findMany({ where: { parentId }, orderBy: { createdAt: 'asc' } });
   }
 
+  /** The owning parent's id for a child, or null if the child doesn't exist. */
+  async childParentId(childId: string): Promise<string | null> {
+    const child = await this.prisma.child.findUnique({
+      where: { id: childId },
+      select: { parentId: true },
+    });
+    return child?.parentId ?? null;
+  }
+
   async listGoals(childId: string) {
     return this.prisma.savingsGoal.findMany({ where: { childId }, orderBy: { createdAt: 'asc' } });
   }
