@@ -16,7 +16,6 @@ import { REPLIES } from '@/lib/content';
 import { useLang, useTheme } from '@/lib/providers';
 
 type ChatMsg = { role: 'me' | 'piggy'; es: string; en: string };
-type Status = 'todo' | 'pending' | 'done';
 
 /** Route entry: gate the kid app behind sign-in. */
 export default function Index() {
@@ -46,13 +45,6 @@ function KidApp() {
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const [tStage, setTStage] = useState('intro');
   const [resisted, setResisted] = useState(12);
-  const [taskStatus, setTaskStatus] = useState<Record<number, Status>>({
-    1: 'todo',
-    2: 'done',
-    3: 'todo',
-    4: 'todo',
-    5: 'pending',
-  });
   const breatheTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isApp = ['home', 'tasks', 'coach', 'quests', 'wins'].includes(screen);
@@ -114,12 +106,7 @@ function KidApp() {
           <Coach messages={messages} suggestions={suggestions} onSend={send} />
         )}
         {screen === 'quests' && <Quests />}
-        {screen === 'tasks' && (
-          <Tasks
-            taskStatus={taskStatus}
-            onMark={(id) => setTaskStatus((s) => ({ ...s, [id]: 'pending' }))}
-          />
-        )}
+        {screen === 'tasks' && <Tasks />}
         {screen === 'wins' && <Wins resisted={resisted} />}
         {screen === 'temptation' && (
           <Temptation
