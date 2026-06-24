@@ -1,0 +1,72 @@
+name: EAS Build & Submit
+
+# Triggers EAS builds (and optional store submission) without burning the free
+# EAS quota on every push:
+#   • Push a release tag (e.g. `git tag v1.0.0 && git push --tags`) → iOS
+#     production build + auto-submit to the App Store.
+#   • Run manually from the Actions tab → pick platform / profile / whether to submit.
+#
+# Builds run on EAS (this job just queues them with --no-wait), reusing the iOS
+# credentials EAS already stored from the first interactive build.
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform to build
+        type: choice
+        options: [ios, android, all]
+        default: ios
+      profile:
+        description: Build profile
+        type: choice
+        options: [production, preview]
+        default: production
+      submit:
+        description: Auto-submit to the store after the build
+        type: boolean
+        default: false
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: eas-build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: EAS Build & Submit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # Tag pushes always build production + submit. Manual runs use the inputs.
+      - name: Build (and submit on tags / when requested)
+        working-directory: apps/stoicpiggy
+        run: |
+          PLATFORM="${{ inputs.platform || 'ios' }}"
+          PROFILE="${{ inputs.profile || 'production' }}"
+          EXTRA=""
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ inputs.submit }}" = "true" ]; then
+            EXTRA="--auto-submit"
+          fi
+          echo "eas build --platform $PLATFORM --profile $PROFILE --non-interactive --no-wait $EXTRA"
+          eas build --platform "$PLATFORM" --profile "$PROFILE" --non-interactive --no-wait $EXTRA
