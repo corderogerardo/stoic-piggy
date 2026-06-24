@@ -46,3 +46,34 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_STOIC_PIGGY }}
           CLOUDFLARE_ACCOUNT_ID: b043ee8fd9483429f6ea1cbb55c8cca9
+
+  dashboard:
+    name: Dashboard → Cloudflare Pages
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # NEXT_PUBLIC_API_URL is inlined at build time; it's part of turbo's cache key.
+      - name: Build dashboard (static export)
+        run: pnpm turbo run build --filter=@stoicpiggy/parents
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+
+      - name: Deploy to Cloudflare Pages
+        run: pnpm dlx wrangler@4 pages deploy apps/parents/out --project-name=stoic-piggy-parents --branch=main
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_STOIC_PIGGY }}
+          CLOUDFLARE_ACCOUNT_ID: b043ee8fd9483429f6ea1cbb55c8cca9

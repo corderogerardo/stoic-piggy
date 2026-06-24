@@ -1,0 +1,36 @@
+name: Pages Custom Domain
+
+# One-shot utility: attach a custom domain to a Cloudflare Pages project via the
+# API (the dashboard SPA is flaky to automate). Same-account zones get their
+# CNAME + SSL provisioned automatically. Run via the Actions tab → Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: Cloudflare Pages project name
+        required: true
+      domain:
+        description: Custom domain to attach
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  attach:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Attach domain to Pages project
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_STOIC_PIGGY }}
+          ACCOUNT_ID: b043ee8fd9483429f6ea1cbb55c8cca9
+          PROJECT: ${{ inputs.project }}
+          DOMAIN: ${{ inputs.domain }}
+        run: |
+          resp=$(curl -sS -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/pages/projects/${PROJECT}/domains" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\":\"${DOMAIN}\"}")
+          echo "$resp" | python3 -c "import sys,json; d=json.load(sys.stdin); print('success:', d['success']); print('result:', d.get('result')); print('errors:', d.get('errors'))"
+          echo "$resp" | python3 -c "import sys,json; sys.exit(0 if json.load(sys.stdin)['success'] else 1)"
