@@ -29,6 +29,10 @@ const familyStub: Pick<
   | 'reportsByParent'
   | 'parentSettings'
   | 'updateParentSettings'
+  | 'childQuests'
+  | 'completeQuest'
+  | 'childWins'
+  | 'resistImpulse'
 > = {
   listChildren: async () => [],
   listGoals: async () => [],
@@ -59,6 +63,26 @@ const familyStub: Pick<
     weeklyReportEnabled: true,
     autoApproveTasks: false,
     payoutMethod: 'card',
+  }),
+  childQuests: async () => [],
+  completeQuest: async () => {
+    throw new Error('not exercised');
+  },
+  childWins: async () => ({
+    level: 1,
+    xp: 0,
+    balanceCents: 0,
+    resistedCount: 0,
+    resistedCents: 0,
+    tasksApproved: 0,
+  }),
+  resistImpulse: async () => ({
+    level: 1,
+    xp: 0,
+    balanceCents: 0,
+    resistedCount: 1,
+    resistedCents: 0,
+    tasksApproved: 0,
   }),
   dashboardByParent: async () => [
     {

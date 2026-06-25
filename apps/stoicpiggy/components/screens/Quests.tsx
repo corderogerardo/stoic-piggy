@@ -1,12 +1,30 @@
-import { ScrollView, View } from 'react-native';
-import { QUESTS } from '@/lib/content';
+import { useCompleteQuest, useMyQuests, useTRPC } from '@stoicpiggy/api';
+import { useQueryClient } from '@tanstack/react-query';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useLang, useTheme } from '@/lib/providers';
 import { Icon } from '../Icon';
 import { Txt } from '../Txt';
 
+const QUEST_ICON = ['piggy-bank', 'bullseye', 'snowflake-o', 'star', 'book', 'trophy'];
+
+/** The signed-in kid's real quests. Tapping a quest claims its reward. */
 export function Quests() {
   const { colors } = useTheme();
   const { t, lang } = useLang();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const questsQ = useMyQuests();
+  const complete = useCompleteQuest();
+  const quests = questsQ.data ?? [];
+
+  const onComplete = async (id: string) => {
+    await complete.mutateAsync({ questId: id });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: trpc.me.quests.queryKey() }),
+      queryClient.invalidateQueries({ queryKey: trpc.me.home.queryKey() }),
+      queryClient.invalidateQueries({ queryKey: trpc.me.wins.queryKey() }),
+    ]);
+  };
 
   return (
     <ScrollView
@@ -18,37 +36,37 @@ export function Quests() {
       <Txt w="400" style={{ fontSize: 13.5, color: colors.ink2, marginBottom: 20 }}>
         {t.lessons.sub}
       </Txt>
+
+      {questsQ.isPending && (
+        <Txt w="400" style={{ fontSize: 13.5, color: colors.ink3 }}>
+          {lang === 'es' ? 'Cargando…' : 'Loading…'}
+        </Txt>
+      )}
+      {!questsQ.isPending && quests.length === 0 && (
+        <Txt w="400" style={{ fontSize: 13.5, color: colors.ink3 }}>
+          {lang === 'es' ? 'No tienes misiones todavía.' : 'No quests yet.'}
+        </Txt>
+      )}
+
       <View style={{ gap: 13 }}>
-        {QUESTS.map((q) => {
-          const done = q.status === 'done';
-          const locked = q.status === 'locked';
-          let pct = 0;
-          if (done) pct = 100;
-          else if (q.prog) {
-            const parts = q.prog.split('/');
-            pct = Math.round((Number(parts[0] ?? 0) / Number(parts[1] ?? 1)) * 100);
-          }
-          const label = done
-            ? t.lessons.done
-            : q.status === 'prog'
-              ? t.lessons.prog
-              : t.lessons.locked;
-          const info = q[lang];
+        {quests.map((q, i) => {
+          const done = q.status === 'claimed';
+          const label = done ? t.lessons.done : lang === 'es' ? 'POR HACER' : 'TO DO';
           return (
-            <View
-              key={q.icon}
+            <Pressable
+              key={q.id}
+              disabled={done || complete.isPending}
+              onPress={() => onComplete(q.id)}
               style={{
                 backgroundColor: colors.cardBg,
                 borderColor: colors.cardBorderColor,
                 borderWidth: colors.cardBorderWidth,
                 borderRadius: 20,
                 padding: 18,
-                opacity: locked ? 0.5 : 1,
+                opacity: done ? 0.6 : 1,
               }}
             >
-              <View
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 13, marginBottom: 12 }}
-              >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 13 }}>
                 <View
                   style={{
                     width: 46,
@@ -56,70 +74,52 @@ export function Quests() {
                     borderRadius: 13,
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backgroundColor: done ? colors.accent : locked ? colors.chip : colors.soft,
+                    backgroundColor: done ? colors.accent : colors.soft,
                   }}
                 >
                   <Icon
-                    name={q.icon}
+                    name={done ? 'check' : (QUEST_ICON[i % QUEST_ICON.length] ?? 'star')}
                     size={19}
-                    color={done ? colors.accentInk : locked ? colors.ink3 : colors.accent}
+                    color={done ? colors.accentInk : colors.accent}
                   />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Txt w="800" style={{ fontSize: 16, color: colors.ink }}>
-                    {info.t}
+                    {q.title}
                   </Txt>
                   <Txt w="400" style={{ fontSize: 12.5, color: colors.ink2, marginTop: 2 }}>
-                    {info.d}
+                    {q.description}
                   </Txt>
                 </View>
-                <View
-                  style={{
-                    backgroundColor: done ? colors.accent : locked ? colors.chip : colors.soft,
-                    paddingHorizontal: 10,
-                    paddingVertical: 5,
-                    borderRadius: 9999,
-                  }}
-                >
-                  <Txt
-                    w="800"
-                    style={{
-                      fontSize: 9,
-                      letterSpacing: 0.4,
-                      color: done ? colors.accentInk : colors.ink2,
-                    }}
-                  >
-                    {label}
-                  </Txt>
-                </View>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <View
-                  style={{
-                    flex: 1,
-                    height: 6,
-                    borderRadius: 9999,
-                    backgroundColor: colors.chip,
-                    overflow: 'hidden',
-                  }}
-                >
+                <View style={{ alignItems: 'flex-end', gap: 6 }}>
                   <View
                     style={{
-                      height: '100%',
-                      width: `${pct}%`,
-                      backgroundColor: colors.accent,
+                      backgroundColor: done ? colors.accent : colors.soft,
+                      paddingHorizontal: 10,
+                      paddingVertical: 5,
                       borderRadius: 9999,
                     }}
-                  />
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <Icon name="bolt" size={11} color={colors.accent} />
-                  <Txt w="800" style={{ fontSize: 11, color: colors.ink3 }}>
-                    {q.xp} XP
-                  </Txt>
+                  >
+                    <Txt
+                      w="800"
+                      style={{
+                        fontSize: 9,
+                        letterSpacing: 0.4,
+                        color: done ? colors.accentInk : colors.ink2,
+                      }}
+                    >
+                      {label}
+                    </Txt>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Icon name="bolt" size={11} color={colors.accent} />
+                    <Txt w="800" style={{ fontSize: 11, color: colors.ink3 }}>
+                      {q.rewardXp} XP
+                    </Txt>
+                  </View>
                 </View>
               </View>
-            </View>
+            </Pressable>
           );
         })}
       </View>

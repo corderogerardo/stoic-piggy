@@ -27,6 +27,28 @@ import {
   VERIFICATION_TTL_MS,
 } from './tokens';
 
+/** Starter learning missions every new kid begins with (Spanish, matching the app). */
+const STARTER_QUESTS = [
+  {
+    title: 'Aprende a ahorrar',
+    description: 'Descubre por qué guardar un poco cada semana hace crecer tu dinero.',
+    rewardXp: 50,
+    rewardCents: 0,
+  },
+  {
+    title: 'Pon tu primera meta',
+    description: 'Elige algo que quieras y define cuánto necesitas ahorrar.',
+    rewardXp: 80,
+    rewardCents: 0,
+  },
+  {
+    title: 'Resiste una tentación',
+    description: 'Usa el modo tentación y decide NO gastar una vez.',
+    rewardXp: 100,
+    rewardCents: 0,
+  },
+];
+
 @Injectable()
 export class AuthService {
   private readonly secret: string;
@@ -228,7 +250,7 @@ export class AuthService {
     return { token: this.sign(this.childClaims(child)), user: this.toAuthChild(child) };
   }
 
-  /** A parent creates a kid account (+ a default piggy bank). Returns the created child row. */
+  /** A parent creates a kid account (+ a default piggy bank + starter quests). */
   async createChild(parentId: string, input: CreateChildAccountInput) {
     try {
       return await this.prisma.child.create({
@@ -240,6 +262,7 @@ export class AuthService {
           age: input.age,
           avatarUrl: input.avatarUrl,
           piggyBanks: { create: { name: 'Ahorros' } },
+          quests: { create: STARTER_QUESTS },
         },
       });
     } catch (error) {

@@ -85,6 +85,7 @@ model Child {
   goals       SavingsGoal[]
   quests      Quest[]
   tasks       Task[]
+  resistedImpulses ResistedImpulse[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -158,6 +159,19 @@ model Quest {
   status      QuestStatus @default(available)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+
+  @@index([childId])
+}
+
+// Logged each time a kid resists an impulse purchase (the Temptation flow). Powers
+// the Wins screen's "resisted" count + total saved-from-impulses.
+model ResistedImpulse {
+  id          String   @id @default(cuid())
+  child       Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  childId     String
+  amountCents Int      @default(0)
+  item        String?
+  createdAt   DateTime @default(now())
 
   @@index([childId])
 }

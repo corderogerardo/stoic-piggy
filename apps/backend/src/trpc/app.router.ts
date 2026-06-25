@@ -5,6 +5,7 @@ import {
   type AuthUser,
   type Child,
   type ChildHome,
+  type ChildWins,
   type CreateChildAccountInput,
   type CreateTaskInput,
   type CreateTransactionInput,
@@ -22,15 +23,18 @@ import {
   type PiggyBank,
   type Quest,
   type QuestStatus,
+  questIdSchema,
   type RegisterParentInput,
   type ReportsData,
   type RequestPasswordResetInput,
   type ResetChildPasswordInput,
   type ResetPasswordInput,
+  type ResistImpulseInput,
   registerParentSchema,
   requestPasswordResetSchema,
   resetChildPasswordSchema,
   resetPasswordSchema,
+  resistImpulseSchema,
   type SavingsGoal,
   type SetChildActiveInput,
   type SubmitTaskInput,
@@ -176,6 +180,10 @@ export interface FamilyPort {
   updateAllowance(input: UpdateAllowanceInput): Promise<ChildRow>;
   setChildActive(input: SetChildActiveInput): Promise<ChildRow>;
   deleteChild(childId: string): Promise<void>;
+  childQuests(childId: string): Promise<QuestRow[]>;
+  completeQuest(childId: string, questId: string): Promise<QuestRow>;
+  childWins(childId: string): Promise<ChildWins>;
+  resistImpulse(childId: string, input: ResistImpulseInput): Promise<ChildWins>;
 }
 export interface TaskPort {
   taskChildId(taskId: string): Promise<string | null>;
@@ -497,9 +505,24 @@ export function createAppRouter({ piggy, family, auth, task }: RouterServices) {
         }),
     }),
 
-    // The signed-in kid's own home payload.
+    // The signed-in kid's own data + self-service actions.
     me: router({
       home: childProcedure.query(({ ctx }): Promise<ChildHome> => auth.childHome(ctx.user.sub)),
+      quests: childProcedure.query(
+        async ({ ctx }): Promise<Quest[]> => (await family.childQuests(ctx.user.sub)).map(toQuest),
+      ),
+      completeQuest: childProcedure
+        .input(questIdSchema)
+        .mutation(
+          async ({ ctx, input }): Promise<Quest> =>
+            toQuest(await family.completeQuest(ctx.user.sub, input.questId)),
+        ),
+      wins: childProcedure.query(({ ctx }): Promise<ChildWins> => family.childWins(ctx.user.sub)),
+      resistImpulse: childProcedure
+        .input(resistImpulseSchema)
+        .mutation(
+          ({ ctx, input }): Promise<ChildWins> => family.resistImpulse(ctx.user.sub, input),
+        ),
     }),
 
     goals: router({

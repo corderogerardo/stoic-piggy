@@ -197,6 +197,54 @@ const family: FamilyPort = {
       payoutMethod: input.payoutMethod ?? 'card',
     };
   },
+  async childQuests(_childId) {
+    return [
+      {
+        id: 'q1',
+        childId: 'c1',
+        title: 'Ahorra',
+        description: 'x',
+        rewardXp: 50,
+        rewardCents: 0,
+        status: 'available',
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+  },
+  async completeQuest(_childId, questId) {
+    return {
+      id: questId,
+      childId: 'c1',
+      title: 'Ahorra',
+      description: 'x',
+      rewardXp: 50,
+      rewardCents: 0,
+      status: 'claimed',
+      createdAt: now,
+      updatedAt: now,
+    };
+  },
+  async childWins(_childId) {
+    return {
+      level: 3,
+      xp: 1240,
+      balanceCents: 34000,
+      resistedCount: 5,
+      resistedCents: 12000,
+      tasksApproved: 7,
+    };
+  },
+  async resistImpulse(_childId, input) {
+    return {
+      level: 3,
+      xp: 1240,
+      balanceCents: 34000,
+      resistedCount: 6,
+      resistedCents: 12000 + input.amountCents,
+      tasksApproved: 7,
+    };
+  },
 };
 
 const auth: AuthPort = {
@@ -597,6 +645,16 @@ describe('appRouter', () => {
 
     it('rejects a parent calling the kid home', async () => {
       await expect(parent.me.home()).rejects.toThrow(/kids only/i);
+    });
+
+    it('serves the kid quests + wins, completes a quest, logs a resisted impulse', async () => {
+      expect((await child.me.quests())[0]?.status).toBe('available');
+      expect((await child.me.completeQuest({ questId: 'q1' })).status).toBe('claimed');
+      expect((await child.me.wins()).resistedCount).toBe(5);
+      const after = await child.me.resistImpulse({ amountCents: 500 });
+      expect(after.resistedCount).toBe(6);
+      expect(after.resistedCents).toBe(12500);
+      await expect(parent.me.quests()).rejects.toThrow(/kids only/i);
     });
   });
 

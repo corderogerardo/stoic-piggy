@@ -129,6 +129,16 @@ export interface DashboardGoal {
   savedCents: number;
 }
 
+/** Stats for the kid app's Wins screen (resisted impulses + progress). */
+export interface ChildWins {
+  level: number;
+  xp: number;
+  balanceCents: number;
+  resistedCount: number;
+  resistedCents: number;
+  tasksApproved: number;
+}
+
 export type PayoutMethod = 'card' | 'bank' | 'cash';
 
 /** Parent preferences shown on the Settings page. */
