@@ -97,6 +97,8 @@ const familyStub: Pick<
       autopayEnabled: true,
       active: true,
       goal: { title: 'Bici', targetCents: 50000, savedCents: 34000 },
+      resistedCount: 12,
+      tasksApproved: 18,
     },
   ],
 };

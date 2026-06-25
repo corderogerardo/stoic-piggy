@@ -220,4 +220,8 @@ export interface DashboardChild {
   /** False when the parent has deactivated the kid (login blocked, shown dimmed). */
   active: boolean;
   goal?: DashboardGoal;
+  /** Impulses the kid has logged as resisted (lifetime). */
+  resistedCount: number;
+  /** Tasks the parent has approved (lifetime). */
+  tasksApproved: number;
 }

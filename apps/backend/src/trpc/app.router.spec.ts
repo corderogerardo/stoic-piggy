@@ -100,6 +100,8 @@ const family: FamilyPort = {
         autopayEnabled: true,
         active: true,
         goal: { title: 'Bici', targetCents: 50000, savedCents: 34000 },
+        resistedCount: 12,
+        tasksApproved: 18,
       },
       {
         id: 'c2',
@@ -113,6 +115,8 @@ const family: FamilyPort = {
         autopayEnabled: false,
         active: false,
         goal: null,
+        resistedCount: 0,
+        tasksApproved: 0,
       },
     ];
   },
