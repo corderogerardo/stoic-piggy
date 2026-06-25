@@ -129,6 +129,32 @@ export interface DashboardGoal {
   savedCents: number;
 }
 
+/** Headline numbers for the parents dashboard overview. */
+export interface ParentSummary {
+  toApproveCount: number;
+  activeTaskCount: number;
+  savedCents: number;
+  /** Sum of reward + allowance deposits across the parent's kids, this calendar month. */
+  paidThisMonthCents: number;
+}
+
+export type ActivityKind =
+  | 'task_created'
+  | 'task_submitted'
+  | 'task_approved'
+  | 'task_rejected'
+  | TransactionType;
+
+/** One derived event for the parents activity feed (from tasks + transactions). */
+export interface ActivityEvent {
+  id: ID;
+  kind: ActivityKind;
+  childId: ID;
+  title: string;
+  amountCents?: number;
+  createdAt: ISODateString;
+}
+
 /** Aggregated per-child snapshot for the parents dashboard (one row per kid). */
 export interface DashboardChild {
   id: ID;

@@ -84,6 +84,18 @@ export function useMyChildren(enabled = true) {
   return useQuery(trpc.children.list.queryOptions(undefined, { enabled }));
 }
 
+/** Headline overview numbers (to-approve, active, saved, paid this month). */
+export function useParentSummary(enabled = true) {
+  const trpc = useTRPC();
+  return useQuery(trpc.children.summary.queryOptions(undefined, { enabled }));
+}
+
+/** Recent activity feed (tasks + transactions) for the signed-in parent. */
+export function useActivity(enabled = true) {
+  const trpc = useTRPC();
+  return useQuery(trpc.children.activity.queryOptions(undefined, { enabled }));
+}
+
 /** Create a kid login account (+ starter piggy bank) for the signed-in parent. */
 export function useCreateChild() {
   const trpc = useTRPC();

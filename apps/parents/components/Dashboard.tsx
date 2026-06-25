@@ -1,16 +1,82 @@
 'use client';
 
-import { useMyDashboard, usePendingApprovals, useTasks } from '@stoicpiggy/api';
+import { useActivity, useMyDashboard, useParentSummary } from '@stoicpiggy/api';
+import { type ActivityEvent, centsToDollars } from '@stoicpiggy/shared';
 import { Piggy } from '@stoicpiggy/ui';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/lib/auth';
-import { ACTIVITY, type ActivityItem, type Kid, type Lang, STR, type View } from '@/lib/content';
+import { type Kid, type Lang, STR, type View } from '@/lib/content';
 import { mapDashboardChildToKid } from '@/lib/mapKid';
 import { ApiStatus } from './ApiStatus';
 import { ApprovalsView } from './ApprovalsView';
 import { KidsView } from './KidsView';
 import { TasksView } from './TasksView';
 import { VerifyEmailBanner } from './VerifyEmailBanner';
+
+type Tone = 'red' | 'blue' | 'green';
+const ACT_ICON: Record<ActivityEvent['kind'], string> = {
+  task_created: 'plus',
+  task_submitted: 'clock-o',
+  task_approved: 'check',
+  task_rejected: 'undo',
+  deposit: 'arrow-up',
+  withdrawal: 'arrow-down',
+  allowance: 'refresh',
+  reward: 'star',
+  goal_contribution: 'bullseye',
+};
+const ACT_TONE: Record<ActivityEvent['kind'], Tone> = {
+  task_created: 'blue',
+  task_submitted: 'blue',
+  task_approved: 'green',
+  task_rejected: 'red',
+  deposit: 'green',
+  withdrawal: 'red',
+  allowance: 'blue',
+  reward: 'green',
+  goal_contribution: 'blue',
+};
+const usd = (cents: number | undefined) =>
+  `$${Math.round(centsToDollars(cents ?? 0)).toLocaleString()}`;
+
+function relTime(iso: string, lang: Lang): string {
+  const min = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (min < 1) return lang === 'es' ? 'Ahora' : 'Now';
+  if (min < 60) return lang === 'es' ? `Hace ${min} min` : `${min} min ago`;
+  const h = Math.round(min / 60);
+  if (h < 24) return lang === 'es' ? `Hace ${h} h` : `${h} h ago`;
+  const d = Math.round(h / 24);
+  return lang === 'es' ? `Hace ${d} d` : `${d} d ago`;
+}
+
+function activityLine(e: ActivityEvent, kidName: string, lang: Lang): string {
+  const amt = e.amountCents ? usd(e.amountCents) : '';
+  const es = lang === 'es';
+  switch (e.kind) {
+    case 'task_approved':
+      return es
+        ? `Aprobaste "${e.title}" para ${kidName}${amt ? ` (+${amt})` : ''}`
+        : `You approved "${e.title}" for ${kidName}${amt ? ` (+${amt})` : ''}`;
+    case 'task_submitted':
+      return es
+        ? `${kidName} marcó "${e.title}" como hecha`
+        : `${kidName} marked "${e.title}" done`;
+    case 'task_created':
+      return es
+        ? `Creaste "${e.title}" para ${kidName}`
+        : `You created "${e.title}" for ${kidName}`;
+    case 'task_rejected':
+      return es
+        ? `Devolviste "${e.title}" a ${kidName}`
+        : `You sent "${e.title}" back to ${kidName}`;
+    case 'allowance':
+      return es ? `Mesada para ${kidName} (+${amt})` : `Allowance for ${kidName} (+${amt})`;
+    case 'reward':
+      return es ? `${kidName} ganó ${amt}: "${e.title}"` : `${kidName} earned ${amt}: "${e.title}"`;
+    default:
+      return `${kidName}: ${e.title}${amt ? ` (${amt})` : ''}`;
+  }
+}
 
 const VIEWS: View[] = ['overview', 'tasks', 'approvals', 'kids', 'reports', 'settings'];
 const NAV_ICON: Record<View, string> = {
@@ -21,12 +87,12 @@ const NAV_ICON: Record<View, string> = {
   reports: 'bar-chart',
   settings: 'cog',
 };
-const TONE_BG: Record<ActivityItem['tone'], string> = {
+const TONE_BG: Record<Tone, string> = {
   red: 'bg-accent/15',
   blue: 'bg-blue/20',
   green: 'bg-success/20',
 };
-const TONE_FG: Record<ActivityItem['tone'], string> = {
+const TONE_FG: Record<Tone, string> = {
   red: 'text-accent',
   blue: 'text-blue',
   green: 'text-success',
@@ -38,15 +104,14 @@ export function Dashboard() {
   const [lang, setLang] = useState<Lang>('es');
   const [view, setView] = useState<View>('overview');
   const [kids, setKids] = useState<Kid[]>([]);
-  const [activity] = useState<ActivityItem[]>(ACTIVITY);
   const [prefs, setPrefs] = useState({ notify: true, weekly: true, autoApprove: false });
   const [payoutMethod, setPayoutMethod] = useState('card');
 
-  // Live data: the signed-in parent's real children + tasks (token-scoped on the server).
+  // Live data: the parent's real children, overview summary, and activity feed.
   // Only active kids are shown here; deactivated ones are managed in the Kids view.
   const liveChildren = useMyDashboard();
-  const tasksQ = useTasks();
-  const approvalsQ = usePendingApprovals();
+  const summaryQ = useParentSummary();
+  const activityQ = useActivity();
   const liveKids = useMemo(
     () =>
       liveChildren.data
@@ -59,7 +124,7 @@ export function Dashboard() {
   }, [liveKids]);
 
   const c = STR[lang];
-  const tx = (o: { es: string; en: string }) => (lang === 'es' ? o.es : o.en);
+  const kidName = (id: string) => kids.find((k) => k.id === id)?.name ?? '—';
 
   const togglePref = (id: 'notify' | 'weekly' | 'autoApprove') =>
     setPrefs({ ...prefs, [id]: !prefs[id] });
@@ -79,8 +144,8 @@ export function Dashboard() {
   );
 
   const [title, sub] = c.titles[view];
-  const pendingCount = approvalsQ.data?.length ?? 0;
-  const activeTaskCount = tasksQ.data?.filter((t) => t.status === 'active').length ?? 0;
+  const summary = summaryQ.data;
+  const pendingCount = summary?.toApproveCount ?? 0;
   const statCards = [
     {
       key: 'toApprove' as const,
@@ -92,21 +157,21 @@ export function Dashboard() {
     {
       key: 'paid' as const,
       icon: 'money',
-      value: '$1,240',
+      value: usd(summary?.paidThisMonthCents),
       delta: lang === 'es' ? 'pagado este mes' : 'paid this month',
       accent: false,
     },
     {
       key: 'saved' as const,
       icon: 'bank',
-      value: `$${kids.reduce((sum, k) => sum + k.balance, 0)}`,
+      value: usd(summary?.savedCents),
       delta: lang === 'es' ? 'ahorrado por tus hijos' : 'saved by your kids',
       accent: false,
     },
     {
       key: 'active' as const,
       icon: 'list-ul',
-      value: activeTaskCount,
+      value: summary?.activeTaskCount ?? 0,
       delta: lang === 'es' ? 'tareas activas' : 'active tasks',
       accent: false,
     },
@@ -371,26 +436,40 @@ export function Dashboard() {
 
                 <div className="min-w-[280px] flex-[1_1_300px] rounded-[20px] border border-navy/10 bg-white p-[22px]">
                   <h2 className="m-0 mb-4 text-base font-extrabold">{c.activity}</h2>
-                  <div className="flex flex-col gap-[2px]">
-                    {activity.slice(0, 6).map((a) => (
-                      <div key={a.es} className="flex gap-[13px] py-[9px]">
-                        <div className="flex flex-none flex-col items-center">
-                          <span
-                            className={`flex h-[30px] w-[30px] items-center justify-center rounded-[9px] ${TONE_BG[a.tone]}`}
-                          >
-                            <i className={`fa fa-${a.icon} text-xs ${TONE_FG[a.tone]}`} />
-                          </span>
-                          <span className="mt-1 w-[2px] flex-1 bg-navy/[0.08]" />
-                        </div>
-                        <div className="flex-1 pb-1.5">
-                          <div className="text-[13px] leading-snug text-navy/85">{tx(a)}</div>
-                          <div className="mt-0.5 text-[11px] text-navy/45">
-                            {lang === 'es' ? a.timeEs : a.timeEn}
+                  {activityQ.isPending ? (
+                    <p className="text-[13px] text-navy/55">
+                      {lang === 'es' ? 'Cargando…' : 'Loading…'}
+                    </p>
+                  ) : (activityQ.data?.length ?? 0) === 0 ? (
+                    <p className="text-[13px] text-navy/55">
+                      {lang === 'es' ? 'Sin actividad todavía.' : 'No activity yet.'}
+                    </p>
+                  ) : (
+                    <div className="flex flex-col gap-[2px]">
+                      {(activityQ.data ?? []).slice(0, 6).map((e) => (
+                        <div key={e.id} className="flex gap-[13px] py-[9px]">
+                          <div className="flex flex-none flex-col items-center">
+                            <span
+                              className={`flex h-[30px] w-[30px] items-center justify-center rounded-[9px] ${TONE_BG[ACT_TONE[e.kind]]}`}
+                            >
+                              <i
+                                className={`fa fa-${ACT_ICON[e.kind]} text-xs ${TONE_FG[ACT_TONE[e.kind]]}`}
+                              />
+                            </span>
+                            <span className="mt-1 w-[2px] flex-1 bg-navy/[0.08]" />
+                          </div>
+                          <div className="flex-1 pb-1.5">
+                            <div className="text-[13px] leading-snug text-navy/85">
+                              {activityLine(e, kidName(e.childId), lang)}
+                            </div>
+                            <div className="mt-0.5 text-[11px] text-navy/45">
+                              {relTime(e.createdAt, lang)}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

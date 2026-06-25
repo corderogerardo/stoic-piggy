@@ -1,4 +1,6 @@
 import {
+  type ActivityEvent,
+  type ActivityKind,
   type AuthSession,
   type AuthUser,
   type Child,
@@ -15,6 +17,7 @@ import {
   type LoginParentInput,
   loginChildSchema,
   loginParentSchema,
+  type ParentSummary,
   type PiggyBank,
   type Quest,
   type QuestStatus,
@@ -125,6 +128,14 @@ interface TaskRow {
   createdAt: Date;
   updatedAt: Date;
 }
+interface ActivityEventRow {
+  id: string;
+  kind: ActivityKind;
+  childId: string;
+  title: string;
+  amountCents: number | null;
+  createdAt: Date;
+}
 interface DashboardChildRow {
   id: string;
   displayName: string;
@@ -150,6 +161,8 @@ export interface FamilyPort {
   listGoals(childId: string): Promise<GoalRow[]>;
   listQuests(childId: string): Promise<QuestRow[]>;
   dashboardByParent(parentId: string): Promise<DashboardChildRow[]>;
+  summaryByParent(parentId: string): Promise<ParentSummary>;
+  activityByParent(parentId: string): Promise<ActivityEventRow[]>;
   /** The owning parent's id for a child, or null if the child doesn't exist. */
   childParentId(childId: string): Promise<string | null>;
   updateChild(input: UpdateChildInput): Promise<ChildRow>;
@@ -269,6 +282,15 @@ const toDashboardChild = (r: DashboardChildRow): DashboardChild => ({
   goal: r.goal ?? undefined,
 });
 
+const toActivityEvent = (r: ActivityEventRow): ActivityEvent => ({
+  id: r.id,
+  kind: r.kind,
+  childId: r.childId,
+  title: r.title,
+  amountCents: r.amountCents ?? undefined,
+  createdAt: iso(r.createdAt),
+});
+
 const childIdInput = z.object({ childId: z.string().min(1) });
 
 export function createAppRouter({ piggy, family, auth, task }: RouterServices) {
@@ -342,6 +364,15 @@ export function createAppRouter({ piggy, family, auth, task }: RouterServices) {
       ),
       list: parentProcedure.query(
         async ({ ctx }): Promise<Child[]> => (await family.listChildren(ctx.user.sub)).map(toChild),
+      ),
+      // Headline numbers for the overview (counts, total saved, paid this month).
+      summary: parentProcedure.query(
+        ({ ctx }): Promise<ParentSummary> => family.summaryByParent(ctx.user.sub),
+      ),
+      // Recent-events feed derived from the parent's tasks + transactions.
+      activity: parentProcedure.query(
+        async ({ ctx }): Promise<ActivityEvent[]> =>
+          (await family.activityByParent(ctx.user.sub)).map(toActivityEvent),
       ),
       // A parent creates a kid's login account (+ a starter piggy bank).
       create: parentProcedure

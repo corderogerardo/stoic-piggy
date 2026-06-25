@@ -1,6 +1,7 @@
 export { isAuthError } from './auth-error';
 export { type CreateClientOptions, createTrpcClient, makeQueryClient } from './client';
 export {
+  useActivity,
   useApiHealth,
   useApproveTask,
   useChildHome,
@@ -15,6 +16,7 @@ export {
   useMe,
   useMyChildren,
   useMyDashboard,
+  useParentSummary,
   usePendingApprovals,
   usePiggyBanks,
   useQuests,

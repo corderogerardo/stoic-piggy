@@ -61,6 +61,90 @@ export class FamilyService {
     return this.prisma.quest.findMany({ where: { childId }, orderBy: { createdAt: 'asc' } });
   }
 
+  /** Headline numbers for the overview: counts, total saved, and paid this month. */
+  async summaryByParent(parentId: string) {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const [kids, toApproveCount, activeTaskCount, paidAgg] = await Promise.all([
+      this.prisma.child.findMany({
+        where: { parentId },
+        select: { piggyBanks: { select: { balanceCents: true } } },
+      }),
+      this.prisma.task.count({ where: { child: { parentId }, status: 'submitted' } }),
+      this.prisma.task.count({ where: { child: { parentId }, status: 'active' } }),
+      this.prisma.transaction.aggregate({
+        _sum: { amountCents: true },
+        where: {
+          piggyBank: { child: { parentId } },
+          type: { in: ['reward', 'allowance'] },
+          createdAt: { gte: monthStart },
+        },
+      }),
+    ]);
+    const savedCents = kids.reduce(
+      (sum, k) => sum + k.piggyBanks.reduce((a, b) => a + b.balanceCents, 0),
+      0,
+    );
+    return {
+      toApproveCount,
+      activeTaskCount,
+      savedCents,
+      paidThisMonthCents: paidAgg._sum.amountCents ?? 0,
+    };
+  }
+
+  /** A recent-events feed derived from the parent's tasks + transactions (newest first). */
+  async activityByParent(parentId: string) {
+    const [tasks, txns] = await Promise.all([
+      this.prisma.task.findMany({
+        where: { child: { parentId } },
+        orderBy: { updatedAt: 'desc' },
+        take: 15,
+      }),
+      this.prisma.transaction.findMany({
+        where: { piggyBank: { child: { parentId } } },
+        orderBy: { createdAt: 'desc' },
+        take: 15,
+        include: { piggyBank: { select: { childId: true } } },
+      }),
+    ]);
+    const taskEvents = tasks.map((t) => {
+      const kind =
+        t.status === 'approved'
+          ? ('task_approved' as const)
+          : t.status === 'rejected'
+            ? ('task_rejected' as const)
+            : t.status === 'submitted'
+              ? ('task_submitted' as const)
+              : ('task_created' as const);
+      const createdAt =
+        t.status === 'approved' && t.resolvedAt
+          ? t.resolvedAt
+          : t.status === 'submitted' && t.submittedAt
+            ? t.submittedAt
+            : t.createdAt;
+      return {
+        id: `task:${t.id}`,
+        kind,
+        childId: t.childId,
+        title: t.title,
+        amountCents: t.amountCents || null,
+        createdAt,
+      };
+    });
+    const txEvents = txns.map((x) => ({
+      id: `tx:${x.id}`,
+      kind: x.type,
+      childId: x.piggyBank.childId,
+      title: x.note ?? x.type,
+      amountCents: x.amountCents,
+      createdAt: x.createdAt,
+    }));
+    return [...taskEvents, ...txEvents]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, 15);
+  }
+
   /** One aggregated row per child: summed balance + primary savings goal. */
   async dashboardByParent(parentId: string) {
     const kids = await this.prisma.child.findMany({

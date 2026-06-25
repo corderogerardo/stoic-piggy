@@ -19,12 +19,25 @@ import { TrpcRouter } from '../src/trpc/trpc.router';
 // be exercised without a database. The auth stub controls token → claims.
 const familyStub: Pick<
   FamilyService,
-  'listChildren' | 'listGoals' | 'listQuests' | 'dashboardByParent' | 'childParentId'
+  | 'listChildren'
+  | 'listGoals'
+  | 'listQuests'
+  | 'dashboardByParent'
+  | 'childParentId'
+  | 'summaryByParent'
+  | 'activityByParent'
 > = {
   listChildren: async () => [],
   listGoals: async () => [],
   listQuests: async () => [],
   childParentId: async () => 'p1',
+  summaryByParent: async () => ({
+    toApproveCount: 0,
+    activeTaskCount: 0,
+    savedCents: 34000,
+    paidThisMonthCents: 0,
+  }),
+  activityByParent: async () => [],
   dashboardByParent: async () => [
     {
       id: 'c1',
