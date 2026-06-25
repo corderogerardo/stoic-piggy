@@ -139,6 +139,27 @@ export interface ChildWins {
   tasksApproved: number;
 }
 
+/**
+ * Derived spending/patience signals for the on-device coach. Computed from a
+ * rolling window of the kid's transactions + resisted impulses — no AI needed,
+ * just aggregation. The coach (template or on-device LLM) reads these numbers.
+ */
+export interface ChildPatterns {
+  windowDays: number;
+  /** deposit + allowance + reward over the window. */
+  inflowCents: number;
+  /** withdrawals over the window. */
+  spentCents: number;
+  /** goal_contribution over the window (saved, not spent). */
+  savedToGoalsCents: number;
+  /** 0..100 — share of inflow the kid kept (didn't withdraw). */
+  saveRate: number;
+  resistedCount: number;
+  resistedCents: number;
+  /** 0..100 — resisted $ vs (resisted + spent) $. Higher = more patient. */
+  patienceScore: number;
+}
+
 export type PayoutMethod = 'card' | 'bank' | 'cash';
 
 /** Parent preferences shown on the Settings page. */

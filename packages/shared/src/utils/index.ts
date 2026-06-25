@@ -1,4 +1,29 @@
 import { DEFAULT_CURRENCY, DEFAULT_LOCALE } from '../constants';
+import type { ChildPatterns } from '../types';
+
+const clamp100 = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
+
+/**
+ * Derive coach signals from already-summed cent totals. Pure — the backend does
+ * the Prisma aggregation, this turns the sums into save/patience rates so the
+ * math is testable without a database.
+ */
+export function computeChildPatterns(input: {
+  windowDays: number;
+  inflowCents: number;
+  spentCents: number;
+  savedToGoalsCents: number;
+  resistedCount: number;
+  resistedCents: number;
+}): ChildPatterns {
+  const { inflowCents, spentCents, resistedCents } = input;
+  const tempted = resistedCents + spentCents;
+  return {
+    ...input,
+    saveRate: inflowCents > 0 ? clamp100((1 - spentCents / inflowCents) * 100) : 0,
+    patienceScore: tempted > 0 ? clamp100((resistedCents / tempted) * 100) : 0,
+  };
+}
 
 /** Format an integer cent amount as a localized currency string. */
 export function formatMoney(

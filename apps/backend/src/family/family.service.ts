@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import type {
-  PayoutMethod,
-  ResistImpulseInput,
-  SetChildActiveInput,
-  UpdateAllowanceInput,
-  UpdateChildInput,
-  UpdateParentSettingsInput,
+import {
+  type ChildPatterns,
+  computeChildPatterns,
+  type PayoutMethod,
+  type ResistImpulseInput,
+  type SetChildActiveInput,
+  type UpdateAllowanceInput,
+  type UpdateChildInput,
+  type UpdateParentSettingsInput,
 } from '@stoicpiggy/shared';
 import { TRPCError } from '@trpc/server';
 import { PrismaService } from '../prisma/prisma.service';
@@ -170,6 +172,40 @@ export class FamilyService {
       data: { childId, amountCents: input.amountCents, item: input.item ?? null },
     });
     return this.childWins(childId);
+  }
+
+  /**
+   * Spending + patience signals over the last 30 days, for the on-device coach.
+   * Plain aggregation — no AI. Transactions hang off piggy banks, so we filter
+   * by the bank's owning child.
+   */
+  async childPatterns(childId: string): Promise<ChildPatterns> {
+    const windowDays = 30;
+    const since = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+    const [byType, resisted] = await Promise.all([
+      this.prisma.transaction.groupBy({
+        by: ['type'],
+        where: { piggyBank: { childId }, createdAt: { gte: since } },
+        _sum: { amountCents: true },
+      }),
+      this.prisma.resistedImpulse.aggregate({
+        _count: true,
+        _sum: { amountCents: true },
+        where: { childId, createdAt: { gte: since } },
+      }),
+    ]);
+    const sumOf = (...types: string[]) =>
+      byType
+        .filter((r) => types.includes(r.type))
+        .reduce((s, r) => s + (r._sum.amountCents ?? 0), 0);
+    return computeChildPatterns({
+      windowDays,
+      inflowCents: sumOf('deposit', 'allowance', 'reward'),
+      spentCents: sumOf('withdrawal'),
+      savedToGoalsCents: sumOf('goal_contribution'),
+      resistedCount: resisted._count,
+      resistedCents: resisted._sum.amountCents ?? 0,
+    });
   }
 
   /** Edit a kid's profile. Ownership is authorized by the router before this runs. */

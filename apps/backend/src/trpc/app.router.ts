@@ -5,6 +5,7 @@ import {
   type AuthUser,
   type Child,
   type ChildHome,
+  type ChildPatterns,
   type ChildWins,
   type CreateChildAccountInput,
   type CreateTaskInput,
@@ -184,6 +185,7 @@ export interface FamilyPort {
   completeQuest(childId: string, questId: string): Promise<QuestRow>;
   childWins(childId: string): Promise<ChildWins>;
   resistImpulse(childId: string, input: ResistImpulseInput): Promise<ChildWins>;
+  childPatterns(childId: string): Promise<ChildPatterns>;
 }
 export interface TaskPort {
   taskChildId(taskId: string): Promise<string | null>;
@@ -518,6 +520,10 @@ export function createAppRouter({ piggy, family, auth, task }: RouterServices) {
             toQuest(await family.completeQuest(ctx.user.sub, input.questId)),
         ),
       wins: childProcedure.query(({ ctx }): Promise<ChildWins> => family.childWins(ctx.user.sub)),
+      // Derived spending/patience signals the coach reads (plain aggregation, no AI).
+      patterns: childProcedure.query(
+        ({ ctx }): Promise<ChildPatterns> => family.childPatterns(ctx.user.sub),
+      ),
       resistImpulse: childProcedure
         .input(resistImpulseSchema)
         .mutation(

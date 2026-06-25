@@ -245,6 +245,18 @@ const family: FamilyPort = {
       tasksApproved: 7,
     };
   },
+  async childPatterns(_childId) {
+    return {
+      windowDays: 30,
+      inflowCents: 10000,
+      spentCents: 4000,
+      savedToGoalsCents: 0,
+      saveRate: 60,
+      resistedCount: 2,
+      resistedCents: 6000,
+      patienceScore: 60,
+    };
+  },
 };
 
 const auth: AuthPort = {

@@ -17,6 +17,7 @@ export {
   useMe,
   useMyChildren,
   useMyDashboard,
+  useMyPatterns,
   useMyQuests,
   useMyWins,
   useParentSettings,
