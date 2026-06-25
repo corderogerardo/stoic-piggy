@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Switch, TextInput, View } from 'react-native';
 import { FONT } from '@/lib/fonts';
 import { useLang, useTheme } from '@/lib/providers';
 import { Icon } from '../Icon';
@@ -11,14 +11,25 @@ interface Msg {
   text: string;
 }
 
+/** On-device LLM opt-in + status (Tier 2). Omitted when the runtime is absent. */
+interface CoachAI {
+  available: boolean;
+  on: boolean;
+  onToggle: () => void;
+  ready: boolean;
+  downloadProgress: number;
+}
+
 export function Coach({
   messages,
   suggestions,
   onSend,
+  ai,
 }: {
   messages: Msg[];
   suggestions: string[];
   onSend: (text: string) => void;
+  ai?: CoachAI;
 }) {
   const { colors } = useTheme();
   const { t } = useLang();
@@ -67,6 +78,31 @@ export function Coach({
           </View>
         </View>
       </View>
+
+      {ai?.available && (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+            paddingHorizontal: 22,
+            paddingVertical: 10,
+            backgroundColor: colors.soft,
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <Txt w="700" style={{ fontSize: 12.5, color: colors.ink }}>
+              {t.coach.aiTitle}
+            </Txt>
+            <Txt w="400" style={{ fontSize: 10.5, color: colors.ink3 }}>
+              {ai.on && !ai.ready
+                ? `${t.coach.aiLoading} ${Math.round(ai.downloadProgress * 100)}%`
+                : t.coach.aiHint}
+            </Txt>
+          </View>
+          <Switch value={ai.on} onValueChange={ai.onToggle} />
+        </View>
+      )}
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, gap: 12 }}>
         {messages.map((m, i) => {

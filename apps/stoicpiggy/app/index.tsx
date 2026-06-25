@@ -1,4 +1,4 @@
-import { useChildHome } from '@stoicpiggy/api';
+import { useChildHome, useMyPatterns } from '@stoicpiggy/api';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +12,8 @@ import { Temptation } from '@/components/screens/Temptation';
 import { Wins } from '@/components/screens/Wins';
 import { TabBar } from '@/components/TabBar';
 import { useAuth } from '@/lib/auth';
+import { coachReport } from '@/lib/coach';
+import { useCoachLLM } from '@/lib/coach-llm';
 import { REPLIES } from '@/lib/content';
 import { useLang, useTheme } from '@/lib/providers';
 
@@ -40,24 +42,34 @@ function KidApp() {
   const { t, lang } = useLang();
   const { child, logout } = useAuth();
   const home = useChildHome();
+  const patterns = useMyPatterns();
 
   const [screen, setScreen] = useState('home');
   const [chat, setChat] = useState<ChatMsg[]>([]);
+  const [aiOn, setAiOn] = useState(false);
+  const coach = useCoachLLM(aiOn, patterns.data, lang);
 
   const isApp = ['home', 'tasks', 'coach', 'quests', 'wins'].includes(screen);
 
-  const send = (text: string) => {
+  const send = async (text: string) => {
     if (!text.trim()) return;
-    const uc = chat.filter((m) => m.role === 'me').length;
-    const i = uc % REPLIES.es.length;
-    setChat([
-      ...chat,
-      { role: 'me', es: text, en: text },
-      { role: 'piggy', es: REPLIES.es[i] ?? '', en: REPLIES.en[i] ?? '' },
-    ]);
+    const mine = chat.filter((m) => m.role === 'me').length;
+    setChat((c) => [...c, { role: 'me', es: text, en: text }]);
+    // Tier 2: try the on-device LLM. Returns null if it's off, still downloading,
+    // or unavailable — then we fall back to the Tier 1 canned reply.
+    const aiReply = await coach.ask(text);
+    const reply = aiReply
+      ? { role: 'piggy' as const, es: aiReply, en: aiReply }
+      : {
+          role: 'piggy' as const,
+          es: REPLIES.es[mine % REPLIES.es.length] ?? '',
+          en: REPLIES.en[mine % REPLIES.en.length] ?? '',
+        };
+    setChat((c) => [...c, reply]);
   };
   const messages = [
-    { role: 'piggy' as const, text: t.coach.intro },
+    // Tier 1: opening line built from the kid's real numbers (works offline).
+    { role: 'piggy' as const, text: coachReport(patterns.data, lang) },
     ...chat.map((m) => ({ role: m.role, text: lang === 'es' ? m.es : m.en })),
   ];
   const suggestions = [t.coach.s1, t.coach.s2, t.coach.s3];
@@ -79,7 +91,18 @@ function KidApp() {
           />
         )}
         {screen === 'coach' && (
-          <Coach messages={messages} suggestions={suggestions} onSend={send} />
+          <Coach
+            messages={messages}
+            suggestions={suggestions}
+            onSend={send}
+            ai={{
+              available: coach.available,
+              on: aiOn,
+              onToggle: () => setAiOn((v) => !v),
+              ready: coach.ready,
+              downloadProgress: coach.downloadProgress,
+            }}
+          />
         )}
         {screen === 'quests' && <Quests />}
         {screen === 'tasks' && <Tasks />}

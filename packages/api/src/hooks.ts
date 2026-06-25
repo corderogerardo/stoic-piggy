@@ -234,6 +234,12 @@ export function useResistImpulse() {
   return useMutation(trpc.me.resistImpulse.mutationOptions());
 }
 
+/** The signed-in kid's derived spending/patience signals (for the coach). */
+export function useMyPatterns(enabled = true) {
+  const trpc = useTRPC();
+  return useQuery(trpc.me.patterns.queryOptions(undefined, { enabled }));
+}
+
 // ---- Per-child reads (parent or owning kid) ----
 
 export function usePiggyBanks(childId: string) {

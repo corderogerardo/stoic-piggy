@@ -171,6 +171,9 @@ const es = {
     s1: '¿Cómo empiezo a ahorrar?',
     s2: '¿Vale la pena este antojo?',
     s3: '¿Qué es un fondo de emergencia?',
+    aiTitle: 'Coach IA en el teléfono',
+    aiHint: 'Gratis y privado. Descarga única (~300 MB).',
+    aiLoading: 'Descargando coach…',
   },
   templ: {
     eyebrow: 'RETO · RESISTE EL IMPULSO',
@@ -269,6 +272,9 @@ const en: typeof es = {
     s1: 'How do I start saving?',
     s2: 'Is this urge worth it?',
     s3: 'What is an emergency fund?',
+    aiTitle: 'On-device AI coach',
+    aiHint: 'Free and private. One-time download (~300 MB).',
+    aiLoading: 'Downloading coach…',
   },
   templ: {
     eyebrow: 'CHALLENGE · RESIST THE URGE',
