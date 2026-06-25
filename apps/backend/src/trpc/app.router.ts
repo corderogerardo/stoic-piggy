@@ -157,6 +157,8 @@ interface DashboardChildRow {
   autopayEnabled: boolean;
   active: boolean;
   goal: { title: string; targetCents: number; savedCents: number } | null;
+  resistedCount: number;
+  tasksApproved: number;
 }
 
 export interface PiggyPort {
@@ -297,6 +299,8 @@ const toDashboardChild = (r: DashboardChildRow): DashboardChild => ({
   autopayEnabled: r.autopayEnabled,
   active: r.active,
   goal: r.goal ?? undefined,
+  resistedCount: r.resistedCount,
+  tasksApproved: r.tasksApproved,
 });
 
 const toActivityEvent = (r: ActivityEventRow): ActivityEvent => ({

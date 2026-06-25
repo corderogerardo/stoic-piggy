@@ -1,4 +1,4 @@
-import { formatMoney } from '@stoicpiggy/shared';
+import { type DashboardGoal, formatMoney, XP_PER_LEVEL } from '@stoicpiggy/shared';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useLang, useTheme } from '@/lib/providers';
 import { Icon } from '../Icon';
@@ -9,23 +9,39 @@ interface HomeProps {
   go: (s: string) => void;
   onChallenge: () => void;
   onLogout?: () => void;
-  /** Real signed-in kid data (falls back to demo values when offline). */
-  kidName?: string;
-  balanceCents?: number;
-  goal?: { title: string; targetCents: number; savedCents: number };
+  /** Real signed-in kid data (the parent gate guarantees it's loaded). */
+  kidName: string;
+  balanceCents: number;
+  level: number;
+  xp: number;
+  goal?: DashboardGoal;
+  /** The kid's current (in-progress / next) quest, if any. */
+  quest?: { title: string; description: string };
 }
 
-export function Home({ go, onChallenge, onLogout, kidName, balanceCents, goal }: HomeProps) {
+export function Home({
+  go,
+  onChallenge,
+  onLogout,
+  kidName,
+  balanceCents,
+  level,
+  xp,
+  goal,
+  quest,
+}: HomeProps) {
   const { colors } = useTheme();
   const { t } = useLang();
   const h = t.home;
 
-  const name = kidName ?? 'Marco';
-  const balanceLabel = balanceCents != null ? formatMoney(balanceCents) : '$2,340';
   const goalPct =
     goal && goal.targetCents > 0
       ? Math.min(100, Math.round((goal.savedCents / goal.targetCents) * 100))
       : null;
+  // XP earned toward the next level (level boundaries are every XP_PER_LEVEL).
+  const xpInLevel = xp % XP_PER_LEVEL;
+  const xpPct = Math.min(100, Math.round((xpInLevel / XP_PER_LEVEL) * 100));
+  const progressPct = goalPct ?? xpPct;
 
   return (
     <ScrollView contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 8, paddingBottom: 24 }}>
@@ -44,7 +60,7 @@ export function Home({ go, onChallenge, onLogout, kidName, balanceCents, goal }:
             {h.hi}
           </Txt>
           <Txt w="800" style={{ fontSize: 27, color: colors.ink }}>
-            {name}
+            {kidName}
           </Txt>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -61,7 +77,7 @@ export function Home({ go, onChallenge, onLogout, kidName, balanceCents, goal }:
           >
             <Icon name="bolt" size={11} color={colors.accentInk} />
             <Txt w="800" style={{ fontSize: 10, letterSpacing: 0.5, color: colors.accentInk }}>
-              {h.level}
+              {h.level} {level}
             </Txt>
           </View>
           {onLogout && (
@@ -89,39 +105,17 @@ export function Home({ go, onChallenge, onLogout, kidName, balanceCents, goal }:
       <View
         style={{ backgroundColor: colors.darkBg, borderRadius: 24, padding: 22, marginBottom: 16 }}
       >
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 14,
-          }}
+        <Txt
+          w="800"
+          style={{ fontSize: 10, letterSpacing: 0.6, color: colors.darkInk2, marginBottom: 14 }}
         >
-          <Txt w="800" style={{ fontSize: 10, letterSpacing: 0.6, color: colors.darkInk2 }}>
-            {h.balLabel}
-          </Txt>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 6,
-              backgroundColor: 'rgba(255,255,255,0.14)',
-              paddingHorizontal: 11,
-              paddingVertical: 5,
-              borderRadius: 9999,
-            }}
-          >
-            <Icon name="fire" size={9} color="#E63946" />
-            <Txt w="800" style={{ fontSize: 9, letterSpacing: 0.5, color: colors.darkInk }}>
-              {h.streak}
-            </Txt>
-          </View>
-        </View>
+          {h.balLabel}
+        </Txt>
         <Txt
           mono
           style={{ fontSize: 42, letterSpacing: -1.5, color: colors.darkInk, marginBottom: 18 }}
         >
-          {balanceLabel}
+          {formatMoney(balanceCents)}
         </Txt>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 }}>
           <Txt w="800" style={{ fontSize: 10, letterSpacing: 0.5, color: colors.darkInk2 }}>
@@ -130,7 +124,7 @@ export function Home({ go, onChallenge, onLogout, kidName, balanceCents, goal }:
           <Txt w="800" style={{ fontSize: 11, color: colors.darkInk }}>
             {goalPct != null && goal
               ? `${formatMoney(goal.savedCents)} / ${formatMoney(goal.targetCents)}`
-              : '1,240 / 2,000 XP'}
+              : `${xpInLevel} / ${XP_PER_LEVEL} XP`}
           </Txt>
         </View>
         <View
@@ -144,7 +138,7 @@ export function Home({ go, onChallenge, onLogout, kidName, balanceCents, goal }:
           <View
             style={{
               height: '100%',
-              width: `${goalPct ?? 62}%`,
+              width: `${progressPct}%`,
               backgroundColor: '#E63946',
               borderRadius: 9999,
             }}
@@ -214,75 +208,50 @@ export function Home({ go, onChallenge, onLogout, kidName, balanceCents, goal }:
         </Pressable>
       </View>
 
-      {/* current quest */}
-      <View
-        style={{
-          backgroundColor: colors.cardBg,
-          borderColor: colors.cardBorderColor,
-          borderWidth: colors.cardBorderWidth,
-          borderRadius: 24,
-          padding: 20,
-          marginBottom: 16,
-        }}
-      >
+      {/* current quest — only when the kid has one */}
+      {quest && (
         <View
           style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 10,
-          }}
-        >
-          <Txt w="800" style={{ fontSize: 10, letterSpacing: 0.6, color: colors.ink3 }}>
-            {h.questEyebrow}
-          </Txt>
-          <Txt w="800" style={{ fontSize: 11, color: colors.accent }}>
-            {h.questProg}
-          </Txt>
-        </View>
-        <Txt w="800" style={{ fontSize: 20, color: colors.ink }}>
-          {h.questTitle}
-        </Txt>
-        <Txt
-          w="400"
-          style={{
-            fontSize: 13,
-            lineHeight: 20,
-            color: colors.ink2,
-            marginTop: 6,
-            marginBottom: 14,
-          }}
-        >
-          {h.questBody}
-        </Txt>
-        <View
-          style={{
-            height: 7,
-            borderRadius: 9999,
-            backgroundColor: colors.chip,
-            overflow: 'hidden',
+            backgroundColor: colors.cardBg,
+            borderColor: colors.cardBorderColor,
+            borderWidth: colors.cardBorderWidth,
+            borderRadius: 24,
+            padding: 20,
             marginBottom: 16,
           }}
         >
-          <View
-            style={{
-              height: '100%',
-              width: '60%',
-              backgroundColor: colors.accent,
-              borderRadius: 9999,
-            }}
-          />
-        </View>
-        <Pressable
-          onPress={() => go('quests')}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
-        >
-          <Txt w="800" style={{ fontSize: 14, color: colors.accent }}>
-            {h.questCta}
+          <Txt
+            w="800"
+            style={{ fontSize: 10, letterSpacing: 0.6, color: colors.ink3, marginBottom: 10 }}
+          >
+            {h.questEyebrow}
           </Txt>
-          <Icon name="arrow-right" size={13} color={colors.accent} />
-        </Pressable>
-      </View>
+          <Txt w="800" style={{ fontSize: 20, color: colors.ink }}>
+            {quest.title}
+          </Txt>
+          <Txt
+            w="400"
+            style={{
+              fontSize: 13,
+              lineHeight: 20,
+              color: colors.ink2,
+              marginTop: 6,
+              marginBottom: 14,
+            }}
+          >
+            {quest.description}
+          </Txt>
+          <Pressable
+            onPress={() => go('quests')}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+          >
+            <Txt w="800" style={{ fontSize: 14, color: colors.accent }}>
+              {h.questCta}
+            </Txt>
+            <Icon name="arrow-right" size={13} color={colors.accent} />
+          </Pressable>
+        </View>
+      )}
 
       {/* ask coach */}
       <Pressable

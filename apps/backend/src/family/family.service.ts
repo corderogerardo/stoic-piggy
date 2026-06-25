@@ -346,6 +346,22 @@ export class FamilyService {
       orderBy: { createdAt: 'asc' },
       include: { piggyBanks: true, goals: { orderBy: { createdAt: 'asc' }, take: 1 } },
     });
+    // Two grouped queries (not N+1) for the gamification counts shown per kid.
+    const childIds = kids.map((k) => k.id);
+    const [resisted, approved] = await Promise.all([
+      this.prisma.resistedImpulse.groupBy({
+        by: ['childId'],
+        where: { childId: { in: childIds } },
+        _count: true,
+      }),
+      this.prisma.task.groupBy({
+        by: ['childId'],
+        where: { childId: { in: childIds }, status: 'approved' },
+        _count: true,
+      }),
+    ]);
+    const resistedBy = new Map(resisted.map((r) => [r.childId, r._count]));
+    const approvedBy = new Map(approved.map((r) => [r.childId, r._count]));
     return kids.map((k) => {
       const goal = k.goals[0];
       return {
@@ -362,6 +378,8 @@ export class FamilyService {
         goal: goal
           ? { title: goal.title, targetCents: goal.targetCents, savedCents: goal.savedCents }
           : null,
+        resistedCount: resistedBy.get(k.id) ?? 0,
+        tasksApproved: approvedBy.get(k.id) ?? 0,
       };
     });
   }

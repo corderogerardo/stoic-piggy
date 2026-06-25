@@ -5,8 +5,8 @@ const PALETTE = ['#E63946', '#457B9D', '#1D3557', '#2FAE6B', '#E9A23B'];
 
 /**
  * Map a live aggregated dashboard row (from the tRPC API) into the dashboard's
- * `Kid` view model. Gamification fields not yet modelled in the backend
- * (streak / resisted / tasksDone) default to 0 until those features land.
+ * `Kid` view model. `streak` isn't modelled in the backend yet, so it defaults
+ * to 0 until that feature lands.
  */
 export function mapDashboardChildToKid(dc: DashboardChild, index: number): Kid {
   const goalTarget = dc.goal ? Math.round(centsToDollars(dc.goal.targetCents)) : 500;
@@ -17,8 +17,8 @@ export function mapDashboardChildToKid(dc: DashboardChild, index: number): Kid {
     lvl: dc.level,
     balance: Math.round(centsToDollars(dc.balanceCents)),
     streak: 0,
-    resisted: 0,
-    tasksDone: 0,
+    resisted: dc.resistedCount,
+    tasksDone: dc.tasksApproved,
     color: PALETTE[index % PALETTE.length] ?? '#E63946',
     initial: (dc.displayName.charAt(0) || '?').toUpperCase(),
     goalEs: dc.goal?.title ?? 'Meta de ahorro',

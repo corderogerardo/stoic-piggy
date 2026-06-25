@@ -13,6 +13,8 @@ const base: DashboardChild = {
   autopayEnabled: true,
   active: true,
   goal: { title: 'Bici nueva', targetCents: 50000, savedCents: 34000 },
+  resistedCount: 12,
+  tasksApproved: 18,
 };
 
 describe('mapDashboardChildToKid', () => {
@@ -45,5 +47,11 @@ describe('mapDashboardChildToKid', () => {
     const kid = mapDashboardChildToKid(base, 0);
     expect(kid.autopay).toBe(true);
     expect(kid.lvl).toBe(7);
+  });
+
+  it('carries the real resisted + approved-task counts through', () => {
+    const kid = mapDashboardChildToKid(base, 0);
+    expect(kid.resisted).toBe(12);
+    expect(kid.tasksDone).toBe(18);
   });
 });
