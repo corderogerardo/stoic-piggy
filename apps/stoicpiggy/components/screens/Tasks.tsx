@@ -1,28 +1,50 @@
+import { useChildTasks, useSubmitTask, useTRPC } from '@stoicpiggy/api';
+import { centsToDollars, type Task } from '@stoicpiggy/shared';
+import { useQueryClient } from '@tanstack/react-query';
 import { Pressable, ScrollView, View } from 'react-native';
-import { TASKS } from '@/lib/content';
+import { useAuth } from '@/lib/auth';
 import { useLang, useTheme } from '@/lib/providers';
 import { Icon } from '../Icon';
 import { Piggy } from '../Piggy';
 import { Txt } from '../Txt';
 
-type Status = 'todo' | 'pending' | 'done';
+type Stage = 'todo' | 'pending' | 'done';
 
-export function Tasks({
-  taskStatus,
-  onMark,
-}: {
-  taskStatus: Record<number, Status>;
-  onMark: (id: number) => void;
-}) {
+// active/rejected → the kid can (re)submit; submitted → waiting on the parent; approved → done.
+const stageOf = (status: Task['status']): Stage =>
+  status === 'submitted' ? 'pending' : status === 'approved' ? 'done' : 'todo';
+const ORDER: Record<Stage, number> = { todo: 0, pending: 1, done: 2 };
+const CAT_ICON: Record<Task['category'], string> = { chore: 'check', lesson: 'graduation-cap' };
+
+const rewardOf = (k: Task): string => {
+  const money = `+$${Math.round(centsToDollars(k.amountCents))}`;
+  const xp = `+${k.rewardXp} XP`;
+  if (k.payType === 'xp') return xp;
+  if (k.payType === 'both') return `${money} · ${xp}`;
+  return money;
+};
+
+/** The signed-in kid's real tasks. Marking one done submits it for the parent to approve. */
+export function Tasks() {
   const { colors } = useTheme();
   const { t, lang } = useLang();
-  const order: Record<Status, number> = { todo: 0, pending: 1, done: 2 };
-  const statusOf = (id: number): Status => taskStatus[id] ?? 'todo';
-  const weeklyEarn = TASKS.filter((k) => k.amt && statusOf(k.id) === 'todo').reduce(
-    (sum, k) => sum + (k.amt ?? 0),
-    0,
-  );
-  const sorted = [...TASKS].sort((a, b) => order[statusOf(a.id)] - order[statusOf(b.id)]);
+  const { child } = useAuth();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const childId = child?.id ?? '';
+  const tasksQ = useChildTasks(childId);
+  const submit = useSubmitTask();
+
+  const tasks = tasksQ.data ?? [];
+  const weeklyEarn = tasks
+    .filter((k) => k.payType !== 'xp' && stageOf(k.status) === 'todo')
+    .reduce((sum, k) => sum + Math.round(centsToDollars(k.amountCents)), 0);
+  const sorted = [...tasks].sort((a, b) => ORDER[stageOf(a.status)] - ORDER[stageOf(b.status)]);
+
+  const onMark = async (taskId: string) => {
+    await submit.mutateAsync({ taskId });
+    await queryClient.invalidateQueries({ queryKey: trpc.tasks.listByChild.queryKey({ childId }) });
+  };
 
   return (
     <ScrollView
@@ -62,96 +84,119 @@ export function Tasks({
         <Piggy mood="happy" size={58} />
       </View>
 
-      <View style={{ gap: 11 }}>
-        {sorted.map((k) => {
-          const st = statusOf(k.id);
-          const isXp = !!k.xp;
-          const reward = isXp ? `+${k.xp} XP` : `+$${k.amt}`;
-          const done = st === 'done';
-          const meta =
-            st === 'todo' ? t.tasks.todo : st === 'pending' ? t.tasks.pending : t.tasks.approved;
-          const metaColor =
-            st === 'pending' ? colors.accent : st === 'done' ? '#2FAE6B' : colors.ink3;
-          return (
-            <View
-              key={k.id}
-              style={{
-                backgroundColor: colors.cardBg,
-                borderColor: colors.cardBorderColor,
-                borderWidth: colors.cardBorderWidth,
-                borderRadius: 18,
-                padding: 14,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 13,
-                opacity: done ? 0.55 : 1,
-              }}
-            >
+      {tasksQ.isPending ? (
+        <Txt w="400" style={{ fontSize: 13.5, color: colors.ink3 }}>
+          {lang === 'es' ? 'Cargando…' : 'Loading…'}
+        </Txt>
+      ) : tasks.length === 0 ? (
+        <Txt w="400" style={{ fontSize: 13.5, color: colors.ink3 }}>
+          {lang === 'es'
+            ? 'No tienes tareas todavía. ¡Mamá o papá te asignarán algunas!'
+            : 'No tasks yet. A parent will assign you some!'}
+        </Txt>
+      ) : (
+        <View style={{ gap: 11 }}>
+          {sorted.map((k) => {
+            const st = stageOf(k.status);
+            const isXp = k.payType === 'xp';
+            const reward = rewardOf(k);
+            const done = st === 'done';
+            const meta =
+              st === 'todo' ? t.tasks.todo : st === 'pending' ? t.tasks.pending : t.tasks.approved;
+            const metaColor =
+              st === 'pending' ? colors.accent : st === 'done' ? '#2FAE6B' : colors.ink3;
+            return (
               <View
+                key={k.id}
                 style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
+                  backgroundColor: colors.cardBg,
+                  borderColor: colors.cardBorderColor,
+                  borderWidth: colors.cardBorderWidth,
+                  borderRadius: 18,
+                  padding: 14,
+                  flexDirection: 'row',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: done
-                    ? colors.chip
-                    : isXp
-                      ? 'rgba(69,123,157,0.16)'
-                      : colors.soft,
+                  gap: 13,
+                  opacity: done ? 0.55 : 1,
                 }}
               >
-                <Icon name={k.icon} size={18} color={done ? colors.ink3 : colors.accent} />
-              </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Txt
-                  w="800"
+                <View
                   style={{
-                    fontSize: 15,
-                    color: colors.ink,
-                    textDecorationLine: done ? 'line-through' : 'none',
+                    width: 44,
+                    height: 44,
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: done
+                      ? colors.chip
+                      : isXp
+                        ? 'rgba(69,123,157,0.16)'
+                        : colors.soft,
                   }}
                 >
-                  {lang === 'es' ? k.es : k.en}
-                </Txt>
+                  <Icon
+                    name={CAT_ICON[k.category]}
+                    size={18}
+                    color={done ? colors.ink3 : colors.accent}
+                  />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Txt
+                    w="800"
+                    style={{
+                      fontSize: 15,
+                      color: colors.ink,
+                      textDecorationLine: done ? 'line-through' : 'none',
+                    }}
+                  >
+                    {k.title}
+                  </Txt>
+                  <Txt
+                    w="800"
+                    style={{ fontSize: 10, letterSpacing: 0.4, color: metaColor, marginTop: 4 }}
+                  >
+                    {meta}
+                  </Txt>
+                </View>
                 <Txt
-                  w="800"
-                  style={{ fontSize: 10, letterSpacing: 0.4, color: metaColor, marginTop: 4 }}
+                  mono
+                  style={{
+                    fontSize: 15,
+                    color: done ? colors.ink3 : isXp ? '#457B9D' : colors.ink,
+                  }}
                 >
-                  {meta}
+                  {reward}
                 </Txt>
+                <Pressable
+                  disabled={st !== 'todo' || submit.isPending}
+                  onPress={() => onMark(k.id)}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor:
+                      st === 'todo'
+                        ? 'transparent'
+                        : st === 'pending'
+                          ? colors.soft
+                          : colors.accent,
+                    borderWidth: st === 'todo' ? 2 : 0,
+                    borderColor: colors.accent,
+                  }}
+                >
+                  <Icon
+                    name={st === 'pending' ? 'clock-o' : 'check'}
+                    size={15}
+                    color={st === 'done' ? colors.accentInk : colors.accent}
+                  />
+                </Pressable>
               </View>
-              <Txt
-                mono
-                style={{ fontSize: 15, color: done ? colors.ink3 : isXp ? '#457B9D' : colors.ink }}
-              >
-                {reward}
-              </Txt>
-              <Pressable
-                disabled={st !== 'todo'}
-                onPress={() => onMark(k.id)}
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 12,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor:
-                    st === 'todo' ? 'transparent' : st === 'pending' ? colors.soft : colors.accent,
-                  borderWidth: st === 'todo' ? 2 : 0,
-                  borderColor: colors.accent,
-                }}
-              >
-                <Icon
-                  name={st === 'pending' ? 'clock-o' : 'check'}
-                  size={15}
-                  color={st === 'done' ? colors.accentInk : colors.accent}
-                />
-              </Pressable>
-            </View>
-          );
-        })}
-      </View>
+            );
+          })}
+        </View>
+      )}
     </ScrollView>
   );
 }
