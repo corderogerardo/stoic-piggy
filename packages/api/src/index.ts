@@ -16,12 +16,14 @@ export {
   useMe,
   useMyChildren,
   useMyDashboard,
+  useParentSettings,
   useParentSummary,
   usePendingApprovals,
   usePiggyBanks,
   useQuests,
   useRegisterParent,
   useRejectTask,
+  useReports,
   useRequestPasswordReset,
   useResendVerification,
   useResetKidPassword,
@@ -32,6 +34,7 @@ export {
   useTasks,
   useUpdateAllowance,
   useUpdateChild,
+  useUpdateParentSettings,
   useVerifyEmail,
 } from './hooks';
 export { ApiProvider, type ApiProviderProps } from './provider';

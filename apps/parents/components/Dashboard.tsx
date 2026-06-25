@@ -10,6 +10,8 @@ import { mapDashboardChildToKid } from '@/lib/mapKid';
 import { ApiStatus } from './ApiStatus';
 import { ApprovalsView } from './ApprovalsView';
 import { KidsView } from './KidsView';
+import { ReportsView } from './ReportsView';
+import { SettingsView } from './SettingsView';
 import { TasksView } from './TasksView';
 import { VerifyEmailBanner } from './VerifyEmailBanner';
 
@@ -97,15 +99,11 @@ const TONE_FG: Record<Tone, string> = {
   blue: 'text-blue',
   green: 'text-success',
 };
-const BAR_VALS = [4, 6, 3, 7, 5, 8, 6];
-
 export function Dashboard() {
   const { parent, logout } = useAuth();
   const [lang, setLang] = useState<Lang>('es');
   const [view, setView] = useState<View>('overview');
   const [kids, setKids] = useState<Kid[]>([]);
-  const [prefs, setPrefs] = useState({ notify: true, weekly: true, autoApprove: false });
-  const [payoutMethod, setPayoutMethod] = useState('card');
 
   // Live data: the parent's real children, overview summary, and activity feed.
   // Only active kids are shown here; deactivated ones are managed in the Kids view.
@@ -126,22 +124,8 @@ export function Dashboard() {
   const c = STR[lang];
   const kidName = (id: string) => kids.find((k) => k.id === id)?.name ?? '—';
 
-  const togglePref = (id: 'notify' | 'weekly' | 'autoApprove') =>
-    setPrefs({ ...prefs, [id]: !prefs[id] });
-
   const langBtn = (active: boolean) =>
     `flex-1 rounded-lg py-2 text-[11px] font-extrabold tracking-[0.5px] ${active ? 'bg-accent text-cream' : 'bg-transparent text-cream/70'}`;
-  const Toggle = ({ on, onClick }: { on: boolean; onClick: () => void }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`relative h-7 w-[50px] flex-none rounded-full transition-colors ${on ? 'bg-accent' : 'bg-navy/20'}`}
-    >
-      <span
-        className={`absolute top-[3px] h-[22px] w-[22px] rounded-full bg-white transition-all ${on ? 'left-[25px]' : 'left-[3px]'}`}
-      />
-    </button>
-  );
 
   const [title, sub] = c.titles[view];
   const summary = summaryQ.data;
@@ -485,116 +469,10 @@ export function Dashboard() {
           {view === 'kids' && <KidsView lang={lang} />}
 
           {/* ===== REPORTS ===== */}
-          {view === 'reports' && (
-            <div className="flex flex-col gap-[22px]">
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-4">
-                {c.reportStats.map((s) => (
-                  <div key={s.t} className="rounded-[18px] border border-navy/10 bg-white p-5">
-                    <div className="mb-3 text-[10.5px] font-extrabold tracking-[0.5px] text-navy/50">
-                      {s.t}
-                    </div>
-                    <div className="font-mono text-[28px] font-bold tracking-[-1px]">{s.v}</div>
-                    <div className="mt-1.5 text-xs font-bold text-blue">
-                      <i className="fa fa-arrow-up" /> {s.d}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-[18px]">
-                <div className="min-w-[320px] flex-[1_1_420px] rounded-[20px] border border-navy/10 bg-white p-6">
-                  <h2 className="m-0 mb-1 text-base font-extrabold">{c.tasksThisWeek}</h2>
-                  <p className="m-0 mb-[22px] text-[13px] text-navy/60">{c.tasksThisWeekSub}</p>
-                  <div className="flex h-[170px] items-end gap-[14px]">
-                    {BAR_VALS.map((val, i) => (
-                      <div
-                        key={c.days[i]}
-                        className="flex h-full flex-1 flex-col items-center justify-end gap-2"
-                      >
-                        <span className="font-mono text-[11px] font-bold text-navy/50">{val}</span>
-                        <div
-                          className={`w-full max-w-[34px] rounded-t-lg ${i === 5 ? 'bg-accent' : 'bg-blue/60'}`}
-                          style={{ height: `${Math.round((val / 8) * 130)}px` }}
-                        />
-                        <span className="text-[11px] font-bold text-navy/50">{c.days[i]}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex min-w-[280px] flex-[1_1_280px] flex-col rounded-[20px] bg-navy p-6 text-cream">
-                  <div className="mb-[14px] inline-block">
-                    <Piggy mood="zen" size={56} />
-                  </div>
-                  <h2 className="m-0 mb-1 text-base font-extrabold">{c.impulseTitle}</h2>
-                  <p className="m-0 mb-5 text-[13px] leading-relaxed text-cream/75">
-                    {c.impulseSub}
-                  </p>
-                  <div className="mt-auto font-mono text-[46px] font-bold tracking-[-2px]">
-                    $2,340
-                  </div>
-                  <div className="text-[12.5px] font-bold text-teal">{c.impulseSaved}</div>
-                </div>
-              </div>
-            </div>
-          )}
+          {view === 'reports' && <ReportsView lang={lang} />}
 
           {/* ===== SETTINGS ===== */}
-          {view === 'settings' && (
-            <div className="flex max-w-[620px] flex-col gap-4">
-              <div className="rounded-[20px] border border-navy/10 bg-white p-6">
-                <h2 className="m-0 mb-1 text-[17px] font-extrabold">{c.payoutTitle}</h2>
-                <p className="m-0 mb-5 text-[13.5px] leading-relaxed text-navy/60">{c.payoutSub}</p>
-                <div className="flex flex-col gap-3">
-                  {c.payouts.map((m) => {
-                    const on = payoutMethod === m.id;
-                    return (
-                      <button
-                        type="button"
-                        key={m.id}
-                        onClick={() => setPayoutMethod(m.id)}
-                        className={`flex items-center gap-[14px] rounded-[14px] border-2 p-[15px] text-left ${on ? 'border-accent bg-accent/[0.05]' : 'border-navy/10 bg-white'}`}
-                      >
-                        <span
-                          className={`flex h-10 w-10 flex-none items-center justify-center rounded-[11px] ${on ? 'bg-accent' : 'bg-teal/40'}`}
-                        >
-                          <i
-                            className={`fa fa-${m.icon} text-base ${on ? 'text-cream' : 'text-blue'}`}
-                          />
-                        </span>
-                        <div className="flex-1">
-                          <div className="text-[14.5px] font-extrabold">{m.title}</div>
-                          <div className="text-xs text-navy/60">{m.desc}</div>
-                        </div>
-                        <span
-                          className={`flex h-[22px] w-[22px] flex-none items-center justify-center rounded-full border-2 ${on ? 'border-accent' : 'border-navy/20'}`}
-                        >
-                          <span
-                            className={`h-[11px] w-[11px] rounded-full ${on ? 'bg-accent' : 'bg-transparent'}`}
-                          />
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="rounded-[20px] border border-navy/10 bg-white p-6">
-                <h2 className="m-0 mb-[18px] text-[17px] font-extrabold">{c.prefsTitle}</h2>
-                <div className="flex flex-col gap-1">
-                  {c.prefsList.map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex items-center gap-[14px] border-b border-navy/[0.07] py-[14px]"
-                    >
-                      <div className="flex-1">
-                        <div className="text-[14.5px] font-bold">{p.title}</div>
-                        <div className="mt-0.5 text-[12.5px] text-navy/60">{p.desc}</div>
-                      </div>
-                      <Toggle on={prefs[p.id]} onClick={() => togglePref(p.id)} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+          {view === 'settings' && <SettingsView lang={lang} />}
         </div>
       </div>
     </div>

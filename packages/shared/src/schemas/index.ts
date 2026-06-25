@@ -166,3 +166,16 @@ export const submitTaskSchema = z.object({
   note: z.string().max(280).optional(),
 });
 export type SubmitTaskInput = z.infer<typeof submitTaskSchema>;
+
+// ---- Parent settings ----
+
+export const payoutMethodSchema = z.enum(['card', 'bank', 'cash']);
+
+/** Update any subset of the parent's preferences (omitted fields are unchanged). */
+export const updateParentSettingsSchema = z.object({
+  notifyEnabled: z.boolean().optional(),
+  weeklyReportEnabled: z.boolean().optional(),
+  autoApproveTasks: z.boolean().optional(),
+  payoutMethod: payoutMethodSchema.optional(),
+});
+export type UpdateParentSettingsInput = z.infer<typeof updateParentSettingsSchema>;

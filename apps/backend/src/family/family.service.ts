@@ -1,14 +1,95 @@
 import { Injectable } from '@nestjs/common';
 import type {
+  PayoutMethod,
   SetChildActiveInput,
   UpdateAllowanceInput,
   UpdateChildInput,
+  UpdateParentSettingsInput,
 } from '@stoicpiggy/shared';
 import { PrismaService } from '../prisma/prisma.service';
+
+const SETTINGS_SELECT = {
+  notifyEnabled: true,
+  weeklyReportEnabled: true,
+  autoApproveTasks: true,
+  payoutMethod: true,
+} as const;
 
 @Injectable()
 export class FamilyService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /** The signed-in parent's preferences (Settings page). */
+  async parentSettings(parentId: string) {
+    const p = await this.prisma.parent.findUnique({
+      where: { id: parentId },
+      select: SETTINGS_SELECT,
+    });
+    return {
+      notifyEnabled: p?.notifyEnabled ?? true,
+      weeklyReportEnabled: p?.weeklyReportEnabled ?? true,
+      autoApproveTasks: p?.autoApproveTasks ?? false,
+      payoutMethod: (p?.payoutMethod ?? 'card') as PayoutMethod,
+    };
+  }
+
+  /** Update any subset of the parent's preferences. */
+  async updateParentSettings(parentId: string, input: UpdateParentSettingsInput) {
+    const p = await this.prisma.parent.update({
+      where: { id: parentId },
+      data: {
+        notifyEnabled: input.notifyEnabled,
+        weeklyReportEnabled: input.weeklyReportEnabled,
+        autoApproveTasks: input.autoApproveTasks,
+        payoutMethod: input.payoutMethod,
+      },
+      select: SETTINGS_SELECT,
+    });
+    return { ...p, payoutMethod: p.payoutMethod as PayoutMethod };
+  }
+
+  /** Aggregates for the Reports page: per-day completed tasks + headline totals. */
+  async reportsByParent(parentId: string) {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(dayStart.getTime() - 6 * 86_400_000);
+    const [approved, paidAgg, kids] = await Promise.all([
+      this.prisma.task.findMany({
+        where: { child: { parentId }, status: 'approved', resolvedAt: { gte: weekStart } },
+        select: { resolvedAt: true },
+      }),
+      this.prisma.transaction.aggregate({
+        _sum: { amountCents: true },
+        where: {
+          piggyBank: { child: { parentId } },
+          type: { in: ['reward', 'allowance'] },
+          createdAt: { gte: monthStart },
+        },
+      }),
+      this.prisma.child.findMany({
+        where: { parentId, deactivatedAt: null },
+        select: { piggyBanks: { select: { balanceCents: true } } },
+      }),
+    ]);
+    const tasksByDay = Array.from({ length: 7 }, () => 0);
+    for (const t of approved) {
+      if (!t.resolvedAt) continue;
+      const idx = Math.floor((t.resolvedAt.getTime() - weekStart.getTime()) / 86_400_000);
+      if (idx >= 0 && idx < 7) tasksByDay[idx] = (tasksByDay[idx] ?? 0) + 1;
+    }
+    const savedCents = kids.reduce(
+      (s, k) => s + k.piggyBanks.reduce((a, b) => a + b.balanceCents, 0),
+      0,
+    );
+    return {
+      tasksByDay,
+      tasksCompletedThisWeek: approved.length,
+      paidThisMonthCents: paidAgg._sum.amountCents ?? 0,
+      savedCents,
+      activeKids: kids.length,
+    };
+  }
 
   async listChildren(parentId: string) {
     return this.prisma.child.findMany({ where: { parentId }, orderBy: { createdAt: 'asc' } });

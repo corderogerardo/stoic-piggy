@@ -96,6 +96,24 @@ export function useActivity(enabled = true) {
   return useQuery(trpc.children.activity.queryOptions(undefined, { enabled }));
 }
 
+/** Aggregates for the Reports page. */
+export function useReports(enabled = true) {
+  const trpc = useTRPC();
+  return useQuery(trpc.children.reports.queryOptions(undefined, { enabled }));
+}
+
+/** The signed-in parent's preferences. */
+export function useParentSettings(enabled = true) {
+  const trpc = useTRPC();
+  return useQuery(trpc.parent.settings.queryOptions(undefined, { enabled }));
+}
+
+/** Update the signed-in parent's preferences (any subset). */
+export function useUpdateParentSettings() {
+  const trpc = useTRPC();
+  return useMutation(trpc.parent.updateSettings.mutationOptions());
+}
+
 /** Create a kid login account (+ starter piggy bank) for the signed-in parent. */
 export function useCreateChild() {
   const trpc = useTRPC();

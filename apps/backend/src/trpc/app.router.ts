@@ -17,11 +17,13 @@ import {
   type LoginParentInput,
   loginChildSchema,
   loginParentSchema,
+  type ParentSettings,
   type ParentSummary,
   type PiggyBank,
   type Quest,
   type QuestStatus,
   type RegisterParentInput,
+  type ReportsData,
   type RequestPasswordResetInput,
   type ResetChildPasswordInput,
   type ResetPasswordInput,
@@ -44,8 +46,10 @@ import {
   taskIdSchema,
   type UpdateAllowanceInput,
   type UpdateChildInput,
+  type UpdateParentSettingsInput,
   updateAllowanceSchema,
   updateChildSchema,
+  updateParentSettingsSchema,
   type VerifyEmailInput,
   verifyEmailSchema,
 } from '@stoicpiggy/shared';
@@ -163,6 +167,9 @@ export interface FamilyPort {
   dashboardByParent(parentId: string): Promise<DashboardChildRow[]>;
   summaryByParent(parentId: string): Promise<ParentSummary>;
   activityByParent(parentId: string): Promise<ActivityEventRow[]>;
+  reportsByParent(parentId: string): Promise<ReportsData>;
+  parentSettings(parentId: string): Promise<ParentSettings>;
+  updateParentSettings(parentId: string, input: UpdateParentSettingsInput): Promise<ParentSettings>;
   /** The owning parent's id for a child, or null if the child doesn't exist. */
   childParentId(childId: string): Promise<string | null>;
   updateChild(input: UpdateChildInput): Promise<ChildRow>;
@@ -374,6 +381,10 @@ export function createAppRouter({ piggy, family, auth, task }: RouterServices) {
         async ({ ctx }): Promise<ActivityEvent[]> =>
           (await family.activityByParent(ctx.user.sub)).map(toActivityEvent),
       ),
+      // Aggregates for the Reports page.
+      reports: parentProcedure.query(
+        ({ ctx }): Promise<ReportsData> => family.reportsByParent(ctx.user.sub),
+      ),
       // A parent creates a kid's login account (+ a starter piggy bank).
       create: parentProcedure
         .input(createChildAccountSchema)
@@ -417,6 +428,19 @@ export function createAppRouter({ piggy, family, auth, task }: RouterServices) {
           await family.deleteChild(input.childId);
           return { ok: true };
         }),
+    }),
+
+    parent: router({
+      // The signed-in parent's preferences.
+      settings: parentProcedure.query(
+        ({ ctx }): Promise<ParentSettings> => family.parentSettings(ctx.user.sub),
+      ),
+      updateSettings: parentProcedure
+        .input(updateParentSettingsSchema)
+        .mutation(
+          ({ ctx, input }): Promise<ParentSettings> =>
+            family.updateParentSettings(ctx.user.sub, input),
+        ),
     }),
 
     tasks: router({

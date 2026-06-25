@@ -129,6 +129,26 @@ export interface DashboardGoal {
   savedCents: number;
 }
 
+export type PayoutMethod = 'card' | 'bank' | 'cash';
+
+/** Parent preferences shown on the Settings page. */
+export interface ParentSettings {
+  notifyEnabled: boolean;
+  weeklyReportEnabled: boolean;
+  autoApproveTasks: boolean;
+  payoutMethod: PayoutMethod;
+}
+
+/** Aggregates for the parents Reports page. */
+export interface ReportsData {
+  /** Approved tasks per day for the last 7 days (oldest → newest). */
+  tasksByDay: number[];
+  tasksCompletedThisWeek: number;
+  paidThisMonthCents: number;
+  savedCents: number;
+  activeKids: number;
+}
+
 /** Headline numbers for the parents dashboard overview. */
 export interface ParentSummary {
   toApproveCount: number;
