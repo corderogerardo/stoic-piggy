@@ -46,8 +46,29 @@ export class LoggerTransport implements MailTransport {
  */
 export function createMailTransport(): MailTransport {
   const apiKey = process.env.RESEND_API_KEY;
-  if (apiKey && apiKey.length > 0) return new ResendTransport(apiKey);
+  if (apiKey && apiKey.length > 0) {
+    warnIfDefaultSenderInProduction();
+    return new ResendTransport(apiKey);
+  }
   return new LoggerTransport();
+}
+
+/**
+ * Sending for real (RESEND_API_KEY set) but with no EMAIL_FROM falls back to
+ * onboarding@resend.dev, which Resend only delivers to the account owner's own
+ * address — so real users silently never get verification/reset emails. Warn
+ * loudly in production (non-fatal: a missing sender shouldn't crash the API).
+ */
+function warnIfDefaultSenderInProduction(): void {
+  const from = process.env.EMAIL_FROM;
+  if (process.env.NODE_ENV === 'production' && !(from && from.length > 0)) {
+    new Logger('MailService').error(
+      'EMAIL_FROM is not set — emails are sent from onboarding@resend.dev, which ' +
+        'Resend only delivers to your own account address. Real users will NOT ' +
+        'receive verification or password-reset emails. Set EMAIL_FROM to a ' +
+        'verified-domain sender (e.g. "Stoic Piggy <no-reply@yourdomain>").',
+    );
+  }
 }
 
 /**

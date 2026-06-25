@@ -36,6 +36,7 @@ export class AuthService {
     private readonly mail: MailService,
   ) {
     this.secret = resolveJwtSecret();
+    warnIfAppUrlMissing(this.logger);
   }
 
   /** Verify a bearer token and return its claims (or null). Used by the tRPC context. */
@@ -361,6 +362,24 @@ function resolveJwtSecret(): string {
 function resolveAppUrl(): string {
   const url = process.env.APP_URL;
   return (url && url.length > 0 ? url : 'http://localhost:3002').replace(/\/+$/, '');
+}
+
+/**
+ * In production a missing APP_URL silently falls back to http://localhost:3002,
+ * which ships dead links in real verification/reset emails (the bug this guards).
+ * Log loudly at boot so the gap surfaces in deploy logs — but stay non-fatal:
+ * crashing here would trip the stale-build deploy trap (Render keeps the last
+ * healthy image and the new code never goes live).
+ */
+function warnIfAppUrlMissing(logger: Logger): void {
+  const url = process.env.APP_URL;
+  if (process.env.NODE_ENV === 'production' && !(url && url.length > 0)) {
+    logger.error(
+      'APP_URL is not set — verification and password-reset emails will link to ' +
+        'http://localhost:3002 instead of the live dashboard. Set APP_URL to the ' +
+        'dashboard origin (e.g. https://stoic-piggy-parents.noofficelocation.com).',
+    );
+  }
 }
 
 /** Prisma throws P2002 on a unique-constraint violation (e.g. duplicate username). */

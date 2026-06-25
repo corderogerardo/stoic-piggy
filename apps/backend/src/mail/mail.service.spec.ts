@@ -62,6 +62,46 @@ describe('createMailTransport', () => {
     process.env.RESEND_API_KEY = 're_test_key';
     expect(createMailTransport()).toBeInstanceOf(ResendTransport);
   });
+
+  describe('EMAIL_FROM production guard', () => {
+    const originalEnv = process.env.NODE_ENV;
+    const originalFrom = process.env.EMAIL_FROM;
+    beforeEach(() => {
+      process.env.RESEND_API_KEY = 're_test_key';
+    });
+    afterEach(() => {
+      process.env.NODE_ENV = originalEnv;
+      if (originalFrom === undefined) delete process.env.EMAIL_FROM;
+      else process.env.EMAIL_FROM = originalFrom;
+    });
+
+    it('logs an error in production when EMAIL_FROM is unset', () => {
+      process.env.NODE_ENV = 'production';
+      delete process.env.EMAIL_FROM;
+      const errorLog = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+      createMailTransport();
+      expect(errorLog).toHaveBeenCalledWith(expect.stringMatching(/EMAIL_FROM is not set/i));
+      errorLog.mockRestore();
+    });
+
+    it('stays quiet in production when EMAIL_FROM is set', () => {
+      process.env.NODE_ENV = 'production';
+      process.env.EMAIL_FROM = 'Stoic Piggy <no-reply@stoicpiggy.app>';
+      const errorLog = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+      createMailTransport();
+      expect(errorLog).not.toHaveBeenCalled();
+      errorLog.mockRestore();
+    });
+
+    it('stays quiet outside production even when EMAIL_FROM is unset', () => {
+      process.env.NODE_ENV = 'test';
+      delete process.env.EMAIL_FROM;
+      const errorLog = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+      createMailTransport();
+      expect(errorLog).not.toHaveBeenCalled();
+      errorLog.mockRestore();
+    });
+  });
 });
 
 describe('resolveEmailFrom', () => {
