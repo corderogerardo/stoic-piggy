@@ -1,7 +1,19 @@
 import type { ChildPatterns } from '@stoicpiggy/shared';
 import { useCallback } from 'react';
-import { isAvailable, type Message, QWEN3_0_6B_QUANTIZED, useLLM } from 'react-native-executorch';
+import {
+  initExecutorch,
+  isAvailable,
+  type Message,
+  QWEN3_0_6B_QUANTIZED,
+  useLLM,
+} from 'react-native-executorch';
+import { ExpoResourceFetcher } from 'react-native-executorch-expo-resource-fetcher';
 import { coachSystemPrompt, type Lang } from './coach';
+
+// Point ExecuTorch's resource fetcher at Expo's filesystem so the model can
+// download + cache on-device. Required on Expo; must run once before any
+// useLLM. Module scope → runs on first import, ahead of the hook below.
+initExecutorch({ resourceFetcher: ExpoResourceFetcher });
 
 // Qwen3 0.6B (quantized): small, multilingual (ES/EN) — a good fit for a kid
 // coach that must run on-device for free. ~300MB download, fetched lazily.
