@@ -167,6 +167,19 @@ export const submitTaskSchema = z.object({
 });
 export type SubmitTaskInput = z.infer<typeof submitTaskSchema>;
 
+// ---- Kid self-service (quests + temptation) ----
+
+/** A kid completes one of their quests (claims its reward). */
+export const questIdSchema = z.object({ questId: z.string().min(1) });
+export type QuestIdInput = z.infer<typeof questIdSchema>;
+
+/** A kid logs a resisted impulse (the Temptation flow). */
+export const resistImpulseSchema = z.object({
+  amountCents: z.number().int().min(0).max(100_000_00),
+  item: z.string().trim().max(80).optional(),
+});
+export type ResistImpulseInput = z.infer<typeof resistImpulseSchema>;
+
 // ---- Parent settings ----
 
 export const payoutMethodSchema = z.enum(['card', 'bank', 'cash']);

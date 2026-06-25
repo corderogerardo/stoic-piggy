@@ -1,5 +1,5 @@
 import { useChildHome } from '@stoicpiggy/api';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Coach } from '@/components/screens/Coach';
@@ -43,9 +43,6 @@ function KidApp() {
 
   const [screen, setScreen] = useState('home');
   const [chat, setChat] = useState<ChatMsg[]>([]);
-  const [tStage, setTStage] = useState('intro');
-  const [resisted, setResisted] = useState(12);
-  const breatheTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isApp = ['home', 'tasks', 'coach', 'quests', 'wins'].includes(screen);
 
@@ -65,28 +62,7 @@ function KidApp() {
   ];
   const suggestions = [t.coach.s1, t.coach.s2, t.coach.s3];
 
-  const takeChallenge = () => {
-    setTStage('intro');
-    setScreen('temptation');
-  };
-  const breathe = () => {
-    setTStage('breathing');
-    breatheTimer.current = setTimeout(
-      () => setTStage((s) => (s === 'breathing' ? 'decide' : s)),
-      2900,
-    );
-  };
-  const goHome = () => {
-    setTStage('intro');
-    setScreen('home');
-  };
-
-  useEffect(
-    () => () => {
-      if (breatheTimer.current) clearTimeout(breatheTimer.current);
-    },
-    [],
-  );
+  const takeChallenge = () => setScreen('temptation');
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.canvas }}>
@@ -107,21 +83,8 @@ function KidApp() {
         )}
         {screen === 'quests' && <Quests />}
         {screen === 'tasks' && <Tasks />}
-        {screen === 'wins' && <Wins resisted={resisted} />}
-        {screen === 'temptation' && (
-          <Temptation
-            stage={tStage}
-            resisted={resisted}
-            onBreathe={breathe}
-            onResist={() => {
-              setResisted((r) => r + 1);
-              setTStage('resisted');
-            }}
-            onBuy={() => setTStage('bought')}
-            onAgain={() => setTStage('intro')}
-            onHome={goHome}
-          />
-        )}
+        {screen === 'wins' && <Wins />}
+        {screen === 'temptation' && <Temptation onHome={() => setScreen('home')} />}
       </View>
       {isApp && <TabBar screen={screen} onTab={setScreen} />}
     </SafeAreaView>

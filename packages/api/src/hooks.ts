@@ -210,6 +210,30 @@ export function useChildHome(enabled = true) {
   return useQuery(trpc.me.home.queryOptions(undefined, { enabled }));
 }
 
+/** The signed-in kid's quests. */
+export function useMyQuests(enabled = true) {
+  const trpc = useTRPC();
+  return useQuery(trpc.me.quests.queryOptions(undefined, { enabled }));
+}
+
+/** Complete a quest (claim its reward). */
+export function useCompleteQuest() {
+  const trpc = useTRPC();
+  return useMutation(trpc.me.completeQuest.mutationOptions());
+}
+
+/** The signed-in kid's Wins stats (resisted impulses + progress). */
+export function useMyWins(enabled = true) {
+  const trpc = useTRPC();
+  return useQuery(trpc.me.wins.queryOptions(undefined, { enabled }));
+}
+
+/** Log a resisted impulse (the Temptation flow). */
+export function useResistImpulse() {
+  const trpc = useTRPC();
+  return useMutation(trpc.me.resistImpulse.mutationOptions());
+}
+
 // ---- Per-child reads (parent or owning kid) ----
 
 export function usePiggyBanks(childId: string) {

@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import type {
   PayoutMethod,
+  ResistImpulseInput,
   SetChildActiveInput,
   UpdateAllowanceInput,
   UpdateChildInput,
   UpdateParentSettingsInput,
 } from '@stoicpiggy/shared';
+import { TRPCError } from '@trpc/server';
 import { PrismaService } from '../prisma/prisma.service';
 
 const SETTINGS_SELECT = {
@@ -93,6 +95,81 @@ export class FamilyService {
 
   async listChildren(parentId: string) {
     return this.prisma.child.findMany({ where: { parentId }, orderBy: { createdAt: 'asc' } });
+  }
+
+  // ---- Kid self-service (called from the `me` router, scoped to ctx.user.sub) ----
+
+  /** The signed-in kid's quests. */
+  async childQuests(childId: string) {
+    return this.prisma.quest.findMany({ where: { childId }, orderBy: { createdAt: 'asc' } });
+  }
+
+  /** A kid completes a quest: mark it claimed + credit its XP/cents reward once. */
+  async completeQuest(childId: string, questId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const quest = await tx.quest.findUnique({ where: { id: questId } });
+      if (!quest || quest.childId !== childId) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Quest not found.' });
+      }
+      if (quest.status === 'claimed') return quest; // idempotent — already rewarded
+      if (quest.rewardCents > 0) {
+        const bank = await tx.piggyBank.findFirst({
+          where: { childId },
+          orderBy: { createdAt: 'asc' },
+        });
+        if (bank) {
+          await tx.transaction.create({
+            data: {
+              piggyBankId: bank.id,
+              type: 'reward',
+              amountCents: quest.rewardCents,
+              note: quest.title,
+            },
+          });
+          await tx.piggyBank.update({
+            where: { id: bank.id },
+            data: { balanceCents: { increment: quest.rewardCents } },
+          });
+        }
+      }
+      if (quest.rewardXp > 0) {
+        await tx.child.update({
+          where: { id: childId },
+          data: { xp: { increment: quest.rewardXp } },
+        });
+      }
+      return tx.quest.update({ where: { id: questId }, data: { status: 'claimed' } });
+    });
+  }
+
+  /** Stats for the Wins screen: resisted impulses + level/balance/tasks for badges. */
+  async childWins(childId: string) {
+    const [child, agg, banks, tasksApproved] = await Promise.all([
+      this.prisma.child.findUnique({ where: { id: childId }, select: { level: true, xp: true } }),
+      this.prisma.resistedImpulse.aggregate({
+        _count: true,
+        _sum: { amountCents: true },
+        where: { childId },
+      }),
+      this.prisma.piggyBank.findMany({ where: { childId }, select: { balanceCents: true } }),
+      this.prisma.task.count({ where: { childId, status: 'approved' } }),
+    ]);
+    return {
+      level: child?.level ?? 1,
+      xp: child?.xp ?? 0,
+      balanceCents: banks.reduce((s, b) => s + b.balanceCents, 0),
+      resistedCount: agg._count,
+      resistedCents: agg._sum.amountCents ?? 0,
+      tasksApproved,
+    };
+  }
+
+  /** A kid logs a resisted impulse; returns the refreshed Wins stats. */
+  async resistImpulse(childId: string, input: ResistImpulseInput) {
+    await this.prisma.resistedImpulse.create({
+      data: { childId, amountCents: input.amountCents, item: input.item ?? null },
+    });
+    return this.childWins(childId);
   }
 
   /** Edit a kid's profile. Ownership is authorized by the router before this runs. */

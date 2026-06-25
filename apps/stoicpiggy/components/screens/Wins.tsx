@@ -1,16 +1,75 @@
+import { useMyWins } from '@stoicpiggy/api';
+import { type ChildWins, centsToDollars } from '@stoicpiggy/shared';
 import { ScrollView, View } from 'react-native';
-import { ACHIEVEMENTS } from '@/lib/content';
 import { useLang, useTheme } from '@/lib/providers';
 import { Icon } from '../Icon';
 import { Txt } from '../Txt';
 
-export function Wins({ resisted }: { resisted: number }) {
+const ZERO: ChildWins = {
+  level: 1,
+  xp: 0,
+  balanceCents: 0,
+  resistedCount: 0,
+  resistedCents: 0,
+  tasksApproved: 0,
+};
+
+interface Badge {
+  icon: string;
+  es: { t: string; d: string };
+  en: { t: string; d: string };
+  earned: (w: ChildWins) => boolean;
+}
+
+const BADGES: Badge[] = [
+  {
+    icon: 'check',
+    es: { t: 'Primera tarea', d: 'Completa tu primera tarea' },
+    en: { t: 'First task', d: 'Finish your first task' },
+    earned: (w) => w.tasksApproved >= 1,
+  },
+  {
+    icon: 'list-ul',
+    es: { t: 'Trabajador', d: 'Completa 5 tareas' },
+    en: { t: 'Hard worker', d: 'Finish 5 tasks' },
+    earned: (w) => w.tasksApproved >= 5,
+  },
+  {
+    icon: 'bank',
+    es: { t: 'Ahorrador', d: 'Ahorra $50' },
+    en: { t: 'Saver', d: 'Save $50' },
+    earned: (w) => w.balanceCents >= 5000,
+  },
+  {
+    icon: 'snowflake-o',
+    es: { t: 'Resistente', d: 'Resiste un impulso' },
+    en: { t: 'Cool head', d: 'Resist one impulse' },
+    earned: (w) => w.resistedCount >= 1,
+  },
+  {
+    icon: 'shield',
+    es: { t: 'Maestro estoico', d: 'Resiste 5 impulsos' },
+    en: { t: 'Stoic master', d: 'Resist 5 impulses' },
+    earned: (w) => w.resistedCount >= 5,
+  },
+  {
+    icon: 'bolt',
+    es: { t: 'Nivel 5', d: 'Llega al nivel 5' },
+    en: { t: 'Level 5', d: 'Reach level 5' },
+    earned: (w) => w.level >= 5,
+  },
+];
+
+export function Wins() {
   const { colors } = useTheme();
   const { t, lang } = useLang();
+  const winsQ = useMyWins();
+  const w = winsQ.data ?? ZERO;
+
   const stats = [
-    { v: '7', l: t.wins.stat1, accent: false },
-    { v: '7', l: t.wins.stat2, accent: false },
-    { v: String(resisted), l: t.wins.stat3, accent: true },
+    { v: String(w.tasksApproved), l: lang === 'es' ? 'TAREAS' : 'TASKS', accent: false },
+    { v: String(w.level), l: lang === 'es' ? 'NIVEL' : 'LEVEL', accent: false },
+    { v: String(w.resistedCount), l: lang === 'es' ? 'RESISTIDOS' : 'RESISTED', accent: true },
   ];
 
   return (
@@ -24,7 +83,7 @@ export function Wins({ resisted }: { resisted: number }) {
         {t.wins.sub}
       </Txt>
 
-      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 22 }}>
+      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
         {stats.map((s) => (
           <View
             key={s.l}
@@ -54,8 +113,21 @@ export function Wins({ resisted }: { resisted: number }) {
         ))}
       </View>
 
+      {w.resistedCents > 0 && (
+        <View
+          style={{ borderRadius: 16, padding: 14, marginBottom: 22, backgroundColor: colors.soft }}
+        >
+          <Txt w="400" style={{ fontSize: 13, color: colors.ink2 }}>
+            {lang === 'es'
+              ? `Has decidido NO gastar $${Math.round(centsToDollars(w.resistedCents))} en impulsos. ¡Eso es ahorro real!`
+              : `You chose NOT to spend $${Math.round(centsToDollars(w.resistedCents))} on impulses. That's real saving!`}
+          </Txt>
+        </View>
+      )}
+
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-        {ACHIEVEMENTS.map((a) => {
+        {BADGES.map((a) => {
+          const earned = a.earned(w);
           const info = a[lang];
           return (
             <View
@@ -69,7 +141,7 @@ export function Wins({ resisted }: { resisted: number }) {
                 borderRadius: 20,
                 padding: 16,
                 alignItems: 'center',
-                opacity: a.earned ? 1 : 0.5,
+                opacity: earned ? 1 : 0.5,
               }}
             >
               <View
@@ -80,10 +152,10 @@ export function Wins({ resisted }: { resisted: number }) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: 11,
-                  backgroundColor: a.earned ? colors.accent : colors.chip,
+                  backgroundColor: earned ? colors.accent : colors.chip,
                 }}
               >
-                <Icon name={a.icon} size={21} color={a.earned ? colors.accentInk : colors.ink3} />
+                <Icon name={a.icon} size={21} color={earned ? colors.accentInk : colors.ink3} />
               </View>
               <Txt w="800" style={{ fontSize: 13.5, textAlign: 'center', color: colors.ink }}>
                 {info.t}
@@ -100,10 +172,10 @@ export function Wins({ resisted }: { resisted: number }) {
                   fontSize: 8.5,
                   letterSpacing: 0.5,
                   marginTop: 9,
-                  color: a.earned ? colors.accent : colors.ink3,
+                  color: earned ? colors.accent : colors.ink3,
                 }}
               >
-                {a.earned ? t.wins.earned : t.wins.locked}
+                {earned ? t.wins.earned : t.wins.locked}
               </Txt>
             </View>
           );
