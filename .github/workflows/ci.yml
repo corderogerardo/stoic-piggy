@@ -89,8 +89,10 @@ jobs:
 
       # The backend imports `@stoicpiggy/shared` from its built dist (types + JS),
       # so build the workspace deps before ts-jest type-checks the e2e suite.
+      # The `...` builds @stoicpiggy/schemas first — shared bundles it (tsup
+      # noExternal) and its dist must exist before shared's build resolves it.
       - name: Build backend dependencies
-        run: pnpm --filter @stoicpiggy/shared build
+        run: pnpm --filter "@stoicpiggy/shared..." build
 
       - name: Apply migrations to the test database
         working-directory: apps/backend

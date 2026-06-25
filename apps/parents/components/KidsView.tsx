@@ -9,15 +9,19 @@ import {
   useUpdateAllowance,
   useUpdateChild,
 } from '@stoicpiggy/api';
+import type { EditKidFormValues, ResetPasswordFormValues } from '@stoicpiggy/schemas';
 import {
-  centsToDollars,
-  type DashboardChild,
-  dollarsToCents,
-  passwordSchema,
-} from '@stoicpiggy/shared';
+  allowanceFormSchema,
+  editKidFormSchema,
+  resetPasswordFormSchema,
+} from '@stoicpiggy/schemas';
+import { centsToDollars, type DashboardChild, dollarsToCents } from '@stoicpiggy/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { Controller } from 'react-hook-form';
 import { CreateKidForm } from './CreateKidForm';
+import { Field, FormError } from './form/Field';
+import { useZodForm } from './form/useZodForm';
 
 type Lang = 'es' | 'en';
 
@@ -206,26 +210,32 @@ function KidCard({
   const t = T[lang];
   const updateAllowance = useUpdateAllowance();
   const setActive = useSetChildActive();
-  const [dollars, setDollars] = useState(String(Math.round(centsToDollars(kid.allowanceCents))));
-  const [autopay, setAutopay] = useState(kid.autopayEnabled);
+  const { control, handleSubmit, reset, getValues, watch, formState } = useZodForm(
+    allowanceFormSchema,
+    {
+      defaultValues: {
+        dollars: String(Math.round(centsToDollars(kid.allowanceCents))),
+        autopayEnabled: kid.autopayEnabled,
+      },
+    },
+  );
+  const autopay = watch('autopayEnabled');
   const [savedFlash, setSavedFlash] = useState(false);
 
   const balance = Math.round(centsToDollars(kid.balanceCents));
   const goalTarget = kid.goal ? Math.round(centsToDollars(kid.goal.targetCents)) : 0;
   const pct = goalTarget > 0 ? Math.min(100, Math.round((balance / goalTarget) * 100)) : 0;
-  const dirty =
-    dollarsToCents(Number(dollars) || 0) !== kid.allowanceCents || autopay !== kid.autopayEnabled;
-
-  const saveAllowance = async () => {
+  const saveAllowance = handleSubmit(async (values) => {
     await updateAllowance.mutateAsync({
       childId: kid.id,
-      allowanceCents: dollarsToCents(Number(dollars) || 0),
-      autopayEnabled: autopay,
+      allowanceCents: dollarsToCents(values.dollars),
+      autopayEnabled: values.autopayEnabled,
     });
     await afterChange();
+    reset(getValues()); // clear the dirty baseline while keeping the displayed values
     setSavedFlash(true);
     setTimeout(() => setSavedFlash(false), 1600);
-  };
+  });
 
   const initial = (kid.displayName.charAt(0) || '?').toUpperCase();
   const input =
@@ -318,22 +328,35 @@ function KidCard({
             <div className="mb-[14px] flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-[15px] font-extrabold text-navy/70">$</span>
-                <input
-                  className={input}
-                  value={dollars}
-                  onChange={(e) => setDollars(e.target.value.replace(/[^0-9]/g, ''))}
-                  inputMode="numeric"
-                  aria-label={t.allowance}
+                <Controller
+                  control={control}
+                  name="dollars"
+                  render={({ field }) => (
+                    <input
+                      className={input}
+                      inputMode="numeric"
+                      aria-label={t.allowance}
+                      value={field.value == null ? '' : String(field.value)}
+                      onChange={(e) => field.onChange(e.target.value.replace(/[^0-9]/g, ''))}
+                      onBlur={field.onBlur}
+                    />
+                  )}
                 />
               </div>
-              <Toggle on={autopay} onClick={() => setAutopay((v) => !v)} />
+              <Controller
+                control={control}
+                name="autopayEnabled"
+                render={({ field }) => (
+                  <Toggle on={field.value} onClick={() => field.onChange(!field.value)} />
+                )}
+              />
             </div>
             <div className="mb-3 text-[12.5px] leading-relaxed text-navy/60">
               {autopay ? t.autopayOn : t.autopayOff}
             </div>
             <button
               type="button"
-              disabled={!dirty || updateAllowance.isPending}
+              disabled={!formState.isDirty || updateAllowance.isPending}
               onClick={saveAllowance}
               className="inline-flex items-center justify-center rounded-[11px] bg-accent px-4 py-2 text-[13px] font-extrabold text-cream disabled:opacity-50"
             >
@@ -387,6 +410,126 @@ function DeactivatedRow({
   );
 }
 
+/** The cancel + primary-action row shared by the manage-kid modal bodies. */
+function ModalActions({
+  submitLabel,
+  cancelLabel,
+  busy,
+  onCancel,
+  onConfirm,
+}: {
+  submitLabel: string;
+  cancelLabel: string;
+  busy: boolean;
+  onCancel: () => void;
+  /** When set, the primary button is a plain button (delete confirm). Otherwise it submits. */
+  onConfirm?: () => void;
+}) {
+  return (
+    <div className="mt-5 flex gap-2.5">
+      <button
+        type="button"
+        onClick={onCancel}
+        className="flex-1 rounded-[13px] border-2 border-navy/15 bg-white py-3 text-[14px] font-extrabold text-navy/70"
+      >
+        {cancelLabel}
+      </button>
+      <button
+        type={onConfirm ? 'button' : 'submit'}
+        onClick={onConfirm}
+        disabled={busy}
+        className="flex-1 rounded-[13px] bg-accent py-3 text-[14px] font-extrabold text-cream disabled:opacity-60"
+      >
+        {submitLabel}
+      </button>
+    </div>
+  );
+}
+
+/** Edit a kid's name + age. */
+function EditKidForm({
+  kid,
+  t,
+  serverError,
+  onSubmit,
+  onCancel,
+}: {
+  kid: DashboardChild;
+  t: (typeof T)[Lang];
+  serverError: string | null;
+  onSubmit: (values: EditKidFormValues) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const { register, handleSubmit, formState } = useZodForm(editKidFormSchema, {
+    defaultValues: { displayName: kid.displayName, age: kid.age ? String(kid.age) : '' },
+  });
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <div className="flex flex-col gap-3">
+        <Field
+          label={t.name}
+          registration={register('displayName')}
+          error={formState.errors.displayName}
+        />
+        <Field
+          label={t.ageLabel}
+          placeholder="10"
+          inputMode="numeric"
+          registration={register('age')}
+          error={formState.errors.age}
+        />
+      </div>
+      <div className="mt-3">
+        <FormError>{serverError}</FormError>
+      </div>
+      <ModalActions
+        submitLabel={t.save}
+        cancelLabel={t.cancel}
+        busy={formState.isSubmitting}
+        onCancel={onCancel}
+      />
+    </form>
+  );
+}
+
+/** Set a new password for a kid. */
+function ResetKidPasswordForm({
+  t,
+  serverError,
+  onSubmit,
+  onCancel,
+}: {
+  t: (typeof T)[Lang];
+  serverError: string | null;
+  onSubmit: (values: ResetPasswordFormValues) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const { register, handleSubmit, formState } = useZodForm(resetPasswordFormSchema, {
+    defaultValues: { password: '' },
+  });
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <Field
+        label={t.pwLabel}
+        type="password"
+        placeholder={t.pwPh}
+        autoComplete="new-password"
+        registration={register('password')}
+        error={formState.errors.password}
+      />
+      <div className="mt-3">
+        <FormError>{serverError}</FormError>
+      </div>
+      <ModalActions
+        submitLabel={t.save}
+        cancelLabel={t.cancel}
+        busy={formState.isSubmitting}
+        onCancel={onCancel}
+      />
+    </form>
+  );
+}
+
 function ManageModal({
   mode,
   kid,
@@ -404,40 +547,44 @@ function ManageModal({
   const updateChild = useUpdateChild();
   const resetPassword = useResetKidPassword();
   const deleteChild = useDeleteChild();
-
-  const [displayName, setDisplayName] = useState(kid.displayName);
-  const [age, setAge] = useState(kid.age ? String(kid.age) : '');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const busy = updateChild.isPending || resetPassword.isPending || deleteChild.isPending;
 
-  const input =
-    'w-full rounded-[13px] border-2 border-navy/15 bg-white px-4 py-3 text-[15px] font-semibold text-navy outline-none focus:border-accent';
-  const label = 'text-[11px] font-extrabold tracking-[0.5px] text-navy/55';
+  const fail = (err: unknown) =>
+    setError(err instanceof Error ? err.message : 'Something went wrong.');
 
-  const submit = async () => {
+  // The forms own field state + validation; this modal owns the mutations.
+  const onEdit = async (values: EditKidFormValues) => {
     setError(null);
     try {
-      if (mode === 'edit') {
-        await updateChild.mutateAsync({
-          childId: kid.id,
-          displayName: displayName.trim(),
-          age: age ? Number(age) : null,
-        });
-      } else if (mode === 'password') {
-        const parsed = passwordSchema.safeParse(password);
-        if (!parsed.success) {
-          setError(parsed.error.issues[0]?.message ?? 'Invalid password');
-          return;
-        }
-        await resetPassword.mutateAsync({ childId: kid.id, password });
-      } else {
-        await deleteChild.mutateAsync({ childId: kid.id });
-      }
+      await updateChild.mutateAsync({
+        childId: kid.id,
+        displayName: values.displayName,
+        age: values.age,
+      });
       await afterChange();
       close();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.');
+      fail(err);
+    }
+  };
+  const onResetPw = async (values: ResetPasswordFormValues) => {
+    setError(null);
+    try {
+      await resetPassword.mutateAsync({ childId: kid.id, password: values.password });
+      await afterChange();
+      close();
+    } catch (err) {
+      fail(err);
+    }
+  };
+  const onDelete = async () => {
+    setError(null);
+    try {
+      await deleteChild.mutateAsync({ childId: kid.id });
+      await afterChange();
+      close();
+    } catch (err) {
+      fail(err);
     }
   };
 
@@ -463,72 +610,26 @@ function ManageModal({
         </h2>
 
         {mode === 'edit' && (
-          <div className="flex flex-col gap-3">
-            <label className="flex flex-col gap-1.5">
-              <span className={label}>{t.name}</span>
-              <input
-                className={input}
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-              />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className={label}>{t.ageLabel}</span>
-              <input
-                className={input}
-                value={age}
-                onChange={(e) => setAge(e.target.value.replace(/[^0-9]/g, ''))}
-                inputMode="numeric"
-                placeholder="10"
-              />
-            </label>
-          </div>
+          <EditKidForm kid={kid} t={t} serverError={error} onSubmit={onEdit} onCancel={close} />
         )}
-
         {mode === 'password' && (
-          <label className="flex flex-col gap-1.5">
-            <span className={label}>{t.pwLabel}</span>
-            <input
-              className={input}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={t.pwPh}
-              autoComplete="new-password"
-            />
-          </label>
+          <ResetKidPasswordForm t={t} serverError={error} onSubmit={onResetPw} onCancel={close} />
         )}
-
         {mode === 'delete' && (
-          <p className="m-0 text-[13.5px] leading-relaxed text-navy/70">{t.delBody}</p>
+          <>
+            <p className="m-0 text-[13.5px] leading-relaxed text-navy/70">{t.delBody}</p>
+            <div className="mt-3">
+              <FormError>{error}</FormError>
+            </div>
+            <ModalActions
+              submitLabel={t.confirmDelete}
+              cancelLabel={t.cancel}
+              busy={deleteChild.isPending}
+              onCancel={close}
+              onConfirm={onDelete}
+            />
+          </>
         )}
-
-        {error && (
-          <div
-            role="alert"
-            className="mt-3 rounded-[11px] bg-accent/10 px-3.5 py-2.5 text-[13px] font-semibold text-accent"
-          >
-            {error}
-          </div>
-        )}
-
-        <div className="mt-5 flex gap-2.5">
-          <button
-            type="button"
-            onClick={close}
-            className="flex-1 rounded-[13px] border-2 border-navy/15 bg-white py-3 text-[14px] font-extrabold text-navy/70"
-          >
-            {t.cancel}
-          </button>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={busy}
-            className={`flex-1 rounded-[13px] py-3 text-[14px] font-extrabold text-cream disabled:opacity-60 ${mode === 'delete' ? 'bg-accent' : 'bg-accent'}`}
-          >
-            {mode === 'delete' ? t.confirmDelete : t.save}
-          </button>
-        </div>
       </div>
     </div>
   );

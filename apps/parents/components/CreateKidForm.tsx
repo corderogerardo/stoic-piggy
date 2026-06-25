@@ -1,9 +1,12 @@
 'use client';
 
 import { useCreateChild, useTRPC } from '@stoicpiggy/api';
-import { createChildAccountSchema } from '@stoicpiggy/shared';
+import type { CreateKidFormValues } from '@stoicpiggy/schemas';
+import { createKidFormSchema } from '@stoicpiggy/schemas';
 import { useQueryClient } from '@tanstack/react-query';
-import { type FormEvent, useState } from 'react';
+import { useState } from 'react';
+import { Field, FormError } from './form/Field';
+import { useZodForm } from './form/useZodForm';
 
 interface Props {
   lang: 'es' | 'en';
@@ -47,109 +50,68 @@ export function CreateKidForm({ lang, onCreated }: Props) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const createChild = useCreateChild();
-
-  const [displayName, setDisplayName] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [age, setAge] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
 
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError(null);
+  const { register, handleSubmit, reset, formState } = useZodForm(createKidFormSchema, {
+    defaultValues: { displayName: '', username: '', password: '', age: '' },
+  });
+  const { errors, isSubmitting } = formState;
+
+  const onSubmit = async (values: CreateKidFormValues) => {
+    setServerError(null);
     setDone(null);
-
-    const parsed = createChildAccountSchema.safeParse({
-      displayName,
-      username,
-      password,
-      age: age ? Number(age) : undefined,
-    });
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Check the form and try again.');
-      return;
-    }
-
     try {
-      await createChild.mutateAsync(parsed.data);
+      await createChild.mutateAsync(values);
       await queryClient.invalidateQueries({ queryKey: trpc.children.dashboard.queryKey() });
       await queryClient.invalidateQueries({ queryKey: trpc.children.list.queryKey() });
-      setDone(t.ok(parsed.data.displayName));
-      onCreated?.(parsed.data.displayName);
-      setDisplayName('');
-      setUsername('');
-      setPassword('');
-      setAge('');
+      setDone(t.ok(values.displayName));
+      onCreated?.(values.displayName);
+      reset();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create the account.');
+      setServerError(err instanceof Error ? err.message : 'Could not create the account.');
     }
   };
-
-  const input =
-    'w-full rounded-[13px] border-2 border-navy/15 bg-white px-4 py-3 text-[15px] font-semibold text-navy outline-none focus:border-accent';
-  const label = 'text-[11px] font-extrabold tracking-[0.5px] text-navy/55';
 
   return (
     <div className="rounded-[22px] border border-navy/10 bg-white p-6">
       <h2 className="m-0 text-[17px] font-extrabold">{t.title}</h2>
       <p className="m-0 mb-5 mt-1 text-[13.5px] text-navy/60">{t.sub}</p>
-      <form onSubmit={submit} className="flex flex-col gap-3">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
         <div className="flex flex-wrap gap-3">
-          <label className="flex min-w-[160px] flex-1 flex-col gap-1.5">
-            <span className={label}>{t.name}</span>
-            <input
-              className={input}
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder={t.namePh}
-              required
-            />
-          </label>
-          <label className="flex w-[120px] flex-col gap-1.5">
-            <span className={label}>{t.age}</span>
-            <input
-              className={input}
-              value={age}
-              onChange={(e) => setAge(e.target.value.replace(/[^0-9]/g, ''))}
-              inputMode="numeric"
-              placeholder="10"
-            />
-          </label>
+          <Field
+            label={t.name}
+            placeholder={t.namePh}
+            wrapperClassName="min-w-[160px] flex-1"
+            registration={register('displayName')}
+            error={errors.displayName}
+          />
+          <Field
+            label={t.age}
+            placeholder="10"
+            inputMode="numeric"
+            wrapperClassName="w-[120px]"
+            registration={register('age')}
+            error={errors.age}
+          />
         </div>
-        <label className="flex flex-col gap-1.5">
-          <span className={label}>{t.user}</span>
-          <input
-            className={input}
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder={t.userPh}
-            autoComplete="off"
-            required
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className={label}>{t.pass}</span>
-          <input
-            className={input}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={t.passPh}
-            autoComplete="new-password"
-            minLength={8}
-            required
-          />
-        </label>
+        <Field
+          label={t.user}
+          placeholder={t.userPh}
+          autoComplete="off"
+          registration={register('username')}
+          error={errors.username}
+        />
+        <Field
+          label={t.pass}
+          type="password"
+          placeholder={t.passPh}
+          autoComplete="new-password"
+          registration={register('password')}
+          error={errors.password}
+        />
 
-        {error && (
-          <div
-            role="alert"
-            className="rounded-[11px] bg-accent/10 px-3.5 py-2.5 text-[13px] font-semibold text-accent"
-          >
-            {error}
-          </div>
-        )}
+        <FormError>{serverError}</FormError>
         {done && (
           <div className="rounded-[11px] bg-success/15 px-3.5 py-2.5 text-[13px] font-semibold text-success">
             {done}
@@ -158,10 +120,10 @@ export function CreateKidForm({ lang, onCreated }: Props) {
 
         <button
           type="submit"
-          disabled={createChild.isPending}
+          disabled={isSubmitting}
           className="mt-1 inline-flex items-center justify-center gap-2 rounded-[13px] bg-accent py-[14px] text-[15px] font-extrabold text-cream disabled:opacity-60"
         >
-          {createChild.isPending ? t.busy : t.submit}
+          {isSubmitting ? t.busy : t.submit}
         </button>
       </form>
     </div>

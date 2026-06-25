@@ -1,16 +1,16 @@
 import { useMyWins, useResistImpulse, useTRPC } from '@stoicpiggy/api';
-import { centsToDollars, dollarsToCents } from '@stoicpiggy/shared';
+import { centsToDollars } from '@stoicpiggy/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, TextInput, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { FONT } from '@/lib/fonts';
 import { useLang, useTheme } from '@/lib/providers';
+import { TemptationIntroForm } from '../form/TemptationIntroForm';
 import { Icon } from '../Icon';
 import { Piggy } from '../Piggy';
 import { Txt } from '../Txt';
@@ -28,8 +28,10 @@ export function Temptation({ onHome }: { onHome: () => void }) {
   const resist = useResistImpulse();
 
   const [stage, setStage] = useState<Stage>('intro');
-  const [item, setItem] = useState('');
-  const [amount, setAmount] = useState('');
+  // The intro form hands the parsed impulse up here; the later stages read it.
+  const [submitted, setSubmitted] = useState<{ item?: string; amountCents: number }>({
+    amountCents: 0,
+  });
   const scale = useSharedValue(0.92);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -45,7 +47,7 @@ export function Temptation({ onHome }: { onHome: () => void }) {
   const breatheStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const resisted = winsQ.data?.resistedCount ?? 0;
-  const amountCents = dollarsToCents(Number(amount) || 0);
+  const { item = '', amountCents } = submitted;
 
   const onResist = async () => {
     setStage('resisted');
@@ -53,21 +55,9 @@ export function Temptation({ onHome }: { onHome: () => void }) {
     await queryClient.invalidateQueries({ queryKey: trpc.me.wins.queryKey() });
   };
   const reset = () => {
-    setItem('');
-    setAmount('');
+    setSubmitted({ amountCents: 0 });
     setStage('intro');
   };
-
-  const input = {
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: colors.divider,
-    color: colors.ink,
-    fontFamily: FONT.regular,
-    fontSize: 15,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-  } as const;
 
   return (
     <View
@@ -119,79 +109,20 @@ export function Temptation({ onHome }: { onHome: () => void }) {
       </View>
 
       {stage === 'intro' && (
-        <>
-          <View style={{ flex: 1, justifyContent: 'center' }}>
-            <View style={{ alignItems: 'center', marginBottom: 12 }}>
-              <Txt
-                w="800"
-                style={{ fontSize: 11, letterSpacing: 1, color: colors.accent, marginBottom: 14 }}
-              >
-                {tp.eyebrow}
-              </Txt>
-              <Piggy mood="tempted" size={104} />
-            </View>
-            <View
-              style={{
-                backgroundColor: colors.cardBg,
-                borderColor: colors.cardBorderColor,
-                borderWidth: colors.cardBorderWidth,
-                borderRadius: 20,
-                padding: 18,
-                gap: 12,
-              }}
-            >
-              <Txt w="800" style={{ fontSize: 10, letterSpacing: 0.6, color: colors.ink3 }}>
-                {tp.wantLabel}
-              </Txt>
-              <TextInput
-                value={item}
-                onChangeText={setItem}
-                placeholder={lang === 'es' ? '¿Qué quieres comprar?' : 'What do you want to buy?'}
-                placeholderTextColor={colors.ink3}
-                style={input}
-              />
-              <TextInput
-                value={amount}
-                onChangeText={(v) => setAmount(v.replace(/[^0-9]/g, ''))}
-                keyboardType="number-pad"
-                placeholder={lang === 'es' ? 'Precio en $' : 'Price in $'}
-                placeholderTextColor={colors.ink3}
-                style={input}
-              />
-            </View>
-            <Txt
-              w="400"
-              style={{
-                fontSize: 14,
-                lineHeight: 22,
-                textAlign: 'center',
-                color: colors.ink2,
-                marginTop: 16,
-              }}
-            >
-              {tp.wantBody}
-            </Txt>
-          </View>
-          <Pressable
-            onPress={() => setStage('breathing')}
-            disabled={amountCents <= 0}
-            style={{
-              backgroundColor: colors.accent,
-              paddingVertical: 17,
-              borderRadius: 16,
-              alignItems: 'center',
-              flexDirection: 'row',
-              justifyContent: 'center',
-              gap: 9,
-              opacity: amountCents <= 0 ? 0.5 : 1,
-            }}
-          >
-            <Icon name="leaf" size={15} color={colors.accentInk} />
-            <Txt w="800" style={{ fontSize: 16, color: colors.accentInk }}>
-              {tp.breatheCta}
-            </Txt>
-          </Pressable>
-        </>
+        <TemptationIntroForm
+          copy={{
+            eyebrow: tp.eyebrow,
+            wantLabel: tp.wantLabel,
+            wantBody: tp.wantBody,
+            breatheCta: tp.breatheCta,
+          }}
+          itemPlaceholder={lang === 'es' ? '¿Qué quieres comprar?' : 'What do you want to buy?'}
+          amountPlaceholder={lang === 'es' ? 'Precio en $' : 'Price in $'}
+          onReady={(v) => {
+            setSubmitted(v);
+            setStage('breathing');
+          }}
+        />
       )}
 
       {stage === 'breathing' && (
