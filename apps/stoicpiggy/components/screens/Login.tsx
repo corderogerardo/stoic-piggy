@@ -1,7 +1,9 @@
+import type { LoginChildInput } from '@stoicpiggy/schemas';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, View } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { useLang, useTheme } from '@/lib/providers';
+import { LoginForm } from '../form/LoginForm';
 import { Piggy } from '../Piggy';
 import { Txt } from '../Txt';
 
@@ -37,35 +39,18 @@ export function Login() {
   const { lang } = useLang();
   const { login } = useAuth();
   const c = COPY[lang];
+  const [serverError, setServerError] = useState<string | null>(null);
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const submit = async () => {
-    if (!username.trim() || !password) return;
-    setError(null);
-    setBusy(true);
+  // The form validates + manages field state; the screen owns the auth mutation
+  // and surfaces its failure. RHF keeps isSubmitting true until this resolves.
+  const onSubmit = async (values: LoginChildInput) => {
+    setServerError(null);
     try {
-      await login(username.trim(), password);
+      await login(values.username, values.password);
     } catch {
-      setError(c.err);
-    } finally {
-      setBusy(false);
+      setServerError(c.err);
     }
   };
-
-  const inputStyle = {
-    borderWidth: 2,
-    borderColor: colors.divider,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: colors.ink,
-    backgroundColor: colors.cardBg === 'transparent' ? colors.canvas : colors.cardBg,
-  } as const;
 
   return (
     <KeyboardAvoidingView
@@ -99,66 +84,7 @@ export function Login() {
           </Txt>
         </View>
 
-        <View style={{ gap: 14 }}>
-          <View style={{ gap: 6 }}>
-            <Txt w="800" style={{ fontSize: 11, letterSpacing: 0.5, color: colors.ink3 }}>
-              {c.user}
-            </Txt>
-            <TextInput
-              accessibilityLabel={c.user}
-              value={username}
-              onChangeText={setUsername}
-              placeholder={c.userPh}
-              placeholderTextColor={colors.ink3}
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="username"
-              style={inputStyle}
-            />
-          </View>
-
-          <View style={{ gap: 6 }}>
-            <Txt w="800" style={{ fontSize: 11, letterSpacing: 0.5, color: colors.ink3 }}>
-              {c.pass}
-            </Txt>
-            <TextInput
-              accessibilityLabel={c.pass}
-              value={password}
-              onChangeText={setPassword}
-              placeholder={c.passPh}
-              placeholderTextColor={colors.ink3}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="current-password"
-              onSubmitEditing={submit}
-              style={inputStyle}
-            />
-          </View>
-
-          {error && (
-            <Txt w="700" style={{ fontSize: 13, color: colors.accent }}>
-              {error}
-            </Txt>
-          )}
-
-          <Pressable
-            accessibilityRole="button"
-            onPress={submit}
-            disabled={busy}
-            style={{
-              backgroundColor: colors.accent,
-              paddingVertical: 16,
-              borderRadius: 16,
-              alignItems: 'center',
-              marginTop: 4,
-              opacity: busy ? 0.6 : 1,
-            }}
-          >
-            <Txt w="800" style={{ fontSize: 16, color: colors.accentInk }}>
-              {busy ? c.busy : c.cta}
-            </Txt>
-          </Pressable>
-        </View>
+        <LoginForm copy={c} serverError={serverError} onSubmit={onSubmit} />
       </View>
     </KeyboardAvoidingView>
   );

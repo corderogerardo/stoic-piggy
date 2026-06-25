@@ -14,13 +14,16 @@
     "clean": "rm -rf .next .turbo coverage"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@stoicpiggy/api": "workspace:*",
+    "@stoicpiggy/schemas": "workspace:*",
     "@stoicpiggy/shared": "workspace:*",
     "@stoicpiggy/ui": "workspace:*",
     "@tanstack/react-query": "^5.101.0",
     "next": "^16.2.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "react-hook-form": "^7.55.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",

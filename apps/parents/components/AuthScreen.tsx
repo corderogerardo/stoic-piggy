@@ -1,8 +1,14 @@
 'use client';
 
+import type {
+  LoginParentInput,
+  RegisterParentInput,
+  RequestPasswordResetInput,
+} from '@stoicpiggy/schemas';
 import { Piggy } from '@stoicpiggy/ui';
-import { type FormEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
+import { ForgotPasswordForm, ParentLoginForm, ParentRegisterForm } from './form/AuthForms';
 
 type Mode = 'login' | 'register' | 'forgot';
 
@@ -10,11 +16,7 @@ type Mode = 'login' | 'register' | 'forgot';
 export function AuthScreen() {
   const { login, register, requestPasswordReset } = useAuth();
   const [mode, setMode] = useState<Mode>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
 
   // Arriving from the landing "Empezar gratis" CTA (?signup) opens sign-up directly.
@@ -28,28 +30,38 @@ export function AuthScreen() {
     setForgotSent(false);
   };
 
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
+  const fail = (err: unknown) =>
+    setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
+
+  // The forms own field state + validation; the screen owns the auth mutations.
+  const onLogin = async ({ email, password }: LoginParentInput) => {
     setError(null);
-    setBusy(true);
     try {
-      if (mode === 'login') await login(email, password);
-      else if (mode === 'register') await register(email, password, displayName);
-      else {
-        await requestPasswordReset(email);
-        setForgotSent(true);
-      }
+      await login(email, password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
-    } finally {
-      setBusy(false);
+      fail(err);
+    }
+  };
+  const onRegister = async ({ email, password, displayName }: RegisterParentInput) => {
+    setError(null);
+    try {
+      await register(email, password, displayName);
+    } catch (err) {
+      fail(err);
+    }
+  };
+  const onForgot = async ({ email }: RequestPasswordResetInput) => {
+    setError(null);
+    try {
+      await requestPasswordReset(email);
+      setForgotSent(true);
+    } catch (err) {
+      fail(err);
     }
   };
 
   const tabBtn = (active: boolean) =>
     `flex-1 rounded-lg py-2.5 text-[13px] font-extrabold tracking-[0.3px] ${active ? 'bg-accent text-cream' : 'bg-transparent text-navy/60'}`;
-  const input =
-    'w-full rounded-[13px] border-2 border-navy/15 bg-white px-4 py-[13px] text-[15px] font-semibold text-navy outline-none focus:border-accent';
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-canvas px-5 py-10 text-navy">
@@ -90,38 +102,8 @@ export function AuthScreen() {
                   </button>
                 </>
               ) : (
-                <form onSubmit={submit} className="flex flex-col gap-3">
-                  <label className="flex flex-col gap-1.5">
-                    <span className="text-[11px] font-extrabold tracking-[0.5px] text-navy/55">
-                      EMAIL
-                    </span>
-                    <input
-                      className={input}
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="tucorreo@ejemplo.com"
-                      autoComplete="email"
-                      required
-                    />
-                  </label>
-
-                  {error && (
-                    <div
-                      role="alert"
-                      className="rounded-[11px] bg-accent/10 px-3.5 py-2.5 text-[13px] font-semibold text-accent"
-                    >
-                      {error}
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={busy}
-                    className="mt-1.5 inline-flex items-center justify-center rounded-[13px] bg-accent py-[14px] text-[15px] font-extrabold text-cream disabled:opacity-60"
-                  >
-                    {busy ? 'Un momento…' : 'Enviar enlace'}
-                  </button>
+                <>
+                  <ForgotPasswordForm serverError={error} onSubmit={onForgot} />
                   <button
                     type="button"
                     onClick={() => go('login')}
@@ -129,7 +111,7 @@ export function AuthScreen() {
                   >
                     Volver a iniciar sesión
                   </button>
-                </form>
+                </>
               )}
             </div>
           ) : (
@@ -151,79 +133,15 @@ export function AuthScreen() {
                 </button>
               </div>
 
-              <form onSubmit={submit} className="flex flex-col gap-3">
-                {mode === 'register' && (
-                  <label className="flex flex-col gap-1.5">
-                    <span className="text-[11px] font-extrabold tracking-[0.5px] text-navy/55">
-                      NOMBRE
-                    </span>
-                    <input
-                      className={input}
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      placeholder="Tu nombre"
-                      autoComplete="name"
-                      required
-                    />
-                  </label>
-                )}
-                <label className="flex flex-col gap-1.5">
-                  <span className="text-[11px] font-extrabold tracking-[0.5px] text-navy/55">
-                    EMAIL
-                  </span>
-                  <input
-                    className={input}
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="tucorreo@ejemplo.com"
-                    autoComplete="email"
-                    required
-                  />
-                </label>
-                <label className="flex flex-col gap-1.5">
-                  <span className="text-[11px] font-extrabold tracking-[0.5px] text-navy/55">
-                    CONTRASEÑA
-                  </span>
-                  <input
-                    className={input}
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={mode === 'register' ? 'Mínimo 8 caracteres' : '••••••••'}
-                    autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-                    minLength={mode === 'register' ? 8 : undefined}
-                    required
-                  />
-                </label>
-
-                {mode === 'login' && (
-                  <button
-                    type="button"
-                    onClick={() => go('forgot')}
-                    className="self-start text-[12.5px] font-extrabold text-accent"
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </button>
-                )}
-
-                {error && (
-                  <div
-                    role="alert"
-                    className="rounded-[11px] bg-accent/10 px-3.5 py-2.5 text-[13px] font-semibold text-accent"
-                  >
-                    {error}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="mt-1.5 inline-flex items-center justify-center gap-2 rounded-[13px] bg-accent py-[14px] text-[15px] font-extrabold text-cream disabled:opacity-60"
-                >
-                  {busy ? 'Un momento…' : mode === 'login' ? 'Entrar' : 'Crear cuenta'}
-                </button>
-              </form>
+              {mode === 'login' ? (
+                <ParentLoginForm
+                  serverError={error}
+                  onForgot={() => go('forgot')}
+                  onSubmit={onLogin}
+                />
+              ) : (
+                <ParentRegisterForm serverError={error} onSubmit={onRegister} />
+              )}
             </>
           )}
         </div>

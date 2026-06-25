@@ -1,5 +1,5 @@
 {
-  "name": "@stoicpiggy/shared",
+  "name": "@stoicpiggy/schemas",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -23,7 +23,6 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@stoicpiggy/schemas": "workspace:*",
     "zod": "^4.4.0"
   },
   "devDependencies": {

@@ -1,17 +1,21 @@
 'use client';
 
 import { useCreateTask, useDeleteTask, useMyDashboard, useTasks, useTRPC } from '@stoicpiggy/api';
+import type { CreateTaskFormValues } from '@stoicpiggy/schemas';
+import { createTaskFormSchema } from '@stoicpiggy/schemas';
 import {
   centsToDollars,
   type DashboardChild,
   dollarsToCents,
   type Task,
   type TaskCategory,
-  type TaskPayType,
   type TaskRecurrence,
 } from '@stoicpiggy/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
+import { Controller } from 'react-hook-form';
+import { FormError } from './form/Field';
+import { useZodForm } from './form/useZodForm';
 
 type Lang = 'es' | 'en';
 
@@ -244,14 +248,20 @@ function CreateTaskModal({
 }) {
   const t = T[lang];
   const createTask = useCreateTask();
-  const [title, setTitle] = useState('');
-  const [childId, setChildId] = useState(kids[0]?.id ?? '');
-  const [category, setCategory] = useState<TaskCategory>('chore');
-  const [payType, setPayType] = useState<TaskPayType>('money');
-  const [amount, setAmount] = useState('20');
-  const [xp, setXp] = useState('50');
-  const [recurrence, setRecurrence] = useState<TaskRecurrence>('once');
-  const [error, setError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const { register, control, handleSubmit, watch, formState } = useZodForm(createTaskFormSchema, {
+    defaultValues: {
+      childId: kids[0]?.id ?? '',
+      title: '',
+      category: 'chore',
+      payType: 'money',
+      amount: '20',
+      xp: '50',
+      recurrence: 'once',
+    },
+  });
+  const payType = watch('payType');
 
   const input =
     'w-full rounded-[12px] border-2 border-navy/15 bg-white px-3.5 py-2.5 text-[14px] font-semibold text-navy outline-none focus:border-accent';
@@ -259,26 +269,22 @@ function CreateTaskModal({
   const pill = (on: boolean) =>
     `flex-1 rounded-[11px] border-2 px-3 py-2 text-[12.5px] font-extrabold ${on ? 'border-accent bg-accent/5 text-accent' : 'border-navy/15 bg-white text-navy/60'}`;
 
-  const submit = async () => {
-    setError(null);
-    if (!childId) {
-      setError(lang === 'es' ? 'Elige un hijo.' : 'Pick a kid.');
-      return;
-    }
+  const onSubmit = async (values: CreateTaskFormValues) => {
+    setServerError(null);
     try {
       await createTask.mutateAsync({
-        childId,
-        title: title.trim() || (lang === 'es' ? 'Tarea nueva' : 'New task'),
-        category,
-        payType,
-        amountCents: payType === 'xp' ? 0 : dollarsToCents(Number(amount) || 0),
-        rewardXp: payType === 'money' ? 0 : Number(xp) || 0,
-        recurrence,
+        childId: values.childId,
+        title: values.title.trim() || (lang === 'es' ? 'Tarea nueva' : 'New task'),
+        category: values.category,
+        payType: values.payType,
+        amountCents: values.payType === 'xp' ? 0 : dollarsToCents(values.amount),
+        rewardXp: values.payType === 'money' ? 0 : values.xp,
+        recurrence: values.recurrence,
       });
       await afterCreate();
       close();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create the task.');
+      setServerError(err instanceof Error ? err.message : 'Could not create the task.');
     }
   };
 
@@ -290,7 +296,8 @@ function CreateTaskModal({
         onClick={close}
         className="absolute inset-0 h-full w-full cursor-default bg-transparent"
       />
-      <div
+      <form
+        onSubmit={handleSubmit(onSubmit)}
         className="relative flex w-full max-w-[460px] flex-col gap-3 rounded-[22px] bg-white p-6"
         role="dialog"
         aria-modal="true"
@@ -299,17 +306,12 @@ function CreateTaskModal({
 
         <label className="flex flex-col gap-1.5">
           <span className={label}>{t.name}</span>
-          <input
-            className={input}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={t.namePh}
-          />
+          <input className={input} placeholder={t.namePh} {...register('title')} />
         </label>
 
         <label className="flex flex-col gap-1.5">
           <span className={label}>{t.assignee}</span>
-          <select className={input} value={childId} onChange={(e) => setChildId(e.target.value)}>
+          <select className={input} {...register('childId')}>
             {kids.map((k) => (
               <option key={k.id} value={k.id}>
                 {k.displayName}
@@ -318,102 +320,127 @@ function CreateTaskModal({
           </select>
         </label>
 
-        <div className="flex flex-col gap-1.5">
-          <span className={label}>{t.category}</span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className={pill(category === 'chore')}
-              onClick={() => setCategory('chore')}
-            >
-              {t.cat.chore}
-            </button>
-            <button
-              type="button"
-              className={pill(category === 'lesson')}
-              onClick={() => setCategory('lesson')}
-            >
-              {t.cat.lesson}
-            </button>
-          </div>
-        </div>
+        <Controller
+          control={control}
+          name="category"
+          render={({ field }) => (
+            <div className="flex flex-col gap-1.5">
+              <span className={label}>{t.category}</span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className={pill(field.value === 'chore')}
+                  onClick={() => field.onChange('chore')}
+                >
+                  {t.cat.chore}
+                </button>
+                <button
+                  type="button"
+                  className={pill(field.value === 'lesson')}
+                  onClick={() => field.onChange('lesson')}
+                >
+                  {t.cat.lesson}
+                </button>
+              </div>
+            </div>
+          )}
+        />
 
-        <div className="flex flex-col gap-1.5">
-          <span className={label}>{t.pay}</span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className={pill(payType === 'money')}
-              onClick={() => setPayType('money')}
-            >
-              {t.money}
-            </button>
-            <button
-              type="button"
-              className={pill(payType === 'xp')}
-              onClick={() => setPayType('xp')}
-            >
-              {t.xp}
-            </button>
-            <button
-              type="button"
-              className={pill(payType === 'both')}
-              onClick={() => setPayType('both')}
-            >
-              {t.both}
-            </button>
-          </div>
-        </div>
+        <Controller
+          control={control}
+          name="payType"
+          render={({ field }) => (
+            <div className="flex flex-col gap-1.5">
+              <span className={label}>{t.pay}</span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className={pill(field.value === 'money')}
+                  onClick={() => field.onChange('money')}
+                >
+                  {t.money}
+                </button>
+                <button
+                  type="button"
+                  className={pill(field.value === 'xp')}
+                  onClick={() => field.onChange('xp')}
+                >
+                  {t.xp}
+                </button>
+                <button
+                  type="button"
+                  className={pill(field.value === 'both')}
+                  onClick={() => field.onChange('both')}
+                >
+                  {t.both}
+                </button>
+              </div>
+            </div>
+          )}
+        />
 
         <div className="flex gap-3">
           {payType !== 'xp' && (
-            <label className="flex flex-1 flex-col gap-1.5">
-              <span className={label}>{t.amount}</span>
-              <input
-                className={input}
-                value={amount}
-                onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ''))}
-                inputMode="numeric"
-              />
-            </label>
+            <Controller
+              control={control}
+              name="amount"
+              render={({ field }) => (
+                <label className="flex flex-1 flex-col gap-1.5">
+                  <span className={label}>{t.amount}</span>
+                  <input
+                    className={input}
+                    inputMode="numeric"
+                    value={field.value == null ? '' : String(field.value)}
+                    onChange={(e) => field.onChange(e.target.value.replace(/[^0-9]/g, ''))}
+                    onBlur={field.onBlur}
+                  />
+                </label>
+              )}
+            />
           )}
           {payType !== 'money' && (
-            <label className="flex flex-1 flex-col gap-1.5">
-              <span className={label}>{t.xpAmount}</span>
-              <input
-                className={input}
-                value={xp}
-                onChange={(e) => setXp(e.target.value.replace(/[^0-9]/g, ''))}
-                inputMode="numeric"
-              />
-            </label>
+            <Controller
+              control={control}
+              name="xp"
+              render={({ field }) => (
+                <label className="flex flex-1 flex-col gap-1.5">
+                  <span className={label}>{t.xpAmount}</span>
+                  <input
+                    className={input}
+                    inputMode="numeric"
+                    value={field.value == null ? '' : String(field.value)}
+                    onChange={(e) => field.onChange(e.target.value.replace(/[^0-9]/g, ''))}
+                    onBlur={field.onBlur}
+                  />
+                </label>
+              )}
+            />
           )}
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <span className={label}>{t.frequency}</span>
-          <div className="flex gap-2">
-            {(['once', 'daily', 'weekly'] as const).map((r) => (
-              <button
-                key={r}
-                type="button"
-                className={pill(recurrence === r)}
-                onClick={() => setRecurrence(r)}
-              >
-                {t.recur[r]}
-              </button>
-            ))}
-          </div>
-        </div>
+        <Controller
+          control={control}
+          name="recurrence"
+          render={({ field }) => (
+            <div className="flex flex-col gap-1.5">
+              <span className={label}>{t.frequency}</span>
+              <div className="flex gap-2">
+                {(['once', 'daily', 'weekly'] as const).map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    className={pill(field.value === r)}
+                    onClick={() => field.onChange(r)}
+                  >
+                    {t.recur[r]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        />
 
-        {error && (
-          <div
-            role="alert"
-            className="rounded-[11px] bg-accent/10 px-3.5 py-2.5 text-[13px] font-semibold text-accent"
-          >
-            {error}
-          </div>
-        )}
+        <FormError>{serverError}</FormError>
 
         <div className="mt-2 flex gap-2.5">
           <button
@@ -424,15 +451,14 @@ function CreateTaskModal({
             {t.cancel}
           </button>
           <button
-            type="button"
-            onClick={submit}
-            disabled={createTask.isPending}
+            type="submit"
+            disabled={formState.isSubmitting}
             className="flex-1 rounded-[12px] bg-accent py-3 text-[14px] font-extrabold text-cream disabled:opacity-60"
           >
-            {createTask.isPending ? t.creating : t.create}
+            {formState.isSubmitting ? t.creating : t.create}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

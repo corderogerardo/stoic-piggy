@@ -8,7 +8,7 @@ import {
   resetPasswordSchema,
   usernameSchema,
   verifyEmailSchema,
-} from './index';
+} from './schemas';
 
 describe('usernameSchema', () => {
   it('lowercases and trims', () => {
