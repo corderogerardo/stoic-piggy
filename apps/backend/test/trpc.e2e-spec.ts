@@ -26,6 +26,9 @@ const familyStub: Pick<
   | 'childParentId'
   | 'summaryByParent'
   | 'activityByParent'
+  | 'reportsByParent'
+  | 'parentSettings'
+  | 'updateParentSettings'
 > = {
   listChildren: async () => [],
   listGoals: async () => [],
@@ -38,6 +41,25 @@ const familyStub: Pick<
     paidThisMonthCents: 0,
   }),
   activityByParent: async () => [],
+  reportsByParent: async () => ({
+    tasksByDay: [0, 0, 0, 0, 0, 0, 0],
+    tasksCompletedThisWeek: 0,
+    paidThisMonthCents: 0,
+    savedCents: 34000,
+    activeKids: 1,
+  }),
+  parentSettings: async () => ({
+    notifyEnabled: true,
+    weeklyReportEnabled: true,
+    autoApproveTasks: false,
+    payoutMethod: 'card',
+  }),
+  updateParentSettings: async () => ({
+    notifyEnabled: true,
+    weeklyReportEnabled: true,
+    autoApproveTasks: false,
+    payoutMethod: 'card',
+  }),
   dashboardByParent: async () => [
     {
       id: 'c1',

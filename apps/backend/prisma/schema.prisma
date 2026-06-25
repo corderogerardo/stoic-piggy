@@ -20,6 +20,13 @@ model Parent {
   // Null until the parent confirms ownership of their email via the verification
   // link. We soft-gate: an unverified parent can still use the dashboard.
   emailVerifiedAt DateTime?
+  // Parent preferences (shown on the Settings page).
+  notifyEnabled       Boolean @default(true)
+  weeklyReportEnabled Boolean @default(true)
+  // When true, a kid's submitted task is approved + paid out automatically.
+  autoApproveTasks    Boolean @default(false)
+  // How money is delivered on approval (card | bank | cash). Display-only for now.
+  payoutMethod        String  @default("card")
   children     Child[]
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens     PasswordResetToken[]

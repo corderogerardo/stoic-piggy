@@ -71,3 +71,40 @@ describe('TaskService.approveTask', () => {
     );
   });
 });
+
+describe('TaskService.submitTask', () => {
+  it('marks the task submitted when the parent has not enabled auto-approve', async () => {
+    const prisma = {
+      task: {
+        findUnique: jest.fn().mockResolvedValue({ child: { parent: { autoApproveTasks: false } } }),
+        update: jest.fn().mockResolvedValue({ id: 'tk1', status: 'submitted' }),
+      },
+    } as unknown as PrismaService;
+    const res = await new TaskService(prisma).submitTask({ taskId: 'tk1' });
+    expect((res as { status: string }).status).toBe('submitted');
+  });
+
+  it('auto-approves + pays out when the parent enabled auto-approve', async () => {
+    const tx = makeTx();
+    tx.task.findUnique.mockResolvedValue({
+      id: 'tk1',
+      childId: 'c1',
+      title: 'x',
+      payType: 'money',
+      amountCents: 1000,
+      rewardXp: 0,
+    });
+    tx.piggyBank.findFirst.mockResolvedValue({ id: 'b1' });
+    const prisma = {
+      task: {
+        findUnique: jest.fn().mockResolvedValue({ child: { parent: { autoApproveTasks: true } } }),
+        update: jest.fn().mockResolvedValue({ id: 'tk1', status: 'submitted' }),
+      },
+      $transaction: (cb: (t: typeof tx) => Promise<unknown>) => cb(tx),
+    } as unknown as PrismaService;
+    await new TaskService(prisma).submitTask({ taskId: 'tk1' });
+    expect(tx.piggyBank.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { balanceCents: { increment: 1000 } } }),
+    );
+  });
+});

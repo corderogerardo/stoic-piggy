@@ -52,12 +52,21 @@ export class TaskService {
     return this.prisma.task.findMany({ where: { childId }, orderBy: { createdAt: 'desc' } });
   }
 
-  /** A kid marks a task done → submitted, optionally with a note. */
-  submitTask(input: SubmitTaskInput) {
-    return this.prisma.task.update({
+  /**
+   * A kid marks a task done → submitted. If the parent enabled auto-approval, it's
+   * approved + paid out immediately instead of waiting in the queue.
+   */
+  async submitTask(input: SubmitTaskInput) {
+    const task = await this.prisma.task.findUnique({
+      where: { id: input.taskId },
+      select: { child: { select: { parent: { select: { autoApproveTasks: true } } } } },
+    });
+    if (!task) throw new TRPCError({ code: 'NOT_FOUND', message: 'Task not found.' });
+    const submitted = await this.prisma.task.update({
       where: { id: input.taskId },
       data: { status: 'submitted', submittedAt: new Date(), note: input.note ?? null },
     });
+    return task.child.parent.autoApproveTasks ? this.approveTask(input.taskId) : submitted;
   }
 
   /**

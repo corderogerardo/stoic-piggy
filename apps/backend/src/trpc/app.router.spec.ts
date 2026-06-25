@@ -172,6 +172,31 @@ const family: FamilyPort = {
       },
     ];
   },
+  async reportsByParent(_parentId) {
+    return {
+      tasksByDay: [0, 1, 0, 2, 1, 3, 0],
+      tasksCompletedThisWeek: 7,
+      paidThisMonthCents: 5000,
+      savedCents: 52000,
+      activeKids: 2,
+    };
+  },
+  async parentSettings(_parentId) {
+    return {
+      notifyEnabled: true,
+      weeklyReportEnabled: true,
+      autoApproveTasks: false,
+      payoutMethod: 'card',
+    };
+  },
+  async updateParentSettings(_parentId, input) {
+    return {
+      notifyEnabled: input.notifyEnabled ?? true,
+      weeklyReportEnabled: input.weeklyReportEnabled ?? true,
+      autoApproveTasks: input.autoApproveTasks ?? false,
+      payoutMethod: input.payoutMethod ?? 'card',
+    };
+  },
 };
 
 const auth: AuthPort = {
@@ -540,6 +565,26 @@ describe('appRouter', () => {
       expect(await parent.tasks.delete({ taskId: 'tk1' })).toEqual({ ok: true });
       await expect(parent.tasks.approve({ taskId: 'tk2' })).rejects.toThrow(/not your/i);
       await expect(parent.tasks.approve({ taskId: 'ghost' })).rejects.toThrow(/not found/i);
+    });
+  });
+
+  describe('parent settings + reports', () => {
+    it('reads and updates settings (parents only)', async () => {
+      const s = await parent.parent.settings();
+      expect(s.payoutMethod).toBe('card');
+      const u = await parent.parent.updateSettings({
+        autoApproveTasks: true,
+        payoutMethod: 'bank',
+      });
+      expect(u.autoApproveTasks).toBe(true);
+      expect(u.payoutMethod).toBe('bank');
+      await expect(child.parent.settings()).rejects.toThrow(/parents only/i);
+    });
+
+    it('returns reports aggregates for the parent', async () => {
+      const r = await parent.children.reports();
+      expect(r.tasksCompletedThisWeek).toBe(7);
+      expect(r.tasksByDay).toHaveLength(7);
     });
   });
 
