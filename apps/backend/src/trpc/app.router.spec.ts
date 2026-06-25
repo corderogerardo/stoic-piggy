@@ -157,6 +157,21 @@ const family: FamilyPort = {
     };
   },
   async deleteChild(_childId) {},
+  async summaryByParent(_parentId) {
+    return { toApproveCount: 1, activeTaskCount: 2, savedCents: 52000, paidThisMonthCents: 5000 };
+  },
+  async activityByParent(_parentId) {
+    return [
+      {
+        id: 'task:tk1',
+        kind: 'task_approved',
+        childId: 'c1',
+        title: 'Basura',
+        amountCents: 2000,
+        createdAt: now,
+      },
+    ];
+  },
 };
 
 const auth: AuthPort = {
@@ -474,6 +489,15 @@ describe('appRouter', () => {
       expect(deact.id).toBe('c1');
       expect(await parent.children.delete({ childId: 'c1' })).toEqual({ ok: true });
       await expect(parent.children.delete({ childId: 'c2' })).rejects.toThrow(/not your/i);
+    });
+
+    it('returns overview summary + activity for the parent', async () => {
+      const s = await parent.children.summary();
+      expect(s.paidThisMonthCents).toBe(5000);
+      expect(s.savedCents).toBe(52000);
+      const a = await parent.children.activity();
+      expect(a[0]?.kind).toBe('task_approved');
+      expect(a[0]?.amountCents).toBe(2000);
     });
   });
 
