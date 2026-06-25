@@ -77,6 +77,7 @@ model Child {
   piggyBanks  PiggyBank[]
   goals       SavingsGoal[]
   quests      Quest[]
+  tasks       Task[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -150,6 +151,53 @@ model Quest {
   status      QuestStatus @default(available)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+
+  @@index([childId])
+}
+
+enum TaskCategory {
+  chore
+  lesson
+}
+
+enum TaskPayType {
+  money
+  xp
+  both
+}
+
+enum TaskRecurrence {
+  once
+  daily
+  weekly
+}
+
+enum TaskStatus {
+  active
+  submitted
+  approved
+  rejected
+}
+
+// A parent-assigned chore/lesson with an approval + pay loop (distinct from Quest,
+// which is the kid's self-serve missions). The kid marks it done (submitted), the
+// parent approves (credits the kid's piggy bank and/or awards XP) or rejects.
+model Task {
+  id          String         @id @default(cuid())
+  child       Child          @relation(fields: [childId], references: [id], onDelete: Cascade)
+  childId     String
+  title       String
+  category    TaskCategory   @default(chore)
+  payType     TaskPayType    @default(money)
+  amountCents Int            @default(0)
+  rewardXp    Int            @default(0)
+  recurrence  TaskRecurrence @default(once)
+  status      TaskStatus     @default(active)
+  note        String?
+  submittedAt DateTime?
+  resolvedAt  DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
   @@index([childId])
 }

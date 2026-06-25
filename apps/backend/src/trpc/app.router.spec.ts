@@ -1,6 +1,12 @@
 import { TRPCError } from '@trpc/server';
 import type { AuthClaims } from '../auth/jwt';
-import { type AuthPort, createAppRouter, type FamilyPort, type PiggyPort } from './app.router';
+import {
+  type AuthPort,
+  createAppRouter,
+  type FamilyPort,
+  type PiggyPort,
+  type TaskPort,
+} from './app.router';
 import type { TrpcContext } from './trpc.context';
 
 const now = new Date('2026-01-02T03:04:05.000Z');
@@ -271,7 +277,65 @@ const auth: AuthPort = {
   },
 };
 
-const appRouter = createAppRouter({ piggy, family, auth });
+const baseTask = {
+  id: 'tk1',
+  childId: 'c1',
+  title: 'Sacar basura',
+  category: 'chore' as const,
+  payType: 'money' as const,
+  amountCents: 2000,
+  rewardXp: 0,
+  recurrence: 'weekly' as const,
+  status: 'active' as const,
+  note: null,
+  submittedAt: null as Date | null,
+  resolvedAt: null as Date | null,
+  createdAt: now,
+  updatedAt: now,
+};
+
+const task: TaskPort = {
+  // tk1 → child c1 (owned by p1); tk2 → child c2 (owned by p2); else unknown.
+  async taskChildId(taskId) {
+    if (taskId === 'tk1') return 'c1';
+    if (taskId === 'tk2') return 'c2';
+    return null;
+  },
+  async createTask(input) {
+    return {
+      ...baseTask,
+      id: 'tk9',
+      childId: input.childId,
+      title: input.title,
+      category: input.category,
+      payType: input.payType,
+      amountCents: input.amountCents,
+      rewardXp: input.rewardXp,
+      recurrence: input.recurrence,
+    };
+  },
+  async listByParent(_parentId) {
+    return [baseTask];
+  },
+  async pendingApprovals(_parentId) {
+    return [{ ...baseTask, status: 'submitted', submittedAt: now }];
+  },
+  async listByChild(_childId) {
+    return [baseTask];
+  },
+  async submitTask(input) {
+    return { ...baseTask, id: input.taskId, status: 'submitted', submittedAt: now };
+  },
+  async approveTask(taskId) {
+    return { ...baseTask, id: taskId, status: 'approved', resolvedAt: now };
+  },
+  async rejectTask(taskId) {
+    return { ...baseTask, id: taskId, status: 'active' };
+  },
+  async deleteTask(_taskId) {},
+};
+
+const appRouter = createAppRouter({ piggy, family, auth, task });
 
 const ctx = (user: AuthClaims | null): TrpcContext => ({ token: user ? 'tok' : null, user });
 const anon = appRouter.createCaller(ctx(null));
@@ -410,6 +474,48 @@ describe('appRouter', () => {
       expect(deact.id).toBe('c1');
       expect(await parent.children.delete({ childId: 'c1' })).toEqual({ ok: true });
       await expect(parent.children.delete({ childId: 'c2' })).rejects.toThrow(/not your/i);
+    });
+  });
+
+  describe('tasks', () => {
+    const chore = {
+      category: 'chore' as const,
+      payType: 'money' as const,
+      amountCents: 2000,
+      rewardXp: 0,
+      recurrence: 'once' as const,
+    };
+
+    it('parent creates a task for an owned kid; blocks unowned + non-parent', async () => {
+      const t = await parent.tasks.create({ childId: 'c1', title: 'Sacar basura', ...chore });
+      expect(t.title).toBe('Sacar basura');
+      expect(t.status).toBe('active');
+      await expect(parent.tasks.create({ childId: 'c2', title: 'x', ...chore })).rejects.toThrow(
+        /not your/i,
+      );
+      await expect(child.tasks.create({ childId: 'c1', title: 'x', ...chore })).rejects.toThrow(
+        /parents only/i,
+      );
+    });
+
+    it('lists parent tasks + pending approvals', async () => {
+      expect((await parent.tasks.listByParent())[0]?.title).toBe('Sacar basura');
+      const pending = await parent.tasks.pendingApprovals();
+      expect(pending[0]?.status).toBe('submitted');
+    });
+
+    it('kid submits their own task; another kid is blocked', async () => {
+      const t = await child.tasks.submit({ taskId: 'tk1' });
+      expect(t.status).toBe('submitted');
+      await expect(otherChild.tasks.submit({ taskId: 'tk1' })).rejects.toThrow(/not your/i);
+    });
+
+    it('parent approves/rejects/deletes an owned task; blocks cross-parent + unknown', async () => {
+      expect((await parent.tasks.approve({ taskId: 'tk1' })).status).toBe('approved');
+      expect((await parent.tasks.reject({ taskId: 'tk1' })).status).toBe('active');
+      expect(await parent.tasks.delete({ taskId: 'tk1' })).toEqual({ ok: true });
+      await expect(parent.tasks.approve({ taskId: 'tk2' })).rejects.toThrow(/not your/i);
+      await expect(parent.tasks.approve({ taskId: 'ghost' })).rejects.toThrow(/not found/i);
     });
   });
 

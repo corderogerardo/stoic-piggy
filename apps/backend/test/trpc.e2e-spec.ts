@@ -10,6 +10,8 @@ import { AuthService } from '../src/auth/auth.service';
 import type { AuthClaims } from '../src/auth/jwt';
 import { FamilyService } from '../src/family/family.service';
 import { PiggyService } from '../src/piggy/piggy.service';
+import { TaskService } from '../src/task/task.service';
+import type { TaskPort } from '../src/trpc/app.router';
 import { TrpcModule } from '../src/trpc/trpc.module';
 import { TrpcRouter } from '../src/trpc/trpc.router';
 
@@ -139,6 +141,26 @@ const authStub: Pick<
   }),
 };
 
+const taskStub: TaskPort = {
+  taskChildId: async () => 'c1',
+  createTask: async () => {
+    throw new Error('not exercised');
+  },
+  listByParent: async () => [],
+  pendingApprovals: async () => [],
+  listByChild: async () => [],
+  submitTask: async () => {
+    throw new Error('not exercised');
+  },
+  approveTask: async () => {
+    throw new Error('not exercised');
+  },
+  rejectTask: async () => {
+    throw new Error('not exercised');
+  },
+  deleteTask: async () => {},
+};
+
 describe('tRPC (e2e, stubbed)', () => {
   let app: INestApplication;
 
@@ -150,6 +172,8 @@ describe('tRPC (e2e, stubbed)', () => {
       .useValue(piggyStub)
       .overrideProvider(AuthService)
       .useValue(authStub)
+      .overrideProvider(TaskService)
+      .useValue(taskStub)
       .compile();
 
     app = moduleRef.createNestApplication();

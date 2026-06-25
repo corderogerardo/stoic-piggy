@@ -120,6 +120,58 @@ export function useDeleteChild() {
   return useMutation(trpc.children.delete.mutationOptions());
 }
 
+// ---- Tasks (parent-assigned chores/lessons with an approval loop) ----
+
+/** All tasks across the signed-in parent's kids. */
+export function useTasks(enabled = true) {
+  const trpc = useTRPC();
+  return useQuery(trpc.tasks.listByParent.queryOptions(undefined, { enabled }));
+}
+
+/** Submitted tasks awaiting the parent's approval. */
+export function usePendingApprovals(enabled = true) {
+  const trpc = useTRPC();
+  return useQuery(trpc.tasks.pendingApprovals.queryOptions(undefined, { enabled }));
+}
+
+/** A kid's tasks (parent or owning kid). */
+export function useChildTasks(childId: string) {
+  const trpc = useTRPC();
+  return useQuery(
+    trpc.tasks.listByChild.queryOptions({ childId }, { enabled: childId.length > 0 }),
+  );
+}
+
+/** A parent assigns a task to a kid. */
+export function useCreateTask() {
+  const trpc = useTRPC();
+  return useMutation(trpc.tasks.create.mutationOptions());
+}
+
+/** A kid marks a task done (→ submitted). */
+export function useSubmitTask() {
+  const trpc = useTRPC();
+  return useMutation(trpc.tasks.submit.mutationOptions());
+}
+
+/** A parent approves a submitted task (credits the kid + awards xp). */
+export function useApproveTask() {
+  const trpc = useTRPC();
+  return useMutation(trpc.tasks.approve.mutationOptions());
+}
+
+/** A parent sends a submitted task back to the kid. */
+export function useRejectTask() {
+  const trpc = useTRPC();
+  return useMutation(trpc.tasks.reject.mutationOptions());
+}
+
+/** A parent deletes a task. */
+export function useDeleteTask() {
+  const trpc = useTRPC();
+  return useMutation(trpc.tasks.delete.mutationOptions());
+}
+
 // ---- Kid app (token-scoped) ----
 
 /** The signed-in kid's home payload (balance + goal + quests). */
