@@ -19,7 +19,7 @@ import {
 } from '@/lib/content';
 import { mapDashboardChildToKid } from '@/lib/mapKid';
 import { ApiStatus } from './ApiStatus';
-import { CreateKidForm } from './CreateKidForm';
+import { KidsView } from './KidsView';
 import { VerifyEmailBanner } from './VerifyEmailBanner';
 
 const VIEWS: View[] = ['overview', 'tasks', 'approvals', 'kids', 'reports', 'settings'];
@@ -105,7 +105,7 @@ export function Dashboard() {
   const { parent, logout } = useAuth();
   const [lang, setLang] = useState<Lang>('es');
   const [view, setView] = useState<View>('overview');
-  const [kids, setKids] = useState<Kid[]>(KIDS);
+  const [kids, setKids] = useState<Kid[]>([]);
   const [tasks, setTasks] = useState<TaskItem[]>(TASKS);
   const [approvals, setApprovals] = useState<Approval[]>(APPROVALS);
   const [activity, setActivity] = useState<ActivityItem[]>(ACTIVITY);
@@ -117,11 +117,12 @@ export function Dashboard() {
   const [draft, setDraft] = useState<Draft>(newDraft());
 
   // Live data: the signed-in parent's real children (token-scoped on the server).
+  // Only active kids are shown here; deactivated ones are managed in the Kids view.
   const liveChildren = useMyDashboard();
   const liveKids = useMemo(
     () =>
-      liveChildren.data && liveChildren.data.length > 0
-        ? liveChildren.data.map(mapDashboardChildToKid)
+      liveChildren.data
+        ? liveChildren.data.filter((dc) => dc.active).map(mapDashboardChildToKid)
         : null,
     [liveChildren.data],
   );
@@ -219,8 +220,6 @@ export function Dashboard() {
 
   const togglePref = (id: 'notify' | 'weekly' | 'autoApprove') =>
     setPrefs({ ...prefs, [id]: !prefs[id] });
-  const toggleAuto = (id: string) =>
-    setKids(kids.map((k) => (k.id === id ? { ...k, autopay: !k.autopay } : k)));
 
   const langBtn = (active: boolean) =>
     `flex-1 rounded-lg py-2 text-[11px] font-extrabold tracking-[0.5px] ${active ? 'bg-accent text-cream' : 'bg-transparent text-cream/70'}`;
@@ -414,66 +413,81 @@ export function Dashboard() {
                     {c.manage} <i className="fa fa-arrow-right" />
                   </button>
                 </div>
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
-                  {kids.map((k) => {
-                    const pct = Math.min(100, Math.round((k.balance / k.goalTarget) * 100));
-                    return (
-                      <div key={k.id} className="rounded-[20px] border border-navy/10 bg-white p-5">
-                        <div className="mb-4 flex items-center gap-[13px]">
-                          <span
-                            className="flex h-12 w-12 flex-none items-center justify-center rounded-[14px] text-[19px] font-extrabold text-cream"
-                            style={{ background: k.color }}
-                          >
-                            {k.initial}
-                          </span>
-                          <div className="flex-1">
-                            <div className="text-[16.5px] font-extrabold">{k.name}</div>
-                            <div className="text-xs text-navy/60">
-                              {c.ageLabel(k.age)} · {c.levelWord} {k.lvl}
+                {liveChildren.isPending ? (
+                  <p className="text-[13.5px] text-navy/55">
+                    {lang === 'es' ? 'Cargando…' : 'Loading…'}
+                  </p>
+                ) : kids.length === 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setView('kids')}
+                    className="w-full rounded-[20px] border-2 border-dashed border-navy/15 bg-white px-5 py-8 text-center text-[13.5px] font-semibold text-navy/55 hover:border-accent hover:text-accent"
+                  >
+                    {lang === 'es'
+                      ? 'Aún no tienes hijos. Crea la cuenta de tu primer hijo →'
+                      : 'No kids yet. Create your first kid account →'}
+                  </button>
+                ) : (
+                  <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
+                    {kids.map((k) => {
+                      const pct = Math.min(100, Math.round((k.balance / k.goalTarget) * 100));
+                      return (
+                        <div
+                          key={k.id}
+                          className="rounded-[20px] border border-navy/10 bg-white p-5"
+                        >
+                          <div className="mb-4 flex items-center gap-[13px]">
+                            <span
+                              className="flex h-12 w-12 flex-none items-center justify-center rounded-[14px] text-[19px] font-extrabold text-cream"
+                              style={{ background: k.color }}
+                            >
+                              {k.initial}
+                            </span>
+                            <div className="flex-1">
+                              <div className="text-[16.5px] font-extrabold">{k.name}</div>
+                              <div className="text-xs text-navy/60">
+                                {c.ageLabel(k.age)} · {c.levelWord} {k.lvl}
+                              </div>
                             </div>
                           </div>
-                          <span className="inline-flex items-center gap-[5px] rounded-full bg-accent/10 px-2.5 py-1.5 text-[10px] font-extrabold text-accent">
-                            <i className="fa fa-fire" />
-                            {lang === 'es' ? `${k.streak} días` : `${k.streak}d`}
-                          </span>
-                        </div>
-                        <div className="mb-[15px] flex gap-2.5">
-                          <div className="flex-1 rounded-[13px] bg-canvas px-[13px] py-[11px]">
-                            <div className="text-[9.5px] font-extrabold tracking-[0.4px] text-navy/50">
-                              {c.balance}
+                          <div className="mb-[15px] flex gap-2.5">
+                            <div className="flex-1 rounded-[13px] bg-canvas px-[13px] py-[11px]">
+                              <div className="text-[9.5px] font-extrabold tracking-[0.4px] text-navy/50">
+                                {c.balance}
+                              </div>
+                              <div className="mt-[3px] font-mono text-[19px] font-bold">
+                                ${k.balance}
+                              </div>
                             </div>
-                            <div className="mt-[3px] font-mono text-[19px] font-bold">
-                              ${k.balance}
-                            </div>
-                          </div>
-                          <div className="flex-1 rounded-[13px] bg-canvas px-[13px] py-[11px]">
-                            <div className="text-[9.5px] font-extrabold tracking-[0.4px] text-navy/50">
-                              {c.tasksDone}
-                            </div>
-                            <div className="mt-[3px] font-mono text-[19px] font-bold">
-                              {k.tasksDone}
+                            <div className="flex-1 rounded-[13px] bg-canvas px-[13px] py-[11px]">
+                              <div className="text-[9.5px] font-extrabold tracking-[0.4px] text-navy/50">
+                                {lang === 'es' ? 'Mesada' : 'Allowance'}
+                              </div>
+                              <div className="mt-[3px] font-mono text-[19px] font-bold">
+                                ${k.allowance}
+                              </div>
                             </div>
                           </div>
+                          <div className="mb-[7px] flex items-center justify-between">
+                            <span className="text-[11px] font-extrabold text-navy/60">
+                              <i className="fa fa-bullseye text-accent" />{' '}
+                              {lang === 'es' ? k.goalEs : k.goalEn}
+                            </span>
+                            <span className="text-[11.5px] font-extrabold text-navy/50">
+                              ${k.balance} / ${k.goalTarget}
+                            </span>
+                          </div>
+                          <div className="h-2 overflow-hidden rounded-full bg-navy/10">
+                            <div
+                              className="h-full rounded-full bg-accent"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
                         </div>
-                        <div className="mb-[7px] flex items-center justify-between">
-                          <span className="text-[11px] font-extrabold text-navy/60">
-                            <i className="fa fa-bullseye text-accent" />{' '}
-                            {lang === 'es' ? k.goalEs : k.goalEn}
-                          </span>
-                          <span className="text-[11.5px] font-extrabold text-navy/50">
-                            ${k.balance} / ${k.goalTarget}
-                          </span>
-                        </div>
-                        <div className="h-2 overflow-hidden rounded-full bg-navy/10">
-                          <div
-                            className="h-full rounded-full bg-accent"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-[18px]">
@@ -706,102 +720,7 @@ export function Dashboard() {
             ))}
 
           {/* ===== KIDS ===== */}
-          {view === 'kids' && (
-            <div className="flex flex-col gap-4">
-              <CreateKidForm lang={lang} />
-              {kids.map((k) => {
-                const pct = Math.min(100, Math.round((k.balance / k.goalTarget) * 100));
-                return (
-                  <div key={k.id} className="rounded-[22px] border border-navy/10 bg-white p-6">
-                    <div className="mb-[22px] flex flex-wrap items-center gap-4">
-                      <span
-                        className="flex h-[58px] w-[58px] flex-none items-center justify-center rounded-2xl text-2xl font-extrabold text-cream"
-                        style={{ background: k.color }}
-                      >
-                        {k.initial}
-                      </span>
-                      <div className="min-w-[160px] flex-1">
-                        <div className="text-xl font-extrabold">{k.name}</div>
-                        <div className="text-[13px] text-navy/60">
-                          {c.ageLabel(k.age)} · {c.levelWord} {k.lvl} · {k.streak} {c.streakWord}
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2.5">
-                        <div className="rounded-[14px] bg-navy px-[18px] py-3 text-center text-cream">
-                          <div className="text-[9.5px] font-extrabold tracking-[0.4px] text-teal">
-                            {c.balance}
-                          </div>
-                          <div className="mt-[3px] font-mono text-[22px] font-bold">
-                            ${k.balance}
-                          </div>
-                        </div>
-                        <div className="rounded-[14px] bg-canvas px-[18px] py-3 text-center">
-                          <div className="text-[9.5px] font-extrabold tracking-[0.4px] text-navy/50">
-                            {c.resisted}
-                          </div>
-                          <div className="mt-[3px] font-mono text-[22px] font-bold text-accent">
-                            {k.resisted}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-[18px]">
-                      <div className="flex-[1_1_280px]">
-                        <div className="mb-[11px] text-[11px] font-extrabold tracking-[0.5px] text-navy/50">
-                          {c.savingsGoal}
-                        </div>
-                        <div className="rounded-2xl bg-canvas p-[18px]">
-                          <div className="mb-[11px] flex items-center justify-between">
-                            <span className="text-[15px] font-extrabold">
-                              <i className="fa fa-bullseye mr-[7px] text-accent" />
-                              {lang === 'es' ? k.goalEs : k.goalEn}
-                            </span>
-                            <span className="font-mono text-[13px] font-bold text-navy/60">
-                              ${k.balance} / ${k.goalTarget}
-                            </span>
-                          </div>
-                          <div className="mb-2.5 h-2.5 overflow-hidden rounded-full bg-navy/10">
-                            <div
-                              className="h-full rounded-full bg-accent"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <div className="text-[12.5px] text-navy/60">
-                            {lang === 'es'
-                              ? `Faltan $${k.goalTarget - k.balance} · ${pct}% logrado`
-                              : `$${k.goalTarget - k.balance} to go · ${pct}% there`}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex-[1_1_280px]">
-                        <div className="mb-[11px] text-[11px] font-extrabold tracking-[0.5px] text-navy/50">
-                          {c.autoAllowance}
-                        </div>
-                        <div className="rounded-2xl bg-canvas p-[18px]">
-                          <div className="mb-[14px] flex items-center justify-between">
-                            <div>
-                              <div className="text-sm font-extrabold">${k.allowance}</div>
-                              <div className="text-xs text-navy/60">{c.everyWeek}</div>
-                            </div>
-                            <Toggle on={k.autopay} onClick={() => toggleAuto(k.id)} />
-                          </div>
-                          <div className="text-[12.5px] leading-relaxed text-navy/60">
-                            {k.autopay
-                              ? lang === 'es'
-                                ? 'Se deposita cada lunes automáticamente.'
-                                : 'Auto-deposited every Monday.'
-                              : lang === 'es'
-                                ? 'Mesada automática desactivada.'
-                                : 'Auto allowance is off.'}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          {view === 'kids' && <KidsView lang={lang} />}
 
           {/* ===== REPORTS ===== */}
           {view === 'reports' && (

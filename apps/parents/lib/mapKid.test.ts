@@ -11,6 +11,7 @@ const base: DashboardChild = {
   balanceCents: 34000,
   allowanceCents: 5000,
   autopayEnabled: true,
+  active: true,
   goal: { title: 'Bici nueva', targetCents: 50000, savedCents: 34000 },
 };
 

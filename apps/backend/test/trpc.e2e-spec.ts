@@ -34,6 +34,7 @@ const familyStub: Pick<
       balanceCents: 34000,
       allowanceCents: 5000,
       autopayEnabled: true,
+      active: true,
       goal: { title: 'Bici', targetCents: 50000, savedCents: 34000 },
     },
   ],

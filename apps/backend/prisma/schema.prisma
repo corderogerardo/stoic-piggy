@@ -71,6 +71,9 @@ model Child {
   age            Int?
   allowanceCents Int           @default(0)
   autopayEnabled Boolean       @default(false)
+  // Null = active. Set when a parent deactivates the kid: blocks login + hides the
+  // kid from the dashboard, but preserves their history (vs a hard delete).
+  deactivatedAt  DateTime?
   piggyBanks  PiggyBank[]
   goals       SavingsGoal[]
   quests      Quest[]
