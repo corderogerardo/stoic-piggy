@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { CreateTaskInput, SubmitTaskInput } from '@stoicpiggy/shared';
 import { TRPCError } from '@trpc/server';
+import { applyXpGain } from '../common/xp';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -99,11 +100,8 @@ export class TaskService {
           });
         }
       }
-      if (task.payType !== 'money' && task.rewardXp > 0) {
-        await tx.child.update({
-          where: { id: task.childId },
-          data: { xp: { increment: task.rewardXp } },
-        });
+      if (task.payType !== 'money') {
+        await applyXpGain(tx, task.childId, task.rewardXp);
       }
       return tx.task.update({
         where: { id: taskId },

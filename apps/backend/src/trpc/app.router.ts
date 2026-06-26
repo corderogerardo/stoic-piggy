@@ -17,6 +17,7 @@ import {
   deleteChildSchema,
   type LoginChildInput,
   type LoginParentInput,
+  levelForXp,
   loginChildSchema,
   loginParentSchema,
   type ParentSettings,
@@ -118,6 +119,7 @@ interface QuestRow {
   rewardXp: number;
   rewardCents: number;
   status: QuestStatus;
+  lessonKey?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -246,7 +248,7 @@ const toChild = (r: ChildRow): Child => ({
   parentId: r.parentId,
   displayName: r.displayName,
   avatarUrl: r.avatarUrl ?? undefined,
-  level: r.level,
+  level: levelForXp(r.xp),
   xp: r.xp,
   createdAt: iso(r.createdAt),
   updatedAt: iso(r.updatedAt),
@@ -269,6 +271,7 @@ const toQuest = (r: QuestRow): Quest => ({
   rewardXp: r.rewardXp,
   rewardCents: r.rewardCents,
   status: r.status,
+  lessonKey: r.lessonKey ?? undefined,
   createdAt: iso(r.createdAt),
   updatedAt: iso(r.updatedAt),
 });
@@ -294,7 +297,7 @@ const toDashboardChild = (r: DashboardChildRow): DashboardChild => ({
   displayName: r.displayName,
   avatarUrl: r.avatarUrl ?? undefined,
   age: r.age ?? undefined,
-  level: r.level,
+  level: levelForXp(r.xp),
   xp: r.xp,
   balanceCents: r.balanceCents,
   allowanceCents: r.allowanceCents,

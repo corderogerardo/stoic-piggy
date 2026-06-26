@@ -14,6 +14,7 @@ import type {
   ResetPasswordInput,
   VerifyEmailInput,
 } from '@stoicpiggy/shared';
+import { levelForXp } from '@stoicpiggy/shared';
 import { TRPCError } from '@trpc/server';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -316,7 +317,7 @@ export class AuthService {
     return {
       child: {
         ...this.toAuthChild(child),
-        level: child.level,
+        level: levelForXp(child.xp),
         xp: child.xp,
         avatarUrl: child.avatarUrl ?? undefined,
       },
@@ -332,6 +333,7 @@ export class AuthService {
         rewardXp: q.rewardXp,
         rewardCents: q.rewardCents,
         status: q.status,
+        lessonKey: q.lessonKey ?? undefined,
         createdAt: q.createdAt.toISOString(),
         updatedAt: q.updatedAt.toISOString(),
       })),

@@ -14,6 +14,8 @@ interface SeedQuest {
   description: string;
   rewardXp: number;
   status: QuestStatusLiteral;
+  /** Links to an in-app lesson (cards + quiz). Omit for legacy tap-to-claim quests. */
+  lessonKey?: string;
 }
 interface SeedChild {
   id: string;
@@ -47,8 +49,10 @@ const FAMILIES: SeedFamily[] = [
         displayName: 'Marco',
         username: 'marco',
         age: 12,
-        level: 7,
-        xp: 1240,
+        // 1950 XP → level 2, just 50 short of level 3. The first lesson tips him
+        // over the boundary, so the demo shows a level-up + the $5 reward.
+        level: 2,
+        xp: 1950,
         allowanceCents: 5000,
         autopayEnabled: true,
         balanceCents: 34000,
@@ -56,17 +60,27 @@ const FAMILIES: SeedFamily[] = [
         quests: [
           {
             id: 'seed-q1',
-            title: 'Presupuesto base',
-            description: 'Dale un trabajo a cada peso antes de gastarlo.',
-            rewardXp: 120,
-            status: 'completed',
+            title: 'Aprende a ahorrar',
+            description: 'Descubre por qué guardar un poco cada semana hace crecer tu dinero.',
+            rewardXp: 50,
+            status: 'available',
+            lessonKey: 'save',
           },
           {
             id: 'seed-q2',
-            title: 'Interés compuesto',
-            description: 'Tu dinero crece mientras descansas.',
-            rewardXp: 150,
-            status: 'in_progress',
+            title: 'Pon tu primera meta',
+            description: 'Elige algo que quieras y define cuánto necesitas ahorrar.',
+            rewardXp: 80,
+            status: 'available',
+            lessonKey: 'goal',
+          },
+          {
+            id: 'seed-q5',
+            title: 'Resiste una tentación',
+            description: 'Aprende la pausa estoica y decide con la cabeza fría.',
+            rewardXp: 100,
+            status: 'available',
+            lessonKey: 'resist',
           },
         ],
       },
@@ -75,8 +89,8 @@ const FAMILIES: SeedFamily[] = [
         displayName: 'Sofía',
         username: 'sofia',
         age: 9,
-        level: 4,
-        xp: 540,
+        level: 2,
+        xp: 1500,
         allowanceCents: 3000,
         autopayEnabled: false,
         balanceCents: 18000,
@@ -94,8 +108,8 @@ const FAMILIES: SeedFamily[] = [
         displayName: 'Lucas',
         username: 'lucas',
         age: 14,
-        level: 9,
-        xp: 1680,
+        level: 5,
+        xp: 4300,
         allowanceCents: 6000,
         autopayEnabled: true,
         balanceCents: 52000,
@@ -115,8 +129,8 @@ const FAMILIES: SeedFamily[] = [
         displayName: 'Emma',
         username: 'emma',
         age: 7,
-        level: 2,
-        xp: 220,
+        level: 1,
+        xp: 300,
         allowanceCents: 2500,
         autopayEnabled: false,
         balanceCents: 9000,
@@ -127,8 +141,8 @@ const FAMILIES: SeedFamily[] = [
         displayName: 'Mateo',
         username: 'mateo',
         age: 10,
-        level: 5,
-        xp: 760,
+        level: 3,
+        xp: 2600,
         allowanceCents: 4000,
         autopayEnabled: true,
         balanceCents: 26000,
@@ -147,7 +161,7 @@ const FAMILIES: SeedFamily[] = [
         username: 'valeria',
         age: 11,
         level: 6,
-        xp: 980,
+        xp: 5100,
         allowanceCents: 4500,
         autopayEnabled: false,
         balanceCents: 41000,
@@ -158,7 +172,8 @@ const FAMILIES: SeedFamily[] = [
             title: 'Metas que se cumplen',
             description: 'Divide una meta grande en pasos pequeños.',
             rewardXp: 130,
-            status: 'completed',
+            status: 'available',
+            lessonKey: 'goal',
           },
         ],
       },
@@ -235,6 +250,7 @@ async function main(): Promise<void> {
             description: quest.description,
             rewardXp: quest.rewardXp,
             status: quest.status,
+            lessonKey: quest.lessonKey,
           },
         });
       }

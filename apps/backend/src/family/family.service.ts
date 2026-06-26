@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   type ChildPatterns,
   computeChildPatterns,
+  levelForXp,
   type PayoutMethod,
   type ResistImpulseInput,
   type SetChildActiveInput,
@@ -10,6 +11,7 @@ import {
   type UpdateParentSettingsInput,
 } from '@stoicpiggy/shared';
 import { TRPCError } from '@trpc/server';
+import { applyXpGain } from '../common/xp';
 import { PrismaService } from '../prisma/prisma.service';
 
 const SETTINGS_SELECT = {
@@ -134,12 +136,7 @@ export class FamilyService {
           });
         }
       }
-      if (quest.rewardXp > 0) {
-        await tx.child.update({
-          where: { id: childId },
-          data: { xp: { increment: quest.rewardXp } },
-        });
-      }
+      await applyXpGain(tx, childId, quest.rewardXp);
       return tx.quest.update({ where: { id: questId }, data: { status: 'claimed' } });
     });
   }
@@ -157,7 +154,7 @@ export class FamilyService {
       this.prisma.task.count({ where: { childId, status: 'approved' } }),
     ]);
     return {
-      level: child?.level ?? 1,
+      level: levelForXp(child?.xp ?? 0),
       xp: child?.xp ?? 0,
       balanceCents: banks.reduce((s, b) => s + b.balanceCents, 0),
       resistedCount: agg._count,
@@ -369,7 +366,7 @@ export class FamilyService {
         displayName: k.displayName,
         avatarUrl: k.avatarUrl,
         age: k.age,
-        level: k.level,
+        level: levelForXp(k.xp),
         xp: k.xp,
         balanceCents: k.piggyBanks.reduce((sum, b) => sum + b.balanceCents, 0),
         allowanceCents: k.allowanceCents,

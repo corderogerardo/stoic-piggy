@@ -14,6 +14,11 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Controller } from 'react-hook-form';
+import {
+  filterSuggestions,
+  type SuggestionGroup,
+  type TaskSuggestion,
+} from '../lib/taskSuggestions';
 import { FormError } from './form/Field';
 import { useZodForm } from './form/useZodForm';
 
@@ -46,6 +51,10 @@ const T = {
     name: 'NOMBRE DE LA TAREA',
     namePh: 'p. ej. Sacar la basura',
     assignee: 'ASIGNAR A',
+    allKids: 'Todos',
+    suggestions: 'SUGERENCIAS',
+    groups: { home: 'Casa', study: 'Estudio', homework: 'Tarea escolar', financial: 'Dinero' },
+    noSuggestions: 'No hay sugerencias para esta edad.',
     category: 'TIPO',
     pay: 'PAGO',
     money: 'Dinero',
@@ -86,6 +95,10 @@ const T = {
     name: 'TASK NAME',
     namePh: 'e.g. Take out the trash',
     assignee: 'ASSIGN TO',
+    allKids: 'All',
+    suggestions: 'SUGGESTIONS',
+    groups: { home: 'Home', study: 'Study', homework: 'Homework', financial: 'Money' },
+    noSuggestions: 'No suggestions for this age.',
     category: 'TYPE',
     pay: 'PAY',
     money: 'Money',
@@ -264,19 +277,38 @@ function CreateTaskModal({
   const createTask = useCreateTask();
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const { register, control, handleSubmit, watch, formState } = useZodForm(createTaskFormSchema, {
-    defaultValues: {
-      childId: kids[0]?.id ?? '',
-      title: '',
-      category: 'chore',
-      payType: 'money',
-      amount: '20',
-      xp: '50',
-      recurrence: 'once',
-      dueDate: '',
+  const { register, control, handleSubmit, watch, setValue, formState } = useZodForm(
+    createTaskFormSchema,
+    {
+      defaultValues: {
+        childIds: kids[0] ? [kids[0].id] : [],
+        title: '',
+        category: 'chore',
+        payType: 'money',
+        amount: '20',
+        xp: '50',
+        recurrence: 'once',
+        dueDate: '',
+      },
     },
-  });
+  );
   const payType = watch('payType');
+  const childIds = watch('childIds');
+
+  const [group, setGroup] = useState<SuggestionGroup>('home');
+  // Filter suggestions by the kid's age only when a single kid is selected and
+  // its age is known; otherwise show every suggestion in the group.
+  const selectedAge =
+    childIds.length === 1 ? (kids.find((k) => k.id === childIds[0])?.age ?? 0) : 0;
+  const suggestions = filterSuggestions(selectedAge, group);
+
+  const applySuggestion = (s: TaskSuggestion) => {
+    setValue('title', lang === 'es' ? s.es : s.en, { shouldValidate: true });
+    setValue('category', s.category);
+    setValue('payType', s.payType);
+    setValue('amount', String(s.amount));
+    setValue('xp', String(s.xp));
+  };
 
   const input =
     'w-full rounded-[12px] border-2 border-navy/15 bg-white px-3.5 py-2.5 text-[14px] font-semibold text-navy outline-none focus:border-accent';
@@ -286,17 +318,19 @@ function CreateTaskModal({
 
   const onSubmit = async (values: CreateTaskFormValues) => {
     setServerError(null);
+    const base = {
+      title: values.title.trim() || (lang === 'es' ? 'Tarea nueva' : 'New task'),
+      category: values.category,
+      payType: values.payType,
+      amountCents: values.payType === 'xp' ? 0 : dollarsToCents(values.amount),
+      rewardXp: values.payType === 'money' ? 0 : values.xp,
+      recurrence: values.recurrence,
+      dueAt: values.dueDate ? new Date(values.dueDate).toISOString() : undefined,
+    };
     try {
-      await createTask.mutateAsync({
-        childId: values.childId,
-        title: values.title.trim() || (lang === 'es' ? 'Tarea nueva' : 'New task'),
-        category: values.category,
-        payType: values.payType,
-        amountCents: values.payType === 'xp' ? 0 : dollarsToCents(values.amount),
-        rewardXp: values.payType === 'money' ? 0 : values.xp,
-        recurrence: values.recurrence,
-        dueAt: values.dueDate ? new Date(values.dueDate).toISOString() : undefined,
-      });
+      await Promise.all(
+        values.childIds.map((childId) => createTask.mutateAsync({ childId, ...base })),
+      );
       await afterCreate();
       close();
     } catch (err) {
@@ -325,16 +359,76 @@ function CreateTaskModal({
           <input className={input} placeholder={t.namePh} {...register('title')} />
         </label>
 
-        <label className="flex flex-col gap-1.5">
-          <span className={label}>{t.assignee}</span>
-          <select className={input} {...register('childId')}>
-            {kids.map((k) => (
-              <option key={k.id} value={k.id}>
-                {k.displayName}
-              </option>
+        <Controller
+          control={control}
+          name="childIds"
+          render={({ field }) => {
+            const allSelected = field.value.length === kids.length && kids.length > 0;
+            const toggle = (id: string) =>
+              field.value.includes(id)
+                ? field.value.length > 1 && field.onChange(field.value.filter((x) => x !== id))
+                : field.onChange([...field.value, id]);
+            return (
+              <div className="flex flex-col gap-1.5">
+                <span className={label}>{t.assignee}</span>
+                <div className="flex flex-wrap gap-2">
+                  {kids.length > 1 && (
+                    <button
+                      type="button"
+                      className={pill(allSelected)}
+                      onClick={() =>
+                        field.onChange(allSelected ? [kids[0]?.id ?? ''] : kids.map((k) => k.id))
+                      }
+                    >
+                      {t.allKids}
+                    </button>
+                  )}
+                  {kids.map((k) => (
+                    <button
+                      key={k.id}
+                      type="button"
+                      className={pill(field.value.includes(k.id))}
+                      onClick={() => toggle(k.id)}
+                    >
+                      {k.displayName}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          }}
+        />
+
+        <div className="flex flex-col gap-1.5">
+          <span className={label}>{t.suggestions}</span>
+          <div className="flex flex-wrap gap-1.5">
+            {(['home', 'study', 'homework', 'financial'] as const).map((g) => (
+              <button
+                key={g}
+                type="button"
+                onClick={() => setGroup(g)}
+                className={`rounded-full px-3 py-1 text-[11.5px] font-extrabold ${group === g ? 'bg-navy text-cream' : 'bg-navy/[0.07] text-navy/60'}`}
+              >
+                {t.groups[g]}
+              </button>
             ))}
-          </select>
-        </label>
+          </div>
+          <div className="flex max-h-[120px] flex-wrap gap-1.5 overflow-y-auto">
+            {suggestions.length === 0 && (
+              <span className="text-[12px] text-navy/45">{t.noSuggestions}</span>
+            )}
+            {suggestions.map((s) => (
+              <button
+                key={`${s.group}-${s.en}`}
+                type="button"
+                onClick={() => applySuggestion(s)}
+                className="rounded-[10px] border border-navy/15 bg-white px-2.5 py-1.5 text-[12px] font-semibold text-navy/80 hover:border-accent hover:text-accent"
+              >
+                {lang === 'es' ? s.es : s.en}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <Controller
           control={control}

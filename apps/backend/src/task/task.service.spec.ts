@@ -6,7 +6,7 @@ function makeTx() {
     task: { findUnique: jest.fn(), update: jest.fn().mockResolvedValue({ status: 'approved' }) },
     piggyBank: { findFirst: jest.fn(), update: jest.fn() },
     transaction: { create: jest.fn() },
-    child: { update: jest.fn() },
+    child: { findUnique: jest.fn(), update: jest.fn() },
   };
 }
 
@@ -44,7 +44,7 @@ describe('TaskService.approveTask', () => {
     expect((res as { status: string }).status).toBe('approved');
   });
 
-  it('awards xp without touching the bank (xp task)', async () => {
+  it('awards xp without touching the bank (xp task, no level-up)', async () => {
     const tx = makeTx();
     tx.task.findUnique.mockResolvedValue({
       id: 'tk2',
@@ -54,13 +54,38 @@ describe('TaskService.approveTask', () => {
       amountCents: 0,
       rewardXp: 50,
     });
+    tx.child.findUnique.mockResolvedValue({ xp: 100 }); // 100 → 150, stays level 1
 
     await new TaskService(prismaWith(tx)).approveTask('tk2');
 
-    expect(tx.child.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { xp: { increment: 50 } } }),
+    expect(tx.child.update).toHaveBeenCalledWith(expect.objectContaining({ data: { xp: 150 } }));
+    expect(tx.transaction.create).not.toHaveBeenCalled(); // no boundary crossed → no $
+  });
+
+  it('pays $5 into the bank when xp crosses a level boundary', async () => {
+    const tx = makeTx();
+    tx.task.findUnique.mockResolvedValue({
+      id: 'tk3',
+      childId: 'c1',
+      title: 'Lección',
+      payType: 'xp',
+      amountCents: 0,
+      rewardXp: 100,
+    });
+    tx.child.findUnique.mockResolvedValue({ xp: 950 }); // 950 → 1050 crosses level 1 → 2
+    tx.piggyBank.findFirst.mockResolvedValue({ id: 'b1' });
+
+    await new TaskService(prismaWith(tx)).approveTask('tk3');
+
+    expect(tx.child.update).toHaveBeenCalledWith(expect.objectContaining({ data: { xp: 1050 } }));
+    expect(tx.transaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ type: 'reward', amountCents: 500, piggyBankId: 'b1' }),
+      }),
     );
-    expect(tx.transaction.create).not.toHaveBeenCalled();
+    expect(tx.piggyBank.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { balanceCents: { increment: 500 } } }),
+    );
   });
 
   it('throws NOT_FOUND for a missing task', async () => {

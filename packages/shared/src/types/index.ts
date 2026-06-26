@@ -100,6 +100,8 @@ export interface Quest extends BaseEntity {
   rewardXp: number;
   rewardCents: number;
   status: QuestStatus;
+  /** Links to an in-app lesson (cards + quiz). Absent = legacy tap-to-claim quest. */
+  lessonKey?: string;
 }
 
 export type TaskCategory = 'chore' | 'lesson';

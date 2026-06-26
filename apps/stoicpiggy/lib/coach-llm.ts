@@ -8,7 +8,7 @@ import {
   useLLM,
 } from 'react-native-executorch';
 import { ExpoResourceFetcher } from 'react-native-executorch-expo-resource-fetcher';
-import { coachSystemPrompt, type Lang } from './coach';
+import { coachSystemPrompt, type Lang, stripThinking } from './coach';
 
 // Point ExecuTorch's resource fetcher at Expo's filesystem so the model can
 // download + cache on-device. Required on Expo; must run once before any
@@ -39,7 +39,7 @@ export function useCoachLLM(enabled: boolean, patterns: ChildPatterns | undefine
       ];
       try {
         const out = await llm.generate(messages);
-        return out.trim() || null;
+        return stripThinking(out) || null;
       } catch {
         return null; // ponytail: any inference failure → caller uses the template
       }
