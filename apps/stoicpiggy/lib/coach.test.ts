@@ -39,9 +39,9 @@ describe('coachReport', () => {
 
 describe('stripThinking', () => {
   it('keeps only the answer after a Qwen3 <think> block', () => {
-    expect(stripThinking('<think>\nThe user asks how to save.\n</think>\nAhorra una parte. 🐷')).toBe(
-      'Ahorra una parte. 🐷',
-    );
+    expect(
+      stripThinking('<think>\nThe user asks how to save.\n</think>\nAhorra una parte. 🐷'),
+    ).toBe('Ahorra una parte. 🐷');
   });
 
   it('passes through a plain answer (no reasoning emitted)', () => {

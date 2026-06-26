@@ -63,6 +63,10 @@ export function coachSystemPrompt(p: ChildPatterns | undefined, lang: Lang): str
  */
 export function stripThinking(text: string): string {
   const close = text.lastIndexOf('</think>');
-  if (close !== -1) return text.slice(close + '</think>'.length).replace(/<\/?think>/gi, '').trim();
+  if (close !== -1)
+    return text
+      .slice(close + '</think>'.length)
+      .replace(/<\/?think>/gi, '')
+      .trim();
   return /<think>/i.test(text) ? '' : text.trim();
 }
