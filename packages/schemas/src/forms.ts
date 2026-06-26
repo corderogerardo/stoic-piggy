@@ -61,7 +61,9 @@ export type AllowanceFormValues = z.infer<typeof allowanceFormSchema>;
 
 /** Create-task modal: dollar/xp amounts typed in; title optional (screen defaults it). */
 export const createTaskFormSchema = z.object({
-  childId: z.string().min(1, 'Pick a kid'),
+  // One task can be assigned to several kids at once (or all of them); the
+  // screen creates one task per id.
+  childIds: z.array(z.string().min(1)).min(1, 'Pick at least one kid'),
   title: z.string().trim().max(120),
   category: taskCategorySchema,
   payType: taskPayTypeSchema,
