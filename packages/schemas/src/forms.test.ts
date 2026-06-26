@@ -74,10 +74,10 @@ describe('allowanceFormSchema', () => {
 });
 
 describe('createTaskFormSchema', () => {
-  it('requires a child and coerces amount/xp', () => {
+  it('requires at least one child and coerces amount/xp', () => {
     expect(
       createTaskFormSchema.safeParse({
-        childId: '',
+        childIds: [],
         title: 'Dishes',
         category: 'chore',
         payType: 'money',
@@ -88,7 +88,7 @@ describe('createTaskFormSchema', () => {
     ).toBe(false);
 
     const ok = createTaskFormSchema.parse({
-      childId: 'c1',
+      childIds: ['c1', 'c2'],
       title: '',
       category: 'chore',
       payType: 'both',
@@ -104,7 +104,7 @@ describe('createTaskFormSchema', () => {
     // value left in the hidden pay side can never silently block submit.
     expect(
       createTaskFormSchema.safeParse({
-        childId: 'c1',
+        childIds: ['c1'],
         title: 't',
         category: 'chore',
         payType: 'xp',
