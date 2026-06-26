@@ -1,4 +1,5 @@
 import { useChildHome, useMyPatterns } from '@stoicpiggy/api';
+import { Observe } from 'expo-observe';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -146,6 +147,22 @@ function KidApp() {
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const [aiOn, setAiOn] = useState(false);
   const coach = useCoachLLM(aiOn, patterns.data, lang);
+
+  // EAS Observe — this is one Expo Router route, so per-screen data comes from
+  // custom events (see `eas observe:events`), not the route integration.
+  // Record each screen the kid lands on, including the initial 'home'.
+  useEffect(() => {
+    Observe.logEvent('screen_view', { attributes: { screen } });
+  }, [screen]);
+
+  // Tag every metric/event with role, language, and level so startup/TTI and
+  // events can be sliced by those dimensions in the dashboard. Level is only
+  // known once home data loads, so this runs after the gate clears.
+  useEffect(() => {
+    if (home.data) {
+      Observe.setGlobalAttributes({ role: 'kid', lang, level: home.data.child.level });
+    }
+  }, [home.data, lang]);
 
   // Gate the app on the first home load — never render placeholder numbers.
   // Once data exists, keep showing it (a later background refetch error won't
