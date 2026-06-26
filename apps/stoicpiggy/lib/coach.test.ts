@@ -1,5 +1,5 @@
 import type { ChildPatterns } from '@stoicpiggy/shared';
-import { coachReport } from './coach';
+import { coachReport, stripThinking } from './coach';
 
 const patterns: ChildPatterns = {
   windowDays: 30,
@@ -34,5 +34,21 @@ describe('coachReport', () => {
   it('treats spending from a prior balance as activity (not a first-timer)', () => {
     const spentOnly = { ...patterns, inflowCents: 0, resistedCount: 0, resistedCents: 0 };
     expect(coachReport(spentOnly, 'es')).not.toMatch(/mesada/i);
+  });
+});
+
+describe('stripThinking', () => {
+  it('keeps only the answer after a Qwen3 <think> block', () => {
+    expect(stripThinking('<think>\nThe user asks how to save.\n</think>\nAhorra una parte. 🐷')).toBe(
+      'Ahorra una parte. 🐷',
+    );
+  });
+
+  it('passes through a plain answer (no reasoning emitted)', () => {
+    expect(stripThinking('Respira antes de gastar. 🧘')).toBe('Respira antes de gastar. 🧘');
+  });
+
+  it('drops a truncated, unclosed reasoning block (no answer to keep)', () => {
+    expect(stripThinking('<think>\nOkay, the user is asking how to start sav')).toBe('');
   });
 });
