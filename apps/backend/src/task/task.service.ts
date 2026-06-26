@@ -28,6 +28,7 @@ export class TaskService {
         amountCents: input.amountCents,
         rewardXp: input.rewardXp,
         recurrence: input.recurrence,
+        dueAt: input.dueAt ? new Date(input.dueAt) : null,
       },
     });
   }

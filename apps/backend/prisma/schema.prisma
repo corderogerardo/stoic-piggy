@@ -193,6 +193,7 @@ enum TaskRecurrence {
   once
   daily
   weekly
+  monthly
 }
 
 enum TaskStatus {
@@ -216,6 +217,7 @@ model Task {
   rewardXp    Int            @default(0)
   recurrence  TaskRecurrence @default(once)
   status      TaskStatus     @default(active)
+  dueAt       DateTime?
   note        String?
   submittedAt DateTime?
   resolvedAt  DateTime?

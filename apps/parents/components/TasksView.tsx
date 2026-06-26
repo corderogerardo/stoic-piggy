@@ -37,7 +37,7 @@ const T = {
     colReward: 'RECOMPENSA',
     colStatus: 'ESTADO',
     cat: { chore: 'Quehacer', lesson: 'Lección' } as Record<TaskCategory, string>,
-    recur: { once: 'Una vez', daily: 'Diario', weekly: 'Semanal' } as Record<
+    recur: { once: 'Una vez', daily: 'Diario', weekly: 'Semanal', monthly: 'Mensual' } as Record<
       TaskRecurrence,
       string
     >,
@@ -63,6 +63,8 @@ const T = {
     amount: 'MONTO ($)',
     xpAmount: 'XP',
     frequency: 'FRECUENCIA',
+    due: 'FECHA LÍMITE (OPCIONAL)',
+    duePrefix: 'Vence',
     create: 'Crear tarea',
     creating: 'Creando…',
     cancel: 'Cancelar',
@@ -80,7 +82,10 @@ const T = {
     colReward: 'REWARD',
     colStatus: 'STATUS',
     cat: { chore: 'Chore', lesson: 'Lesson' } as Record<TaskCategory, string>,
-    recur: { once: 'Once', daily: 'Daily', weekly: 'Weekly' } as Record<TaskRecurrence, string>,
+    recur: { once: 'Once', daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly' } as Record<
+      TaskRecurrence,
+      string
+    >,
     status: {
       active: 'Active',
       submitted: 'To approve',
@@ -102,6 +107,8 @@ const T = {
     amount: 'AMOUNT ($)',
     xpAmount: 'XP',
     frequency: 'FREQUENCY',
+    due: 'DUE DATE (OPTIONAL)',
+    duePrefix: 'Due',
     create: 'Create task',
     creating: 'Creating…',
     cancel: 'Cancel',
@@ -193,7 +200,14 @@ export function TasksView({ lang }: { lang: Lang }) {
                   </span>
                   <div className="min-w-0">
                     <div className="text-[14.5px] font-extrabold leading-tight">{task.title}</div>
-                    <div className="text-[11.5px] text-navy/55">{t.cat[task.category]}</div>
+                    <div className="text-[11.5px] text-navy/55">
+                      {t.cat[task.category]}
+                      {task.dueAt &&
+                        ` · ${t.duePrefix} ${new Date(task.dueAt).toLocaleDateString(lang, {
+                          day: 'numeric',
+                          month: 'short',
+                        })}`}
+                    </div>
                   </div>
                 </div>
                 <div className="flex w-[130px] items-center gap-2">
@@ -274,6 +288,7 @@ function CreateTaskModal({
         amount: '20',
         xp: '50',
         recurrence: 'once',
+        dueDate: '',
       },
     },
   );
@@ -310,6 +325,7 @@ function CreateTaskModal({
       amountCents: values.payType === 'xp' ? 0 : dollarsToCents(values.amount),
       rewardXp: values.payType === 'money' ? 0 : values.xp,
       recurrence: values.recurrence,
+      dueAt: values.dueDate ? new Date(values.dueDate).toISOString() : undefined,
     };
     try {
       await Promise.all(
@@ -519,7 +535,7 @@ function CreateTaskModal({
             <div className="flex flex-col gap-1.5">
               <span className={label}>{t.frequency}</span>
               <div className="flex gap-2">
-                {(['once', 'daily', 'weekly'] as const).map((r) => (
+                {(['once', 'daily', 'weekly', 'monthly'] as const).map((r) => (
                   <button
                     key={r}
                     type="button"
@@ -533,6 +549,11 @@ function CreateTaskModal({
             </div>
           )}
         />
+
+        <label className="flex flex-col gap-1.5">
+          <span className={label}>{t.due}</span>
+          <input type="date" className={input} {...register('dueDate')} />
+        </label>
 
         <FormError>{serverError}</FormError>
 

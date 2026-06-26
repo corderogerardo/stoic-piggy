@@ -74,6 +74,8 @@ export const createTaskFormSchema = z.object({
   amount: z.coerce.number().int().min(0),
   xp: z.coerce.number().int().min(0),
   recurrence: taskRecurrenceSchema,
+  // Native <input type="date"> value ("YYYY-MM-DD") or "" for no deadline.
+  dueDate: z.string().optional(),
 });
 export type CreateTaskFormValues = z.infer<typeof createTaskFormSchema>;
 

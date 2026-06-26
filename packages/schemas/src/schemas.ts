@@ -141,7 +141,7 @@ export type DeleteChildInput = z.infer<typeof deleteChildSchema>;
 
 export const taskCategorySchema = z.enum(['chore', 'lesson']);
 export const taskPayTypeSchema = z.enum(['money', 'xp', 'both']);
-export const taskRecurrenceSchema = z.enum(['once', 'daily', 'weekly']);
+export const taskRecurrenceSchema = z.enum(['once', 'daily', 'weekly', 'monthly']);
 
 /** A parent assigns a task to one of their kids. */
 export const createTaskSchema = z.object({
@@ -153,6 +153,8 @@ export const createTaskSchema = z.object({
   amountCents: z.number().int().min(0).max(100_000_00),
   rewardXp: z.number().int().min(0).max(100_000),
   recurrence: taskRecurrenceSchema,
+  // Optional deadline (full ISO datetime). Omitted = no due date.
+  dueAt: z.string().datetime().optional(),
 });
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 

@@ -391,6 +391,7 @@ const baseTask = {
   rewardXp: 0,
   recurrence: 'weekly' as const,
   status: 'active' as const,
+  dueAt: null as Date | null,
   note: null,
   submittedAt: null as Date | null,
   resolvedAt: null as Date | null,

@@ -106,7 +106,7 @@ export interface Quest extends BaseEntity {
 
 export type TaskCategory = 'chore' | 'lesson';
 export type TaskPayType = 'money' | 'xp' | 'both';
-export type TaskRecurrence = 'once' | 'daily' | 'weekly';
+export type TaskRecurrence = 'once' | 'daily' | 'weekly' | 'monthly';
 /** active → kid submits → submitted → parent approves/rejects. */
 export type TaskStatus = 'active' | 'submitted' | 'approved' | 'rejected';
 
@@ -120,6 +120,7 @@ export interface Task extends BaseEntity {
   rewardXp: number;
   recurrence: TaskRecurrence;
   status: TaskStatus;
+  dueAt?: ISODateString;
   note?: string;
   submittedAt?: ISODateString;
   resolvedAt?: ISODateString;
