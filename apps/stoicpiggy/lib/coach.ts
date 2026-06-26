@@ -49,5 +49,24 @@ export function coachSystemPrompt(p: ChildPatterns | undefined, lang: Lang): str
     'Never shame the child. Never give financial product advice. Use their numbers when relevant.',
     `Always reply in ${reply}.`,
     facts,
+    // Qwen3 soft switch: skip chain-of-thought so we get the answer directly
+    // (faster on-device, and no English <think> block to leak into the chat).
+    '/no_think',
   ].join(' ');
+}
+
+/**
+ * Qwen3 emits its reasoning in a `<think>…</think>` block (in English, whatever
+ * the answer language) — never show it to the kid. The reply is whatever follows
+ * the block. An unclosed `<think>` means generation was cut off mid-reasoning, so
+ * there's no answer to keep → return '' and let the caller fall back to Tier 1.
+ */
+export function stripThinking(text: string): string {
+  const close = text.lastIndexOf('</think>');
+  if (close !== -1)
+    return text
+      .slice(close + '</think>'.length)
+      .replace(/<\/?think>/gi, '')
+      .trim();
+  return /<think>/i.test(text) ? '' : text.trim();
 }

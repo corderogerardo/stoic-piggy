@@ -31,7 +31,7 @@ export function Home({
   quest,
 }: HomeProps) {
   const { colors } = useTheme();
-  const { t } = useLang();
+  const { t, lang, setLang } = useLang();
   const h = t.home;
 
   const goalPct =
@@ -80,6 +80,24 @@ export function Home({
               {h.level} {level}
             </Txt>
           </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={lang === 'es' ? 'Switch to English' : 'Cambiar a Español'}
+            onPress={() => setLang(lang === 'es' ? 'en' : 'es')}
+            hitSlop={8}
+            style={{
+              height: 34,
+              paddingHorizontal: 12,
+              borderRadius: 9999,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors.chip,
+            }}
+          >
+            <Txt w="800" style={{ fontSize: 11, letterSpacing: 0.5, color: colors.ink3 }}>
+              {lang === 'es' ? 'ES' : 'EN'}
+            </Txt>
+          </Pressable>
           {onLogout && (
             <Pressable
               accessibilityRole="button"
