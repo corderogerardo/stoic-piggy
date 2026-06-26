@@ -479,7 +479,7 @@ describe('AuthService.childHome', () => {
       username: 'marco',
       displayName: 'Marco',
       level: 7,
-      xp: 1240,
+      xp: 6500, // 6500 XP → level 7 (Expert) under 1000 XP/level
       avatarUrl: null,
       piggyBanks: [{ balanceCents: 20000 }, { balanceCents: 14000 }],
       goals: [{ title: 'Bici', targetCents: 50000, savedCents: 34000 }],

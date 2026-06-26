@@ -157,6 +157,8 @@ model Quest {
   rewardXp    Int         @default(0)
   rewardCents Int         @default(0)
   status      QuestStatus @default(available)
+  // Links a quest to its in-app lesson (cards + quiz). Null = legacy tap-to-claim.
+  lessonKey   String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
