@@ -33,6 +33,8 @@ export function Home({
   const { colors } = useTheme();
   const { t } = useLang();
   const h = t.home;
+  // Named rank for the kid's level (1..7 → Beginner..Expert).
+  const tier = t.levels[Math.min(Math.max(level, 1), t.levels.length) - 1] ?? '';
 
   const goalPct =
     goal && goal.targetCents > 0
@@ -77,7 +79,7 @@ export function Home({
           >
             <Icon name="bolt" size={11} color={colors.accentInk} />
             <Txt w="800" style={{ fontSize: 10, letterSpacing: 0.5, color: colors.accentInk }}>
-              {h.level} {level}
+              {h.level} {level} · {tier.toUpperCase()}
             </Txt>
           </View>
           {onLogout && (
