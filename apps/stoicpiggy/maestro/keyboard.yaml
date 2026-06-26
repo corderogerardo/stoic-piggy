@@ -1,0 +1,18 @@
+appId: com.stoicpiggy.app
+---
+# Regression for the Coach composer being hidden behind the on-screen keyboard.
+# The smoke build lands on the kid home screen already authenticated.
+- launchApp
+- tapOn:
+    id: "tab-coach"
+- assertVisible: "Type your question..."
+# Focus the composer — this raises the keyboard.
+- tapOn:
+    id: "coach-input"
+- inputText: "Saving up for a new bike"
+# With the keyboard up, the composer + send must stay reachable above it.
+- assertVisible: "Saving up for a new bike"
+- assertVisible:
+    id: "coach-send"
+- tapOn:
+    id: "coach-send"

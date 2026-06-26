@@ -32,6 +32,7 @@ export function TabBar({ screen, onTab }: { screen: string; onTab: (key: string)
         return (
           <Pressable
             key={tab.k}
+            testID={`tab-${tab.k}`}
             onPress={() => onTab(tab.k)}
             style={{ flex: 1, alignItems: 'center', gap: 5, paddingVertical: 4 }}
           >

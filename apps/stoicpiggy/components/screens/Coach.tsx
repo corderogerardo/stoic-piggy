@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, Switch, TextInput, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Switch,
+  TextInput,
+  View,
+} from 'react-native';
 import { FONT } from '@/lib/fonts';
 import { useLang, useTheme } from '@/lib/providers';
 import { Icon } from '../Icon';
@@ -41,7 +49,13 @@ export function Coach({
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    // ponytail: TabBar is a sibling OUTSIDE this view (app/index.tsx), so the KAV's
+    // measured frame already ends above it — keyboardVerticalOffset stays 0. A positive
+    // offset would push the composer up past the keyboard by the TabBar's height.
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+    >
       <View
         style={{
           flexDirection: 'row',
@@ -104,7 +118,11 @@ export function Coach({
         </View>
       )}
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, gap: 12 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 20, gap: 12 }}
+        keyboardShouldPersistTaps="handled"
+      >
         {messages.map((m, i) => {
           const me = m.role === 'me';
           return (
@@ -173,6 +191,7 @@ export function Coach({
         }}
       >
         <TextInput
+          testID="coach-input"
           value={input}
           onChangeText={setInput}
           onSubmitEditing={() => submit(input)}
@@ -191,6 +210,7 @@ export function Coach({
           }}
         />
         <Pressable
+          testID="coach-send"
           onPress={() => submit(input)}
           style={{
             width: 46,
@@ -204,6 +224,6 @@ export function Coach({
           <Icon name="paper-plane" size={16} color={colors.accentInk} />
         </Pressable>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
