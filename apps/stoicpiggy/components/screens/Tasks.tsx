@@ -24,6 +24,15 @@ const rewardOf = (k: Task): string => {
   return money;
 };
 
+/** Whole days from today (local) to the due date: 0 = today, 1 = tomorrow, <0 = overdue. */
+const dueDayDiff = (iso: string): number => {
+  const due = new Date(iso);
+  const now = new Date();
+  const a = Date.UTC(due.getFullYear(), due.getMonth(), due.getDate());
+  const b = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((a - b) / 86_400_000);
+};
+
 /** The signed-in kid's real tasks. Marking one done submits it for the parent to approve. */
 export function Tasks() {
   const { colors } = useTheme();
@@ -105,6 +114,25 @@ export function Tasks() {
               st === 'todo' ? t.tasks.todo : st === 'pending' ? t.tasks.pending : t.tasks.approved;
             const metaColor =
               st === 'pending' ? colors.accent : st === 'done' ? '#2FAE6B' : colors.ink3;
+            const recurLabel = t.tasks.recur[k.recurrence];
+            const due =
+              !done && k.dueAt
+                ? ((d) =>
+                    d < 0
+                      ? { text: t.tasks.overdue, urgent: true }
+                      : d === 0
+                        ? { text: t.tasks.dueToday, urgent: true }
+                        : d === 1
+                          ? { text: t.tasks.dueTomorrow, urgent: false }
+                          : { text: t.tasks.dueIn.replace('{n}', String(d)), urgent: false })(
+                    dueDayDiff(k.dueAt),
+                  )
+                : null;
+            const chips: { text: string; color: string }[] = [
+              { text: meta, color: metaColor },
+              { text: recurLabel, color: colors.ink3 },
+              ...(due ? [{ text: due.text, color: due.urgent ? colors.accent : colors.ink3 }] : []),
+            ];
             return (
               <View
                 key={k.id}
@@ -151,12 +179,30 @@ export function Tasks() {
                   >
                     {k.title}
                   </Txt>
-                  <Txt
-                    w="800"
-                    style={{ fontSize: 10, letterSpacing: 0.4, color: metaColor, marginTop: 4 }}
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      gap: 7,
+                      marginTop: 4,
+                    }}
                   >
-                    {meta}
-                  </Txt>
+                    {chips.map((chip) => (
+                      <Txt
+                        key={chip.text}
+                        w="800"
+                        style={{ fontSize: 10, letterSpacing: 0.4, color: chip.color }}
+                      >
+                        {chip.text}
+                      </Txt>
+                    ))}
+                  </View>
+                  {k.note ? (
+                    <Txt w="400" style={{ fontSize: 11.5, color: colors.ink2, marginTop: 5 }}>
+                      {k.note}
+                    </Txt>
+                  ) : null}
                 </View>
                 <Txt
                   mono

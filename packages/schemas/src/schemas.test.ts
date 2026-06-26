@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createChildAccountSchema,
+  createTaskSchema,
   loginChildSchema,
   passwordSchema,
   registerParentSchema,
@@ -112,5 +113,28 @@ describe('createChildAccountSchema', () => {
         age: 0,
       }).success,
     ).toBe(false);
+  });
+});
+
+describe('createTaskSchema', () => {
+  const base = {
+    childId: 'c1',
+    title: 'Sacar la basura',
+    category: 'chore' as const,
+    payType: 'money' as const,
+    amountCents: 500,
+    rewardXp: 0,
+    recurrence: 'monthly' as const,
+  };
+
+  it('accepts monthly recurrence and an optional ISO dueAt', () => {
+    expect(createTaskSchema.safeParse(base).success).toBe(true);
+    expect(
+      createTaskSchema.safeParse({ ...base, dueAt: new Date('2026-07-01').toISOString() }).success,
+    ).toBe(true);
+  });
+
+  it('rejects a non-ISO dueAt', () => {
+    expect(createTaskSchema.safeParse({ ...base, dueAt: '2026-07-01' }).success).toBe(false);
   });
 });

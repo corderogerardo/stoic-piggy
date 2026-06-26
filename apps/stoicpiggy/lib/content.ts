@@ -99,6 +99,11 @@ const es = {
     todo: 'POR HACER',
     pending: 'ESPERANDO A MAMÁ',
     approved: 'APROBADA ✓',
+    recur: { once: 'Una vez', daily: 'Diaria', weekly: 'Semanal', monthly: 'Mensual' },
+    dueToday: 'Vence hoy',
+    dueTomorrow: 'Vence mañana',
+    dueIn: 'Vence en {n} días',
+    overdue: 'Vencida',
   },
   lessons: {
     title: 'Misiones',
@@ -198,6 +203,11 @@ const en: typeof es = {
     todo: 'TO DO',
     pending: 'WAITING FOR MOM',
     approved: 'APPROVED ✓',
+    recur: { once: 'One-time', daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly' },
+    dueToday: 'Due today',
+    dueTomorrow: 'Due tomorrow',
+    dueIn: 'Due in {n} days',
+    overdue: 'Overdue',
   },
   lessons: {
     title: 'Quests',

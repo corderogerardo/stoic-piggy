@@ -131,6 +131,7 @@ interface TaskRow {
   rewardXp: number;
   recurrence: TaskRecurrence;
   status: TaskStatus;
+  dueAt: Date | null;
   note: string | null;
   submittedAt: Date | null;
   resolvedAt: Date | null;
@@ -281,6 +282,7 @@ const toTask = (r: TaskRow): Task => ({
   rewardXp: r.rewardXp,
   recurrence: r.recurrence,
   status: r.status,
+  dueAt: r.dueAt ? iso(r.dueAt) : undefined,
   note: r.note ?? undefined,
   submittedAt: r.submittedAt ? iso(r.submittedAt) : undefined,
   resolvedAt: r.resolvedAt ? iso(r.resolvedAt) : undefined,
