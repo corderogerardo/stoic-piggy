@@ -9,6 +9,7 @@ import {
 import { SpaceMono_400Regular, SpaceMono_700Bold } from '@expo-google-fonts/space-mono';
 import { ApiProvider } from '@stoicpiggy/api';
 import { useFonts } from 'expo-font';
+import { ObserveRoot, useObserve } from 'expo-observe';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -25,7 +26,8 @@ SplashScreen.preventAutoHideAsync();
 // to your LAN IP, e.g. http://192.168.1.20:3001/trpc.
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001/trpc';
 
-export default function RootLayout() {
+function RootLayout() {
+  const { markInteractive } = useObserve();
   const [loaded] = useFonts({
     DMSans_400Regular,
     DMSans_500Medium,
@@ -37,8 +39,11 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (loaded) SplashScreen.hideAsync();
-  }, [loaded]);
+    if (loaded) {
+      SplashScreen.hideAsync();
+      markInteractive();
+    }
+  }, [loaded, markInteractive]);
 
   if (!loaded) return null;
 
@@ -57,3 +62,5 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+export default ObserveRoot.wrap(RootLayout);
