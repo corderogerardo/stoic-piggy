@@ -1,6 +1,7 @@
 import { useChildTasks, useSubmitTask, useTRPC } from '@stoicpiggy/api';
 import { centsToDollars, type Task } from '@stoicpiggy/shared';
 import { useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { useLang, useTheme } from '@/lib/providers';
@@ -45,10 +46,14 @@ export function Tasks() {
   const submit = useSubmitTask();
 
   const tasks = tasksQ.data ?? [];
-  const weeklyEarn = tasks
+  const approvedCount = tasks.filter((k) => k.status === 'approved').length;
+  const activeTasks = tasks.filter((k) => k.status !== 'approved');
+  const weeklyEarn = activeTasks
     .filter((k) => k.payType !== 'xp' && stageOf(k.status) === 'todo')
     .reduce((sum, k) => sum + Math.round(centsToDollars(k.amountCents)), 0);
-  const sorted = [...tasks].sort((a, b) => ORDER[stageOf(a.status)] - ORDER[stageOf(b.status)]);
+  const sorted = [...activeTasks].sort(
+    (a, b) => ORDER[stageOf(a.status)] - ORDER[stageOf(b.status)],
+  );
 
   const onMark = async (taskId: string) => {
     await submit.mutateAsync({ taskId });
@@ -60,9 +65,18 @@ export function Tasks() {
       testID="tasks-screen"
       contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 14, paddingBottom: 24 }}
     >
-      <Txt w="800" style={{ fontSize: 27, color: colors.ink, marginTop: 6 }}>
-        {t.tasks.title}
-      </Txt>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 6, marginBottom: 4 }}>
+        <Txt w="800" style={{ fontSize: 27, color: colors.ink, flex: 1 }}>
+          {t.tasks.title}
+        </Txt>
+        {approvedCount > 0 && (
+          <Pressable onPress={() => router.push('/task-history')} hitSlop={8}>
+            <Txt w="600" style={{ fontSize: 12.5, color: colors.accent }}>
+              {lang === 'es' ? `${approvedCount} completadas →` : `${approvedCount} completed →`}
+            </Txt>
+          </Pressable>
+        )}
+      </View>
       <Txt w="400" style={{ fontSize: 13.5, color: colors.ink2, marginBottom: 18 }}>
         {t.tasks.sub}
       </Txt>
@@ -98,7 +112,7 @@ export function Tasks() {
         <Txt w="400" style={{ fontSize: 13.5, color: colors.ink3 }}>
           {lang === 'es' ? 'Cargando…' : 'Loading…'}
         </Txt>
-      ) : tasks.length === 0 ? (
+      ) : activeTasks.length === 0 ? (
         <Txt w="400" style={{ fontSize: 13.5, color: colors.ink3 }}>
           {lang === 'es'
             ? 'No tienes tareas todavía. ¡Mamá o papá te asignarán algunas!'
