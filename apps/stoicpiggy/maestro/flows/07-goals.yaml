@@ -2,11 +2,11 @@ appId: com.stoicpiggy.app
 tags:
   - auth
 ---
-# Screen: Wins (stats + badges). Reached from the tab bar.
+# Screen: Goals (my goals + Logros badges). Reached from the tab bar.
 - runFlow: ../subflows/sign-in.yaml
 - tapOn:
-    id: "tab-wins"
+    id: "tab-goals"
 - extendedWaitUntil:
     visible:
-      id: "wins-screen"
+      id: "goals-screen"
     timeout: 30000

@@ -17,7 +17,7 @@ maestro/
     04-tasks.yaml
     05-coach.yaml      # send a message, assert it echoes into the chat
     06-quests.yaml
-    07-wins.yaml
+    07-goals.yaml      # goals tab → create/Logros screen
     08-temptation.yaml # opens the challenge, closes back (no backend write)
     09-keyboard.yaml   # composer + send stay above the on-screen keyboard (regression)
 ```

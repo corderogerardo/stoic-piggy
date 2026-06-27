@@ -1,12 +1,49 @@
 import { describe, expect, it } from 'vitest';
 import {
   allowanceFormSchema,
+  createGoalFormSchema,
   createKidFormSchema,
   createTaskFormSchema,
   editKidFormSchema,
   resetPasswordFormSchema,
   temptationFormSchema,
 } from './forms';
+
+describe('createGoalFormSchema', () => {
+  it('coerces a digit target string and trims the title', () => {
+    const parsed = createGoalFormSchema.parse({
+      title: '  New bike  ',
+      dollars: '150',
+      term: 'medium',
+      category: 'thing',
+    });
+    expect(parsed.title).toBe('New bike');
+    expect(parsed.dollars).toBe(150);
+  });
+
+  it('rejects an empty title, a non-positive target, and a bad term/category', () => {
+    expect(
+      createGoalFormSchema.safeParse({ title: '', dollars: '10', term: 'short', category: 'thing' })
+        .success,
+    ).toBe(false);
+    expect(
+      createGoalFormSchema.safeParse({ title: 'x', dollars: '0', term: 'short', category: 'thing' })
+        .success,
+    ).toBe(false);
+    expect(
+      createGoalFormSchema.safeParse({ title: 'x', dollars: '10', term: 'soon', category: 'thing' })
+        .success,
+    ).toBe(false);
+    expect(
+      createGoalFormSchema.safeParse({
+        title: 'x',
+        dollars: '10',
+        term: 'short',
+        category: 'crypto',
+      }).success,
+    ).toBe(false);
+  });
+});
 
 describe('resetPasswordFormSchema', () => {
   it('enforces the shared password rules', () => {

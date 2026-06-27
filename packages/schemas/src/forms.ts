@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import {
   createChildAccountSchema,
+  goalCategorySchema,
+  goalTermSchema,
   passwordSchema,
   taskCategorySchema,
   taskPayTypeSchema,
@@ -78,6 +80,15 @@ export const createTaskFormSchema = z.object({
   dueDate: z.string().optional(),
 });
 export type CreateTaskFormValues = z.infer<typeof createTaskFormSchema>;
+
+/** Create-goal modal (custom): title + target in dollars + term + category. */
+export const createGoalFormSchema = z.object({
+  title: z.string().trim().min(1, 'Give your goal a name').max(120),
+  dollars: z.coerce.number().int().positive('Set a target above $0').max(100_000),
+  term: goalTermSchema,
+  category: goalCategorySchema,
+});
+export type CreateGoalFormValues = z.infer<typeof createGoalFormSchema>;
 
 /** Temptation intro: optional item + a price in dollars (> 0 to proceed). */
 export const temptationFormSchema = z.object({

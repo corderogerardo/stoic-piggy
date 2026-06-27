@@ -36,7 +36,7 @@ export interface AuthSession {
 
 /** The kid's home payload after sign-in (aggregated balance + goal + quests). */
 export interface ChildHome {
-  child: AuthChild & { level: number; xp: number; avatarUrl?: string };
+  child: AuthChild & { level: number; xp: number; avatarUrl?: string; age?: number };
   balanceCents: number;
   goal?: DashboardGoal;
   quests: Quest[];
@@ -83,11 +83,18 @@ export interface Transaction extends BaseEntity {
   note?: string;
 }
 
+/** How soon the kid aims to reach a goal: short ~1mo, medium ~3mo, long ~6mo. */
+export type GoalTerm = 'short' | 'medium' | 'long';
+/** What the goal teaches: a thing to save for, an investment, or a skill/education. */
+export type GoalCategory = 'thing' | 'invest' | 'learn';
+
 export interface SavingsGoal extends BaseEntity {
   childId: ID;
   title: string;
   targetCents: number;
   savedCents: number;
+  term: GoalTerm;
+  category: GoalCategory;
   achievedAt?: ISODateString;
 }
 

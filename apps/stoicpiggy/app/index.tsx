@@ -5,13 +5,13 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Piggy } from '@/components/Piggy';
 import { Coach } from '@/components/screens/Coach';
+import { Goals } from '@/components/screens/Goals';
 import { Home } from '@/components/screens/Home';
 import { Login } from '@/components/screens/Login';
 import { Onboarding } from '@/components/screens/Onboarding';
 import { Quests } from '@/components/screens/Quests';
 import { Tasks } from '@/components/screens/Tasks';
 import { Temptation } from '@/components/screens/Temptation';
-import { Wins } from '@/components/screens/Wins';
 import { TabBar } from '@/components/TabBar';
 import { Txt } from '@/components/Txt';
 import { useAuth } from '@/lib/auth';
@@ -179,7 +179,7 @@ function KidApp() {
   const currentQuest =
     quests.find((q) => q.status === 'in_progress') ?? quests.find((q) => q.status === 'available');
 
-  const isApp = ['home', 'tasks', 'coach', 'quests', 'wins'].includes(screen);
+  const isApp = ['home', 'tasks', 'coach', 'quests', 'goals'].includes(screen);
 
   const send = async (text: string) => {
     if (!text.trim()) return;
@@ -242,7 +242,7 @@ function KidApp() {
         )}
         {screen === 'quests' && <Quests />}
         {screen === 'tasks' && <Tasks />}
-        {screen === 'wins' && <Wins />}
+        {screen === 'goals' && <Goals />}
         {screen === 'temptation' && <Temptation onHome={() => setScreen('home')} />}
       </View>
       {isApp && <TabBar screen={screen} onTab={setScreen} />}

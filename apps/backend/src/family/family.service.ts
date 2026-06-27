@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import {
   type ChildPatterns,
+  type ContributeGoalInput,
+  type CreateGoalInput,
   computeChildPatterns,
   levelForXp,
   type PayoutMethod,
@@ -246,6 +248,55 @@ export class FamilyService {
 
   async listGoals(childId: string) {
     return this.prisma.savingsGoal.findMany({ where: { childId }, orderBy: { createdAt: 'asc' } });
+  }
+
+  /** A kid creates one of their own goals. Capped at 3 goals per kid. */
+  async createGoal(childId: string, input: CreateGoalInput) {
+    const count = await this.prisma.savingsGoal.count({ where: { childId } });
+    if (count >= 3) {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: 'You can have at most 3 goals.' });
+    }
+    return this.prisma.savingsGoal.create({
+      data: {
+        childId,
+        title: input.title,
+        targetCents: input.targetCents,
+        term: input.term,
+        category: input.category,
+      },
+    });
+  }
+
+  /** A kid deletes one of their own goals. Ownership checked before the delete. */
+  async deleteGoal(childId: string, goalId: string): Promise<void> {
+    const goal = await this.prisma.savingsGoal.findUnique({
+      where: { id: goalId },
+      select: { childId: true },
+    });
+    if (!goal || goal.childId !== childId) {
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'Goal not found.' });
+    }
+    await this.prisma.savingsGoal.delete({ where: { id: goalId } });
+  }
+
+  /**
+   * A kid logs progress toward a goal. This is a motivational tracker: it bumps
+   * the goal's saved amount (capped at the target, stamping achievedAt the first
+   * time it's reached) but does NOT move real piggy-bank money.
+   */
+  async contributeGoal(childId: string, input: ContributeGoalInput) {
+    const goal = await this.prisma.savingsGoal.findUnique({ where: { id: input.goalId } });
+    if (!goal || goal.childId !== childId) {
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'Goal not found.' });
+    }
+    const savedCents = Math.min(goal.savedCents + input.amountCents, goal.targetCents);
+    return this.prisma.savingsGoal.update({
+      where: { id: input.goalId },
+      data: {
+        savedCents,
+        achievedAt: savedCents >= goal.targetCents ? (goal.achievedAt ?? new Date()) : null,
+      },
+    });
   }
 
   async listQuests(childId: string) {

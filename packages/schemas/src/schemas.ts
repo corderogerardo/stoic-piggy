@@ -16,12 +16,36 @@ export const createTransactionSchema = z.object({
 });
 export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
 
+export const goalTermSchema = z.enum(['short', 'medium', 'long']);
+export const goalCategorySchema = z.enum(['thing', 'invest', 'learn']);
+
 export const createSavingsGoalSchema = z.object({
   childId: z.string().min(1),
   title: z.string().min(1).max(120),
   targetCents: z.number().int().positive(),
 });
 export type CreateSavingsGoalInput = z.infer<typeof createSavingsGoalSchema>;
+
+/** A kid creates one of their own goals. `childId` comes from the auth token. */
+export const createGoalSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  // Cap at $100k to reject fat-finger / overflow input.
+  targetCents: z.number().int().positive().max(100_000_00),
+  term: goalTermSchema,
+  category: goalCategorySchema,
+});
+export type CreateGoalInput = z.infer<typeof createGoalSchema>;
+
+/** Reference a single goal (delete). */
+export const goalIdSchema = z.object({ goalId: z.string().min(1) });
+export type GoalIdInput = z.infer<typeof goalIdSchema>;
+
+/** A kid logs progress toward a goal (a motivational tracker — no real money moves). */
+export const contributeGoalSchema = z.object({
+  goalId: z.string().min(1),
+  amountCents: z.number().int().positive().max(100_000_00),
+});
+export type ContributeGoalInput = z.infer<typeof contributeGoalSchema>;
 
 export const createChildSchema = z.object({
   parentId: z.string().min(1),

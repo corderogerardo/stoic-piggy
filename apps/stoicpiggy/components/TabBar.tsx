@@ -11,7 +11,7 @@ export function TabBar({ screen, onTab }: { screen: string; onTab: (key: string)
     { k: 'tasks', i: 'check-square-o', l: t.nav.tasks },
     { k: 'coach', i: 'commenting-o', l: t.nav.coach },
     { k: 'quests', i: 'compass', l: t.nav.learn },
-    { k: 'wins', i: 'trophy', l: t.nav.wins },
+    { k: 'goals', i: 'bullseye', l: t.nav.goals },
   ];
 
   return (

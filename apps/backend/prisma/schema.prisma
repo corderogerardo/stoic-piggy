@@ -127,16 +127,32 @@ model Transaction {
   @@index([piggyBankId])
 }
 
+// How soon the kid aims to reach the goal: short ~1mo, medium ~3mo, long ~6mo.
+enum GoalTerm {
+  short
+  medium
+  long
+}
+
+// What the goal teaches: a thing to save for, an investment, or a skill/education.
+enum GoalCategory {
+  thing
+  invest
+  learn
+}
+
 model SavingsGoal {
-  id          String    @id @default(cuid())
-  child       Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+  id          String       @id @default(cuid())
+  child       Child        @relation(fields: [childId], references: [id], onDelete: Cascade)
   childId     String
   title       String
   targetCents Int
-  savedCents  Int       @default(0)
+  savedCents  Int          @default(0)
+  term        GoalTerm     @default(short)
+  category    GoalCategory @default(thing)
   achievedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   @@index([childId])
 }
