@@ -1,0 +1,7 @@
+# Maestro workspace config.
+# `maestro test ./maestro` runs ONLY the per-screen flows below; the reusable
+# building blocks in subflows/ are pulled in via `runFlow` and never executed
+# standalone.
+maxParallel: 1
+flows:
+  - "flows/*.yaml"

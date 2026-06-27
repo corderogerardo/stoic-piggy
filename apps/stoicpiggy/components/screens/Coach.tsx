@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FONT } from '@/lib/fonts';
 import { useLang, useTheme } from '@/lib/providers';
 import { Icon } from '../Icon';
@@ -41,6 +42,7 @@ export function Coach({
 }) {
   const { colors } = useTheme();
   const { t } = useLang();
+  const insets = useSafeAreaInsets();
   const [input, setInput] = useState('');
   const submit = (text: string) => {
     if (!text.trim()) return;
@@ -49,11 +51,14 @@ export function Coach({
   };
 
   return (
-    // ponytail: TabBar is a sibling OUTSIDE this view (app/index.tsx), so the KAV's
-    // measured frame already ends above it — keyboardVerticalOffset stays 0. A positive
-    // offset would push the composer up past the keyboard by the TabBar's height.
+    // The KAV lives inside a top-inset SafeAreaView (app/index.tsx), so onLayout reports
+    // its y as 0 (relative to parent) while its real screen-y is insets.top. With offset 0
+    // the padding math comes up insets.top short and the composer hides behind the keyboard.
+    // keyboardVerticalOffset = insets.top compensates. The TabBar is a sibling BELOW the KAV,
+    // so it needs no term here — it just gets covered by the keyboard while typing.
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
       style={{ flex: 1 }}
     >
       <View
@@ -136,6 +141,8 @@ export function Coach({
                   borderRadius: 18,
                   backgroundColor: me ? colors.accent : colors.soft,
                 }}
+                testID={`coach-message-${m.role}-${i}`}
+                accessibilityLabel={`coach-message-${m.role}-${i}`}
               >
                 <Txt
                   w="400"

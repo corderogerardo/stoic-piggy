@@ -1,0 +1,12 @@
+appId: com.stoicpiggy.app
+tags:
+  - auth
+---
+# Screen: Goals (my goals + Logros badges). Reached from the tab bar.
+- runFlow: ../subflows/sign-in.yaml
+- tapOn:
+    id: "tab-goals"
+- extendedWaitUntil:
+    visible:
+      id: "goals-screen"
+    timeout: 30000

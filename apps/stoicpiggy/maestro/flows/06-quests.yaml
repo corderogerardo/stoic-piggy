@@ -1,0 +1,12 @@
+appId: com.stoicpiggy.app
+tags:
+  - auth
+---
+# Screen: Quests / Missions. Reached from the tab bar.
+- runFlow: ../subflows/sign-in.yaml
+- tapOn:
+    id: "tab-quests"
+- extendedWaitUntil:
+    visible:
+      id: "quests-screen"
+    timeout: 30000

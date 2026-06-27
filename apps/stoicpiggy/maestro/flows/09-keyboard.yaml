@@ -1,0 +1,28 @@
+appId: com.stoicpiggy.app
+tags:
+  - auth
+---
+# Screen: Coach. Regression for the composer hiding behind the on-screen keyboard.
+# Guards the keyboardVerticalOffset fix in Coach.tsx: with the keyboard up, the send
+# button must stay tappable above it, so the message actually posts to the chat log.
+- runFlow: ../subflows/sign-in.yaml
+- tapOn:
+    id: "tab-coach"
+- extendedWaitUntil:
+    visible:
+      id: "coach-send"
+    timeout: 30000
+# Focus the composer — this raises the keyboard.
+- tapOn:
+    id: "coach-input"
+- inputText: "Ahorrando para una bici"
+# Tap send while the keyboard is up. If the button were hidden behind the keyboard
+# the tap would land on the keyboard and no message bubble would ever appear.
+- tapOn:
+    id: "coach-send"
+# The kid's message echoes into the chat as the first "me" bubble (index 1; the
+# coach's opening report is index 0). testID-based, so it's language-agnostic.
+- extendedWaitUntil:
+    visible:
+      id: "coach-message-me-1"
+    timeout: 10000

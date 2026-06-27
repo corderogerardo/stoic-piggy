@@ -1,0 +1,24 @@
+appId: com.stoicpiggy.app
+env:
+  MESSAGE: "Hola Piggy"
+tags:
+  - auth
+---
+# Screen: Coach. Sending a message echoes it into the chat log.
+- runFlow: ../subflows/sign-in.yaml
+- tapOn:
+    id: "tab-coach"
+- extendedWaitUntil:
+    visible:
+      id: "coach-send"
+    timeout: 30000
+- tapOn:
+    id: "coach-input"
+- inputText: ${MESSAGE}
+- pressKey: Enter
+# The kid's own message appears as a chat bubble.
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible: "Hola Piggy"
+    timeout: 30000

@@ -1,0 +1,18 @@
+appId: com.stoicpiggy.app
+tags:
+  - auth
+---
+# Screen: Temptation (the "wait before you buy" challenge), opened from Home's
+# daily-challenge CTA. Kept shallow on purpose: it stops at the intro and closes
+# back to Home, so it never writes a "resisted impulse" to the live backend.
+- runFlow: ../subflows/sign-in.yaml
+- tapOn:
+    id: "home-challenge"
+- extendedWaitUntil:
+    visible:
+      id: "temptation-screen"
+    timeout: 30000
+- tapOn:
+    id: "temptation-close"
+- assertVisible:
+    id: "home-screen"

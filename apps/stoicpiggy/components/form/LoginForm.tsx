@@ -37,6 +37,7 @@ export function LoginForm({
       <FormTextField
         control={control}
         name="username"
+        testID="login-username"
         label={copy.user}
         placeholder={copy.userPh}
         autoCapitalize="none"
@@ -46,6 +47,7 @@ export function LoginForm({
       <FormTextField
         control={control}
         name="password"
+        testID="login-password"
         label={copy.pass}
         placeholder={copy.passPh}
         secureTextEntry
@@ -63,6 +65,7 @@ export function LoginForm({
 
       <Pressable
         accessibilityRole="button"
+        testID="login-submit"
         onPress={submit}
         disabled={busy}
         style={{
