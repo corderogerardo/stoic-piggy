@@ -1,0 +1,12 @@
+appId: com.stoicpiggy.app
+tags:
+  - auth
+---
+# Screen: Tasks. Reached from the tab bar.
+- runFlow: ../subflows/sign-in.yaml
+- tapOn:
+    id: "tab-tasks"
+- extendedWaitUntil:
+    visible:
+      id: "tasks-screen"
+    timeout: 30000

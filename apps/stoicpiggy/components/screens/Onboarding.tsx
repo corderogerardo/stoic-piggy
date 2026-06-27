@@ -15,7 +15,10 @@ export function Onboarding({ onStart }: { onStart: () => void }) {
   ];
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 30, paddingVertical: 24 }}>
+    <ScrollView
+      testID="onboarding-screen"
+      contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 30, paddingVertical: 24 }}
+    >
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <View style={{ marginBottom: 26, alignItems: 'center', justifyContent: 'center' }}>
           <View
@@ -86,6 +89,7 @@ export function Onboarding({ onStart }: { onStart: () => void }) {
       </View>
 
       <Pressable
+        testID="onboarding-start"
         onPress={onStart}
         style={{
           backgroundColor: colors.accent,

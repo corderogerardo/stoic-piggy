@@ -49,6 +49,7 @@ export function Quests() {
   return (
     <>
       <ScrollView
+        testID="quests-screen"
         contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 14, paddingBottom: 24 }}
       >
         <Txt w="800" style={{ fontSize: 27, color: colors.ink, marginTop: 6 }}>

@@ -57,6 +57,7 @@ export function Tasks() {
 
   return (
     <ScrollView
+      testID="tasks-screen"
       contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 14, paddingBottom: 24 }}
     >
       <Txt w="800" style={{ fontSize: 27, color: colors.ink, marginTop: 6 }}>

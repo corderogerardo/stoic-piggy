@@ -1,0 +1,17 @@
+appId: com.stoicpiggy.app
+tags:
+  - smoke
+  - auth
+---
+# Screen: Home. Balance card, daily-challenge CTA, and the tab bar.
+- runFlow: ../subflows/sign-in.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 60000
+- assertVisible:
+    id: "home-challenge"
+- assertVisible:
+    id: "tab-home"
+- assertVisible:
+    id: "tab-coach"

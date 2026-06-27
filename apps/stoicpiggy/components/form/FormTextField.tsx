@@ -20,6 +20,7 @@ type Props<TForm extends FieldValues> = {
   | 'onSubmitEditing'
   | 'returnKeyType'
   | 'accessibilityLabel'
+  | 'testID'
 >;
 
 /** A Controller-wrapped RN TextInput with a label and inline Zod error. */

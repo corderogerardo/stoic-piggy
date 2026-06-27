@@ -1,0 +1,25 @@
+appId: com.stoicpiggy.app
+---
+# Reusable: a truly clean cold-start, then connect to Metro. Used by the
+# onboarding + login flows that test the unauthenticated screens.
+#
+# `clearState` wipes the app data container but NOT the iOS Keychain — and the
+# onboarding-seen flag + the kid's JWT both live in expo-secure-store (Keychain).
+# `clearKeychain` resets them so every run starts at the real first-run state.
+- clearKeychain
+- launchApp:
+    clearState: true
+- openLink: "exp+stoicpiggy://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
+# Fresh state makes expo-dev-client show its developer-menu intro once Metro
+# finishes bundling — wait it out, then dismiss it.
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 120000
+- tapOn: "Continue"
+# After a keychain wipe expo-dev-client also auto-opens the full developer menu
+# on top of the app — wait for it, then tap the backdrop above the sheet to close.
+- extendedWaitUntil:
+    visible: "Reload"
+    timeout: 30000
+- tapOn:
+    point: "50%,9%"

@@ -46,7 +46,10 @@ export function Home({
   const progressPct = goalPct ?? xpPct;
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 8, paddingBottom: 24 }}>
+    <ScrollView
+      testID="home-screen"
+      contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 8, paddingBottom: 24 }}
+    >
       {/* header */}
       <View
         style={{
@@ -102,6 +105,7 @@ export function Home({
           </Pressable>
           {onLogout && (
             <Pressable
+              testID="home-logout"
               accessibilityRole="button"
               accessibilityLabel="Sign out"
               onPress={onLogout}
@@ -209,6 +213,7 @@ export function Home({
           {h.chBody}
         </Txt>
         <Pressable
+          testID="home-challenge"
           onPress={onChallenge}
           style={{
             alignSelf: 'flex-start',

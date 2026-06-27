@@ -61,6 +61,7 @@ export function Temptation({ onHome }: { onHome: () => void }) {
 
   return (
     <View
+      testID="temptation-screen"
       style={{
         flex: 1,
         backgroundColor: colors.canvas,
@@ -78,6 +79,7 @@ export function Temptation({ onHome }: { onHome: () => void }) {
         }}
       >
         <Pressable
+          testID="temptation-close"
           onPress={onHome}
           style={{
             width: 38,

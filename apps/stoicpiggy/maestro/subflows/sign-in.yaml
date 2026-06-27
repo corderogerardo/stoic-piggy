@@ -1,0 +1,60 @@
+appId: com.stoicpiggy.app
+env:
+  KID_USER: marco
+  KID_PASS: piggy1234
+---
+# Reusable: a clean cold-start, then sign in as a demo kid and land on Home.
+# Reused by every authenticated-screen flow so each is fully isolated.
+#
+# `clearKeychain` is required: the onboarding flag + JWT live in the Keychain,
+# which `clearState` does not wipe. With both cleared, every run deterministically
+# starts at Onboarding → Login.
+- clearKeychain
+- launchApp:
+    clearState: true
+- openLink: "exp+stoicpiggy://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
+
+# expo-dev-client shows its developer-menu intro on fresh state — dismiss it.
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 120000
+- tapOn: "Continue"
+# After a keychain wipe expo-dev-client also auto-opens the full developer menu
+# on top of the app — wait for it, then tap the backdrop above the sheet to close.
+- extendedWaitUntil:
+    visible: "Reload"
+    timeout: 30000
+- tapOn:
+    point: "50%,9%"
+
+# Fresh state always lands on Onboarding → tap through to the sign-in screen.
+- extendedWaitUntil:
+    visible:
+      id: "onboarding-start"
+    timeout: 60000
+- tapOn:
+    id: "onboarding-start"
+
+- extendedWaitUntil:
+    visible:
+      id: "login-username"
+    timeout: 60000
+- tapOn:
+    id: "login-username"
+- inputText: ${KID_USER}
+- tapOn:
+    id: "login-password"
+- inputText: ${KID_PASS}
+# Submit via the password field's return key (onSubmitEditing) — robust whether or
+# not the on-screen keyboard covers the button. (hideKeyboard is unreliable here.)
+- pressKey: Enter
+
+# Decline the iOS "Save Password?" dialog that pops up over Home after login.
+- runFlow: dismiss-save-password.yaml
+
+# After sign-in the app may show the "waking up the backend" splash before Home
+# (Render free-tier cold start can take ~30s).
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 120000

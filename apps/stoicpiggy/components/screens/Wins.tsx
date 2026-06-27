@@ -74,6 +74,7 @@ export function Wins() {
 
   return (
     <ScrollView
+      testID="wins-screen"
       contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 14, paddingBottom: 24 }}
     >
       <Txt w="800" style={{ fontSize: 27, color: colors.ink, marginTop: 6 }}>
