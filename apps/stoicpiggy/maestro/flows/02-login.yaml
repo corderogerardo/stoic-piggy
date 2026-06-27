@@ -1,0 +1,45 @@
+appId: com.stoicpiggy.app
+env:
+  KID_USER: marco
+  KID_PASS: piggy1234
+tags:
+  - smoke
+  - unauth
+---
+# Screen: Login (kid sign-in). Wrong password errors; correct lands on Home.
+- runFlow: ../subflows/launch.yaml
+
+# Fresh state shows Onboarding first → advance to the sign-in screen.
+- extendedWaitUntil:
+    visible:
+      id: "onboarding-start"
+    timeout: 60000
+- tapOn:
+    id: "onboarding-start"
+- extendedWaitUntil:
+    visible:
+      id: "login-username"
+    timeout: 60000
+
+# Wrong password → inline error, still on the login screen.
+- tapOn:
+    id: "login-username"
+- inputText: ${KID_USER}
+- tapOn:
+    id: "login-password"
+- inputText: "wrong-password"
+- pressKey: Enter
+- assertVisible:
+    id: "login-username"
+
+# Correct password → Home.
+- tapOn:
+    id: "login-password"
+- eraseText
+- inputText: ${KID_PASS}
+- pressKey: Enter
+- runFlow: ../subflows/dismiss-save-password.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 120000

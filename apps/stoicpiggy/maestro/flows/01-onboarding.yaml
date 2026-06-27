@@ -1,0 +1,17 @@
+appId: com.stoicpiggy.app
+tags:
+  - smoke
+  - unauth
+---
+# Screen: Onboarding (first-run intro). Tapping "start" advances to sign-in.
+- runFlow: ../subflows/launch.yaml
+- extendedWaitUntil:
+    visible:
+      id: "onboarding-screen"
+    timeout: 120000
+- tapOn:
+    id: "onboarding-start"
+- extendedWaitUntil:
+    visible:
+      id: "login-username"
+    timeout: 30000
