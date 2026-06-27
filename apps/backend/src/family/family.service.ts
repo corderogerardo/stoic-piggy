@@ -16,6 +16,52 @@ import { TRPCError } from '@trpc/server';
 import { applyXpGain } from '../common/xp';
 import { PrismaService } from '../prisma/prisma.service';
 
+/** Ordered lesson catalog — each entry is spawned once per kid, in sequence, as they complete quests. */
+const QUEST_CATALOG = [
+  {
+    title: 'Aprende a ahorrar',
+    description: 'Descubre por qué guardar un poco cada semana hace crecer tu dinero.',
+    rewardXp: 50,
+    rewardCents: 0,
+    lessonKey: 'save',
+  },
+  {
+    title: 'Pon tu primera meta',
+    description: 'Elige algo que quieras y define cuánto necesitas ahorrar.',
+    rewardXp: 80,
+    rewardCents: 0,
+    lessonKey: 'goal',
+  },
+  {
+    title: 'Resiste una tentación',
+    description: 'Usa el modo tentación y decide NO gastar una vez.',
+    rewardXp: 100,
+    rewardCents: 0,
+    lessonKey: 'resist',
+  },
+  {
+    title: 'Haz un plan de gastos',
+    description: 'Aprende a dividir tu dinero antes de recibirlo.',
+    rewardXp: 110,
+    rewardCents: 0,
+    lessonKey: 'budget',
+  },
+  {
+    title: 'El poder de esperar',
+    description: 'Descubre por qué la paciencia es el superpoder del dinero.',
+    rewardXp: 120,
+    rewardCents: 0,
+    lessonKey: 'patience',
+  },
+  {
+    title: 'Vigila tus gastos',
+    description: 'Aprende a rastrear lo que entra y lo que sale.',
+    rewardXp: 130,
+    rewardCents: 0,
+    lessonKey: 'track',
+  },
+] as const;
+
 const SETTINGS_SELECT = {
   notifyEnabled: true,
   weeklyReportEnabled: true,
@@ -110,7 +156,7 @@ export class FamilyService {
     return this.prisma.quest.findMany({ where: { childId }, orderBy: { createdAt: 'asc' } });
   }
 
-  /** A kid completes a quest: mark it claimed + credit its XP/cents reward once. */
+  /** A kid completes a quest: mark it claimed + credit its XP/cents reward once, then spawn the next unassigned quest from the catalog. */
   async completeQuest(childId: string, questId: string) {
     return this.prisma.$transaction(async (tx) => {
       const quest = await tx.quest.findUnique({ where: { id: questId } });
@@ -139,7 +185,18 @@ export class FamilyService {
         }
       }
       await applyXpGain(tx, childId, quest.rewardXp);
-      return tx.quest.update({ where: { id: questId }, data: { status: 'claimed' } });
+      const claimed = await tx.quest.update({
+        where: { id: questId },
+        data: { status: 'claimed' },
+      });
+
+      // Spawn the next catalog entry the kid doesn't have yet.
+      const existing = await tx.quest.findMany({ where: { childId }, select: { lessonKey: true } });
+      const existingKeys = new Set(existing.map((q) => q.lessonKey).filter(Boolean));
+      const next = QUEST_CATALOG.find((c) => !existingKeys.has(c.lessonKey));
+      if (next) await tx.quest.create({ data: { childId, ...next } });
+
+      return claimed;
     });
   }
 

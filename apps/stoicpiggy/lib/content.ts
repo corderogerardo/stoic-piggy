@@ -131,6 +131,7 @@ const es = {
     retry: 'Intentar de nuevo',
     reviewNote: 'Repaso — ya reclamaste esta lección.',
     close: 'Cerrar',
+    historyTitle: 'Completadas',
   },
   wins: {
     title: 'Logros',
@@ -295,6 +296,7 @@ const en: typeof es = {
     retry: 'Try again',
     reviewNote: 'Review — you already claimed this lesson.',
     close: 'Close',
+    historyTitle: 'Completed',
   },
   wins: {
     title: 'Wins',
