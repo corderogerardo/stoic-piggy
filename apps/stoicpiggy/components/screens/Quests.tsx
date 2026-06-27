@@ -1,6 +1,7 @@
 import { useChildHome, useCompleteQuest, useMyQuests, useTRPC } from '@stoicpiggy/api';
 import type { Quest } from '@stoicpiggy/shared';
 import { useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { getLesson } from '@/lib/lessons';
@@ -27,7 +28,7 @@ export function Quests() {
   const complete = useCompleteQuest();
   const allQuests = questsQ.data ?? [];
   const quests = allQuests.filter((q) => q.status !== 'claimed');
-  const history = allQuests.filter((q) => q.status === 'claimed');
+  const completedCount = allQuests.filter((q) => q.status === 'claimed').length;
   const currentXp = homeQ.data?.child.xp ?? 0;
   const [active, setActive] = useState<Quest | null>(null);
 
@@ -55,9 +56,22 @@ export function Quests() {
         testID="quests-screen"
         contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 14, paddingBottom: 24 }}
       >
-        <Txt w="800" style={{ fontSize: 27, color: colors.ink, marginTop: 6 }}>
-          {t.lessons.title}
-        </Txt>
+        <View
+          style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 6, marginBottom: 4 }}
+        >
+          <Txt w="800" style={{ fontSize: 27, color: colors.ink, flex: 1 }}>
+            {t.lessons.title}
+          </Txt>
+          {completedCount > 0 && (
+            <Pressable onPress={() => router.push('/mission-history')} hitSlop={8}>
+              <Txt w="600" style={{ fontSize: 12.5, color: colors.accent }}>
+                {lang === 'es'
+                  ? `${completedCount} completadas →`
+                  : `${completedCount} completed →`}
+              </Txt>
+            </Pressable>
+          )}
+        </View>
         <Txt w="400" style={{ fontSize: 13.5, color: colors.ink2, marginBottom: 20 }}>
           {t.lessons.sub}
         </Txt>
@@ -67,7 +81,7 @@ export function Quests() {
             {lang === 'es' ? 'Cargando…' : 'Loading…'}
           </Txt>
         )}
-        {!questsQ.isPending && quests.length === 0 && history.length === 0 && (
+        {!questsQ.isPending && quests.length === 0 && completedCount === 0 && (
           <Txt w="400" style={{ fontSize: 13.5, color: colors.ink3 }}>
             {lang === 'es' ? 'No tienes misiones todavía.' : 'No quests yet.'}
           </Txt>
@@ -86,31 +100,6 @@ export function Quests() {
             />
           ))}
         </View>
-
-        {history.length > 0 && (
-          <View style={{ marginTop: 28 }}>
-            <Txt
-              w="800"
-              style={{ fontSize: 11, letterSpacing: 0.7, color: colors.ink3, marginBottom: 12 }}
-            >
-              {t.lessons.historyTitle.toUpperCase()}
-            </Txt>
-            <View style={{ gap: 10 }}>
-              {history.map((q) => (
-                <QuestCard
-                  key={q.id}
-                  q={q}
-                  icon="check"
-                  label={t.lessons.done}
-                  done
-                  disabled={complete.isPending}
-                  onPress={() => onPress(q)}
-                  colors={colors}
-                />
-              ))}
-            </View>
-          </View>
-        )}
       </ScrollView>
       {active && activeLesson && (
         <LessonFlow
