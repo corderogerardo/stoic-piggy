@@ -1,7 +1,7 @@
 import { formatMoney, levelForXp, levelUpRewardCents } from '@stoicpiggy/shared';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Lesson } from '@/lib/lessons';
 import { useLang, useTheme } from '@/lib/providers';
 import { Icon } from './Icon';
@@ -36,6 +36,7 @@ export function LessonFlow({
   const { colors } = useTheme();
   const { t } = useLang();
   const L = t.lessons;
+  const insets = useSafeAreaInsets();
 
   const [phase, setPhase] = useState<'cards' | 'quiz' | 'result'>('cards');
   const [cardI, setCardI] = useState(0);
@@ -96,7 +97,7 @@ export function LessonFlow({
 
   return (
     <Modal visible animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: colors.canvas }}>
+      <View style={{ flex: 1, backgroundColor: colors.canvas, paddingBottom: insets.bottom }}>
         {/* header: progress bar + close */}
         <View
           style={{
@@ -104,7 +105,7 @@ export function LessonFlow({
             alignItems: 'center',
             gap: 14,
             paddingHorizontal: 18,
-            paddingTop: 8,
+            paddingTop: insets.top + 8,
             paddingBottom: 12,
           }}
         >
@@ -250,7 +251,7 @@ export function LessonFlow({
             </Pressable>
           </ScrollView>
         )}
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 }
