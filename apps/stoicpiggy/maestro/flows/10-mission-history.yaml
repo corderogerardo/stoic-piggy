@@ -1,0 +1,35 @@
+appId: com.stoicpiggy.app
+tags:
+  - auth
+---
+# Screen: Mission History. Opened from the Quests tab when the kid has completed missions.
+- runFlow: ../subflows/sign-in.yaml
+- tapOn:
+    id: "tab-quests"
+- extendedWaitUntil:
+    visible:
+      id: "quests-screen"
+    timeout: 30000
+
+# The history link appears only when at least one quest is claimed.
+# The demo user (marco) has claimed quests so this is always present.
+- extendedWaitUntil:
+    visible:
+      id: "quests-history-link"
+    timeout: 10000
+- tapOn:
+    id: "quests-history-link"
+
+# Verify the history modal opened.
+- extendedWaitUntil:
+    visible:
+      id: "mission-history-screen"
+    timeout: 10000
+
+# Dismiss by tapping the back arrow and return to Quests.
+- tapOn:
+    id: "mission-history-back"
+- extendedWaitUntil:
+    visible:
+      id: "quests-screen"
+    timeout: 10000

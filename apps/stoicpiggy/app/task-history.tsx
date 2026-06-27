@@ -37,7 +37,10 @@ export default function TaskHistory() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.canvas, paddingBottom: insets.bottom }}>
+    <View
+      testID="task-history-screen"
+      style={{ flex: 1, backgroundColor: colors.canvas, paddingBottom: insets.bottom }}
+    >
       <View
         style={{
           flexDirection: 'row',
@@ -48,7 +51,12 @@ export default function TaskHistory() {
           paddingBottom: 14,
         }}
       >
-        <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button">
+        <Pressable
+          testID="task-history-back"
+          onPress={() => router.back()}
+          hitSlop={10}
+          accessibilityRole="button"
+        >
           <Icon name="arrow-left" size={20} color={colors.ink} />
         </Pressable>
         <Txt w="800" style={{ fontSize: 20, color: colors.ink, flex: 1 }}>

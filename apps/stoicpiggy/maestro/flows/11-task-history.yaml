@@ -1,0 +1,34 @@
+appId: com.stoicpiggy.app
+tags:
+  - auth
+---
+# Screen: Task History. Opened from the Tasks tab when the kid has approved tasks.
+- runFlow: ../subflows/sign-in.yaml
+- tapOn:
+    id: "tab-tasks"
+- extendedWaitUntil:
+    visible:
+      id: "tasks-screen"
+    timeout: 30000
+
+# The history link appears only when at least one task is approved by a parent.
+- extendedWaitUntil:
+    visible:
+      id: "tasks-history-link"
+    timeout: 10000
+- tapOn:
+    id: "tasks-history-link"
+
+# Verify the history modal opened.
+- extendedWaitUntil:
+    visible:
+      id: "task-history-screen"
+    timeout: 10000
+
+# Dismiss by tapping the back arrow and return to Tasks.
+- tapOn:
+    id: "task-history-back"
+- extendedWaitUntil:
+    visible:
+      id: "tasks-screen"
+    timeout: 10000

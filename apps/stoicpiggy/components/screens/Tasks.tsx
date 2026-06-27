@@ -70,7 +70,11 @@ export function Tasks() {
           {t.tasks.title}
         </Txt>
         {approvedCount > 0 && (
-          <Pressable onPress={() => router.push('/task-history')} hitSlop={8}>
+          <Pressable
+            testID="tasks-history-link"
+            onPress={() => router.push('/task-history')}
+            hitSlop={8}
+          >
             <Txt w="600" style={{ fontSize: 12.5, color: colors.accent }}>
               {lang === 'es' ? `${approvedCount} completadas →` : `${approvedCount} completed →`}
             </Txt>

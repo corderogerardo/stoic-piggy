@@ -63,7 +63,11 @@ export function Quests() {
             {t.lessons.title}
           </Txt>
           {completedCount > 0 && (
-            <Pressable onPress={() => router.push('/mission-history')} hitSlop={8}>
+            <Pressable
+              testID="quests-history-link"
+              onPress={() => router.push('/mission-history')}
+              hitSlop={8}
+            >
               <Txt w="600" style={{ fontSize: 12.5, color: colors.accent }}>
                 {lang === 'es'
                   ? `${completedCount} completadas →`
