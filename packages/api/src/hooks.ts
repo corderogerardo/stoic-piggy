@@ -256,6 +256,24 @@ export function useSavingsGoals(childId: string) {
   );
 }
 
+/** A kid creates one of their own goals (server enforces the 3-goal cap). */
+export function useCreateGoal() {
+  const trpc = useTRPC();
+  return useMutation(trpc.goals.create.mutationOptions());
+}
+
+/** A kid deletes one of their own goals. */
+export function useDeleteGoal() {
+  const trpc = useTRPC();
+  return useMutation(trpc.goals.delete.mutationOptions());
+}
+
+/** A kid logs progress toward a goal (tracker — no real money moves). */
+export function useContributeGoal() {
+  const trpc = useTRPC();
+  return useMutation(trpc.goals.contribute.mutationOptions());
+}
+
 export function useQuests(childId: string) {
   const trpc = useTRPC();
   return useQuery(

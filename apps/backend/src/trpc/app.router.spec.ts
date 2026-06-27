@@ -65,11 +65,42 @@ const family: FamilyPort = {
         title: 'Bici',
         targetCents: 50000,
         savedCents: 34000,
+        term: 'medium',
+        category: 'thing',
         achievedAt: null,
         createdAt: now,
         updatedAt: now,
       },
     ];
+  },
+  async createGoal(childId, input) {
+    return {
+      id: 'g-new',
+      childId,
+      title: input.title,
+      targetCents: input.targetCents,
+      savedCents: 0,
+      term: input.term,
+      category: input.category,
+      achievedAt: null,
+      createdAt: now,
+      updatedAt: now,
+    };
+  },
+  async deleteGoal() {},
+  async contributeGoal(childId, input) {
+    return {
+      id: input.goalId,
+      childId,
+      title: 'Bici',
+      targetCents: 50000,
+      savedCents: 50000,
+      term: 'medium',
+      category: 'thing',
+      achievedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    };
   },
   async listQuests(childId) {
     return [

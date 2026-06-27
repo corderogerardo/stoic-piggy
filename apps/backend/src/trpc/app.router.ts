@@ -7,14 +7,21 @@ import {
   type ChildHome,
   type ChildPatterns,
   type ChildWins,
+  type ContributeGoalInput,
   type CreateChildAccountInput,
+  type CreateGoalInput,
   type CreateTaskInput,
   type CreateTransactionInput,
+  contributeGoalSchema,
   createChildAccountSchema,
+  createGoalSchema,
   createTaskSchema,
   createTransactionSchema,
   type DashboardChild,
   deleteChildSchema,
+  type GoalCategory,
+  type GoalTerm,
+  goalIdSchema,
   type LoginChildInput,
   type LoginParentInput,
   levelForXp,
@@ -107,6 +114,8 @@ interface GoalRow {
   title: string;
   targetCents: number;
   savedCents: number;
+  term: GoalTerm;
+  category: GoalCategory;
   achievedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -173,6 +182,9 @@ export interface PiggyPort {
 export interface FamilyPort {
   listChildren(parentId: string): Promise<ChildRow[]>;
   listGoals(childId: string): Promise<GoalRow[]>;
+  createGoal(childId: string, input: CreateGoalInput): Promise<GoalRow>;
+  deleteGoal(childId: string, goalId: string): Promise<void>;
+  contributeGoal(childId: string, input: ContributeGoalInput): Promise<GoalRow>;
   listQuests(childId: string): Promise<QuestRow[]>;
   dashboardByParent(parentId: string): Promise<DashboardChildRow[]>;
   summaryByParent(parentId: string): Promise<ParentSummary>;
@@ -259,6 +271,8 @@ const toGoal = (r: GoalRow): SavingsGoal => ({
   title: r.title,
   targetCents: r.targetCents,
   savedCents: r.savedCents,
+  term: r.term,
+  category: r.category,
   achievedAt: r.achievedAt ? iso(r.achievedAt) : undefined,
   createdAt: iso(r.createdAt),
   updatedAt: iso(r.updatedAt),
@@ -547,6 +561,27 @@ export function createAppRouter({ piggy, family, auth, task }: RouterServices) {
           await authorizeChildAccess(ctx.user, input.childId);
           return (await family.listGoals(input.childId)).map(toGoal);
         }),
+      // A kid creates one of their own goals (server enforces the 3-goal cap).
+      create: childProcedure
+        .input(createGoalSchema)
+        .mutation(
+          async ({ ctx, input }): Promise<SavingsGoal> =>
+            toGoal(await family.createGoal(ctx.user.sub, input)),
+        ),
+      // A kid deletes one of their own goals.
+      delete: childProcedure
+        .input(goalIdSchema)
+        .mutation(async ({ ctx, input }): Promise<{ ok: true }> => {
+          await family.deleteGoal(ctx.user.sub, input.goalId);
+          return { ok: true };
+        }),
+      // A kid logs progress toward a goal (tracker — no real money moves).
+      contribute: childProcedure
+        .input(contributeGoalSchema)
+        .mutation(
+          async ({ ctx, input }): Promise<SavingsGoal> =>
+            toGoal(await family.contributeGoal(ctx.user.sub, input)),
+        ),
     }),
 
     quests: router({

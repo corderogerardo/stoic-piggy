@@ -320,6 +320,7 @@ export class AuthService {
         level: levelForXp(child.xp),
         xp: child.xp,
         avatarUrl: child.avatarUrl ?? undefined,
+        age: child.age ?? undefined,
       },
       balanceCents: child.piggyBanks.reduce((sum, b) => sum + b.balanceCents, 0),
       goal: goal
