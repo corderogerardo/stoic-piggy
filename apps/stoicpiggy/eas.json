@@ -6,7 +6,11 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "RCT_USE_RN_DEP": "1",
+        "RCT_USE_PREBUILT_RNCORE": "1"
+      }
     },
     "preview": {
       "distribution": "internal",
@@ -14,13 +18,17 @@
         "simulator": true
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://stoic-piggy-api.onrender.com/trpc"
+        "EXPO_PUBLIC_API_URL": "https://stoic-piggy-api.onrender.com/trpc",
+        "RCT_USE_RN_DEP": "1",
+        "RCT_USE_PREBUILT_RNCORE": "1"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://stoic-piggy-api.onrender.com/trpc"
+        "EXPO_PUBLIC_API_URL": "https://stoic-piggy-api.onrender.com/trpc",
+        "RCT_USE_RN_DEP": "1",
+        "RCT_USE_PREBUILT_RNCORE": "1"
       }
     }
   },

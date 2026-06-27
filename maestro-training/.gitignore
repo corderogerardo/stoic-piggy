@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.tmp_*
+.tmp_*.jsonl
+.fused_model/
+adapters/
+exported_model/
+*.gguf
