@@ -35,18 +35,21 @@ const STARTER_QUESTS = [
     description: 'Descubre por qué guardar un poco cada semana hace crecer tu dinero.',
     rewardXp: 50,
     rewardCents: 0,
+    lessonKey: 'save',
   },
   {
     title: 'Pon tu primera meta',
     description: 'Elige algo que quieras y define cuánto necesitas ahorrar.',
     rewardXp: 80,
     rewardCents: 0,
+    lessonKey: 'goal',
   },
   {
     title: 'Resiste una tentación',
     description: 'Usa el modo tentación y decide NO gastar una vez.',
     rewardXp: 100,
     rewardCents: 0,
+    lessonKey: 'resist',
   },
 ];
 

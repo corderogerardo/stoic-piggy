@@ -53,7 +53,9 @@ function RootLayout() {
         <ApiProvider url={API_URL} getToken={getToken}>
           <AuthProvider>
             <AppProviders>
-              <Stack screenOptions={{ headerShown: false }} />
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="goal-new" options={{ presentation: 'modal' }} />
+              </Stack>
               <StatusBar style="auto" />
             </AppProviders>
           </AuthProvider>

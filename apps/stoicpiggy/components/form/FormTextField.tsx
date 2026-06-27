@@ -17,6 +17,7 @@ type Props<TForm extends FieldValues> = {
   | 'autoCapitalize'
   | 'autoComplete'
   | 'autoCorrect'
+  | 'autoFocus'
   | 'onSubmitEditing'
   | 'returnKeyType'
   | 'accessibilityLabel'

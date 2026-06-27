@@ -10,20 +10,17 @@ import {
 import {
   type ChildWins,
   centsToDollars,
-  createGoalFormSchema,
   formatMoney,
   type GoalCategory,
   type GoalTerm,
   type SavingsGoal,
 } from '@stoicpiggy/shared';
 import { useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { Controller } from 'react-hook-form';
 import { Alert, Modal, Pressable, ScrollView, View } from 'react-native';
 import { CATEGORY_ICON, type GoalSuggestion, suggestionsForAge, TERM_MONTHS } from '@/lib/goals';
 import { useLang, useTheme } from '@/lib/providers';
-import { FormTextField } from '../form/FormTextField';
-import { useZodForm } from '../form/useZodForm';
 import { Icon } from '../Icon';
 import { Txt } from '../Txt';
 
@@ -82,8 +79,6 @@ const BADGES: Badge[] = [
   },
 ];
 
-const TERMS: GoalTerm[] = ['short', 'medium', 'long'];
-const CATEGORIES: GoalCategory[] = ['thing', 'invest', 'learn'];
 /** Quick-add amounts (cents) for the tracker chips: $1 / $5 / $10. */
 const QUICK_ADD = [100, 500, 1000];
 
@@ -189,6 +184,7 @@ export function Goals() {
 
         {!atMax && (
           <Pressable
+            testID="goals-add"
             onPress={() => setSheetOpen(true)}
             style={{
               flexDirection: 'row',
@@ -502,29 +498,13 @@ function AddGoalSheet({
 }) {
   const { colors } = useTheme();
   const { t, lang } = useLang();
-  const [tab, setTab] = useState<'suggested' | 'custom'>('suggested');
-
-  // Custom-goal form: React Hook Form wired to the shared Zod schema. Field
-  // values are the schema input (typed strings); handleSubmit hands back the
-  // validated/coerced output, which we map to the create payload (dollars→cents).
-  const { control, handleSubmit } = useZodForm(createGoalFormSchema, {
-    defaultValues: { title: '', dollars: '', term: 'short', category: 'thing' },
-  });
-  const submitCustom = handleSubmit((values) =>
-    onPick({
-      title: values.title,
-      targetCents: values.dollars * 100,
-      term: values.term,
-      category: values.category,
-    }),
-  );
-
   const suggestions = suggestionsForAge(age);
 
   return (
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
       <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
         <View
+          testID="goals-sheet"
           style={{
             backgroundColor: colors.canvas,
             borderTopLeftRadius: 26,
@@ -541,133 +521,78 @@ function AddGoalSheet({
             <Txt w="800" style={{ fontSize: 19, color: colors.ink }}>
               {t.goals.sheetTitle}
             </Txt>
-            <Pressable onPress={onClose} hitSlop={10} accessibilityLabel={t.goals.cancel}>
+            <Pressable
+              testID="goals-sheet-close"
+              onPress={onClose}
+              hitSlop={10}
+              accessibilityLabel={t.goals.cancel}
+            >
               <Icon name="times" size={18} color={colors.ink3} />
             </Pressable>
           </View>
 
-          {/* tabs */}
-          <View
-            style={{
-              flexDirection: 'row',
-              gap: 6,
-              backgroundColor: colors.chip,
-              borderRadius: 12,
-              padding: 4,
-              marginTop: 16,
-              marginBottom: 14,
-            }}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            style={{ marginTop: 16 }}
+            contentContainerStyle={{ gap: 10, paddingBottom: 4 }}
           >
-            {(['suggested', 'custom'] as const).map((k) => {
-              const on = tab === k;
-              return (
-                <Pressable
-                  key={k}
-                  onPress={() => setTab(k)}
-                  style={{
-                    flex: 1,
-                    alignItems: 'center',
-                    paddingVertical: 9,
-                    borderRadius: 9,
-                    backgroundColor: on ? colors.canvas : 'transparent',
-                  }}
-                >
-                  <Txt w="800" style={{ fontSize: 13, color: on ? colors.ink : colors.ink3 }}>
-                    {k === 'suggested' ? t.goals.tabSuggested : t.goals.tabCustom}
-                  </Txt>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          {tab === 'suggested' ? (
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <View style={{ gap: 10 }}>
-                {suggestions.map((s) => (
-                  <SuggestionRow
-                    key={s.key}
-                    s={s}
-                    lang={lang}
-                    t={t}
-                    colors={colors}
-                    busy={busy}
-                    onPick={() =>
-                      onPick({
-                        title: s[lang].title,
-                        targetCents: s.targetCents,
-                        term: s.term,
-                        category: s.category,
-                      })
-                    }
-                  />
-                ))}
+            <Pressable
+              testID="goals-custom-btn"
+              onPress={() => {
+                onClose();
+                router.push('/goal-new');
+              }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 13,
+                backgroundColor: colors.soft,
+                borderRadius: 16,
+                padding: 14,
+              }}
+            >
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 13,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: colors.accent,
+                }}
+              >
+                <Icon name="pencil" size={17} color={colors.accentInk} />
               </View>
-            </ScrollView>
-          ) : (
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <View style={{ gap: 14 }}>
-                <FormTextField
-                  control={control}
-                  name="title"
-                  label={t.goals.nameLabel}
-                  placeholder={t.goals.namePh}
-                />
-                <FormTextField
-                  control={control}
-                  name="dollars"
-                  label={t.goals.targetLabel}
-                  placeholder={t.goals.targetPh}
-                  keyboardType="number-pad"
-                  sanitize={(x) => x.replace(/[^0-9]/g, '')}
-                />
-
-                <Field label={t.goals.termLabel} colors={colors}>
-                  <Controller
-                    control={control}
-                    name="term"
-                    render={({ field }) => (
-                      <Segmented
-                        options={TERMS.map((k) => ({ k, label: t.goals.term[k] }))}
-                        value={field.value}
-                        onChange={field.onChange}
-                        colors={colors}
-                      />
-                    )}
-                  />
-                </Field>
-                <Field label={t.goals.catLabel} colors={colors}>
-                  <Controller
-                    control={control}
-                    name="category"
-                    render={({ field }) => (
-                      <Segmented
-                        options={CATEGORIES.map((k) => ({ k, label: t.goals.cat[k] }))}
-                        value={field.value}
-                        onChange={field.onChange}
-                        colors={colors}
-                      />
-                    )}
-                  />
-                </Field>
-
-                <Pressable
-                  disabled={busy}
-                  onPress={submitCustom}
-                  style={{
-                    backgroundColor: colors.accent,
-                    paddingVertical: 15,
-                    borderRadius: 14,
-                    alignItems: 'center',
-                    opacity: busy ? 0.6 : 1,
-                  }}
-                >
-                  <Txt w="800" style={{ fontSize: 15, color: colors.accentInk }}>
-                    {t.goals.create}
-                  </Txt>
-                </Pressable>
+              <View style={{ flex: 1 }}>
+                <Txt w="800" style={{ fontSize: 14.5, color: colors.ink }}>
+                  {t.goals.tabCustom}
+                </Txt>
+                <Txt w="400" style={{ fontSize: 11.5, color: colors.ink2, marginTop: 2 }}>
+                  {t.goals.customSub}
+                </Txt>
               </View>
-            </ScrollView>
-          )}
+              <Icon name="arrow-right" size={14} color={colors.accent} />
+            </Pressable>
+
+            {suggestions.map((s) => (
+              <SuggestionRow
+                key={s.key}
+                s={s}
+                lang={lang}
+                t={t}
+                colors={colors}
+                busy={busy}
+                onPick={() =>
+                  onPick({
+                    title: s[lang].title,
+                    targetCents: s.targetCents,
+                    term: s.term,
+                    category: s.category,
+                  })
+                }
+              />
+            ))}
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -730,71 +655,5 @@ function SuggestionRow({
       </View>
       <Icon name="plus" size={14} color={colors.accent} />
     </Pressable>
-  );
-}
-
-function Field({
-  label,
-  colors,
-  children,
-}: {
-  label: string;
-  colors: Colors;
-  children: React.ReactNode;
-}) {
-  return (
-    <View style={{ gap: 6 }}>
-      <Txt w="800" style={{ fontSize: 11, letterSpacing: 0.5, color: colors.ink3 }}>
-        {label}
-      </Txt>
-      {children}
-    </View>
-  );
-}
-
-function Segmented<T extends string>({
-  options,
-  value,
-  onChange,
-  colors,
-}: {
-  options: { k: T; label: string }[];
-  value: T;
-  onChange: (v: T) => void;
-  colors: Colors;
-}) {
-  return (
-    <View style={{ flexDirection: 'row', gap: 8 }}>
-      {options.map((o) => {
-        const on = value === o.k;
-        return (
-          <Pressable
-            key={o.k}
-            onPress={() => onChange(o.k)}
-            style={{
-              flex: 1,
-              alignItems: 'center',
-              paddingVertical: 11,
-              paddingHorizontal: 4,
-              borderRadius: 12,
-              borderWidth: 2,
-              borderColor: on ? colors.accent : colors.divider,
-              backgroundColor: on ? colors.soft : 'transparent',
-            }}
-          >
-            <Txt
-              w="800"
-              style={{
-                fontSize: 11.5,
-                textAlign: 'center',
-                color: on ? colors.accent : colors.ink2,
-              }}
-            >
-              {o.label}
-            </Txt>
-          </Pressable>
-        );
-      })}
-    </View>
   );
 }
