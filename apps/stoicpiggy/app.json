@@ -42,7 +42,8 @@
           }
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "./plugins/withQuotedRNBundleScript"
     ],
     "experiments": {
       "typedRoutes": true
