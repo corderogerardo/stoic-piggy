@@ -482,7 +482,12 @@ export function LandingPage() {
               <span className="flex h-8 w-8 items-center justify-center rounded-[9px] bg-accent">
                 <Piggy mood="zen" size={22} />
               </span>
-              <span className="text-[15px] font-extrabold">Stoic Piggy</span>
+              <div className="leading-tight">
+                <div className="text-[15px] font-extrabold">Stoic Piggy</div>
+                <div className="text-[10px] font-bold tracking-[0.4px] text-cream/40">
+                  Made by No office location
+                </div>
+              </div>
             </div>
             <div className="flex items-center gap-[18px]">
               <a href="/privacy" className="text-[12.5px] text-cream/70 hover:text-cream">

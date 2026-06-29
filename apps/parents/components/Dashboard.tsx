@@ -228,6 +228,9 @@ export function Dashboard() {
             <i className="fa fa-sign-out" />
           </button>
         </div>
+        <div className="px-2.5 pb-1 pt-2 text-[10px] font-bold tracking-[0.4px] text-cream/30">
+          Made by No office location
+        </div>
       </aside>
 
       {/* ============ MAIN ============ */}
