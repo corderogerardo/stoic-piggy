@@ -1,5 +1,6 @@
 import type { ChildWins, SavingsGoal } from '@stoicpiggy/shared';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { router } from 'expo-router';
 
 // Mutable state the mocked API hooks read/write. Names are `mock*` so Jest's
 // hoisted factory may reference them; the hooks read them lazily at render time.
@@ -47,6 +48,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 // The custom goal form was moved out of <Goals /> into this modal route (commit
 // 5de51a3). Validation + create are tested by rendering the screen directly.
 import GoalNewScreen from '@/app/goal-new';
+
 import { Goals } from '../screens/Goals';
 
 // goal-new uses useSafeAreaInsets; initialMetrics gives the provider synchronous
@@ -100,6 +102,15 @@ describe('Goals screen', () => {
     const { getByText } = render(<Goals />);
     expect(getByText('Aún no tienes metas. ¡Crea tu primera!')).toBeTruthy();
     expect(getByText('Nueva meta')).toBeTruthy();
+  });
+
+  // ---- Custom goal: the sheet routes to the dedicated /goal-new screen ----
+  it('navigates to the custom goal form from the sheet', () => {
+    const { getByText, getByTestId } = render(<Goals />);
+    fireEvent.press(getByText('Nueva meta'));
+    fireEvent.press(getByTestId('goals-custom-btn'));
+
+    expect(router.push).toHaveBeenCalledWith('/goal-new');
   });
 
   // ---- Zod validation + React Hook Form (custom form lives in goal-new modal) ----
