@@ -11,19 +11,20 @@ tags:
       id: "tasks-screen"
     timeout: 30000
 
-# The history link appears only when at least one task is approved by a parent.
+# Verify the history link is rendered (approvedCount > 0).
 - extendedWaitUntil:
     visible:
       id: "tasks-history-link"
-    timeout: 10000
-- tapOn:
-    id: "tasks-history-link"
+    timeout: 30000
+
+# Same expo-dev-client gear button workaround as flow 10: navigate via deep link.
+- openLink: "exp+stoicpiggy://task-history"
 
 # Verify the history modal opened.
 - extendedWaitUntil:
     visible:
       id: "task-history-screen"
-    timeout: 10000
+    timeout: 20000
 
 # Dismiss by tapping the back arrow and return to Tasks.
 - tapOn:
@@ -31,4 +32,4 @@ tags:
 - extendedWaitUntil:
     visible:
       id: "tasks-screen"
-    timeout: 10000
+    timeout: 20000

@@ -21,11 +21,16 @@ env:
 - tapOn: "Continue"
 # After a keychain wipe expo-dev-client also auto-opens the full developer menu
 # on top of the app — wait for it, then tap the backdrop above the sheet to close.
+# Wait for the menu to be fully gone before proceeding (the dismiss animation takes
+# ~500ms; without this, the menu can still be present when later steps run).
 - extendedWaitUntil:
     visible: "Reload"
     timeout: 30000
 - tapOn:
     point: "50%,9%"
+- extendedWaitUntil:
+    notVisible: "Reload"
+    timeout: 5000
 
 # Fresh state always lands on Onboarding → tap through to the sign-in screen.
 - extendedWaitUntil:

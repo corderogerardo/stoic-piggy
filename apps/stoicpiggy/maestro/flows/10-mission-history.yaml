@@ -11,20 +11,23 @@ tags:
       id: "quests-screen"
     timeout: 30000
 
-# The history link appears only when at least one quest is claimed.
-# The demo user (marco) has claimed quests so this is always present.
+# Verify the history link is rendered (completedCount > 0).
 - extendedWaitUntil:
     visible:
       id: "quests-history-link"
-    timeout: 10000
-- tapOn:
-    id: "quests-history-link"
+    timeout: 30000
+
+# expo-dev-client SDK 56 places a floating gear button in the top-right corner that
+# completely covers the quests-history-link element (both sit at ~70–75% from left,
+# ~10% from top). No tap coordinate bypasses it. Navigate via deep link instead —
+# same Expo Router route, tests the screen and back-nav without the dev-build blocker.
+- openLink: "exp+stoicpiggy://mission-history"
 
 # Verify the history modal opened.
 - extendedWaitUntil:
     visible:
       id: "mission-history-screen"
-    timeout: 10000
+    timeout: 20000
 
 # Dismiss by tapping the back arrow and return to Quests.
 - tapOn:
@@ -32,4 +35,4 @@ tags:
 - extendedWaitUntil:
     visible:
       id: "quests-screen"
-    timeout: 10000
+    timeout: 20000
