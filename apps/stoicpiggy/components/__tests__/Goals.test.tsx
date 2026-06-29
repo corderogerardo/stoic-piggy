@@ -39,7 +39,28 @@ jest.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: jest.fn().mockResolvedValue(undefined) }),
 }));
 
+// The custom-goal form lives in the goal-new modal route; stub navigation so its
+// onSubmit `router.back()` is a no-op in tests.
+jest.mock('expo-router', () => ({ router: { back: jest.fn(), push: jest.fn() } }));
+
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+// The custom goal form was moved out of <Goals /> into this modal route (commit
+// 5de51a3). Validation + create are tested by rendering the screen directly.
+import GoalNewScreen from '@/app/goal-new';
 import { Goals } from '../screens/Goals';
+
+// goal-new uses useSafeAreaInsets; initialMetrics gives the provider synchronous
+// insets so it renders without native measurement.
+const SAFE_AREA_METRICS = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 0, left: 0, right: 0, bottom: 0 },
+};
+const renderGoalNew = () =>
+  render(
+    <SafeAreaProvider initialMetrics={SAFE_AREA_METRICS}>
+      <GoalNewScreen />
+    </SafeAreaProvider>,
+  );
 
 describe('Goals screen', () => {
   beforeEach(() => {
@@ -81,12 +102,10 @@ describe('Goals screen', () => {
     expect(getByText('Nueva meta')).toBeTruthy();
   });
 
-  // ---- Zod validation + React Hook Form ----
+  // ---- Zod validation + React Hook Form (custom form lives in goal-new modal) ----
   it('blocks submit and shows Zod errors when the custom form is empty', async () => {
-    const { getByText } = render(<Goals />);
-    fireEvent.press(getByText('Nueva meta'));
-    fireEvent.press(getByText('Personalizada'));
-    fireEvent.press(getByText('Crear meta'));
+    const { getByText, getByTestId } = renderGoalNew();
+    fireEvent.press(getByTestId('goal-new-submit'));
 
     await waitFor(() => expect(getByText('Give your goal a name')).toBeTruthy());
     expect(getByText('Set a target above $0')).toBeTruthy();
@@ -95,9 +114,7 @@ describe('Goals screen', () => {
 
   // ---- Goal creation: custom form (RHF state + coercion + backend payload) ----
   it('creates a custom goal with the typed values, coercing dollars to cents', async () => {
-    const { getByText, getByPlaceholderText } = render(<Goals />);
-    fireEvent.press(getByText('Nueva meta'));
-    fireEvent.press(getByText('Personalizada'));
+    const { getByText, getByPlaceholderText } = renderGoalNew();
 
     fireEvent.changeText(getByPlaceholderText('Ej. Bicicleta nueva'), 'PS5 nueva');
     fireEvent.changeText(getByPlaceholderText('60'), '150');
@@ -113,8 +130,6 @@ describe('Goals screen', () => {
         category: 'invest',
       }),
     );
-    // The created goal is read back and rendered in the list.
-    await waitFor(() => expect(getByText('PS5 nueva')).toBeTruthy());
   });
 
   // ---- Goal creation: preloaded suggestion ----
