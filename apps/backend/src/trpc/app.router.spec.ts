@@ -410,6 +410,12 @@ const auth: AuthPort = {
       quests: [],
     };
   },
+  async deleteAccount(_parentId) {
+    return { ok: true };
+  },
+  async requestAccountDeletion(_childId) {
+    return { ok: true };
+  },
 };
 
 const baseTask = {

@@ -227,6 +227,10 @@ export interface AuthPort {
   createChild(parentId: string, input: CreateChildAccountInput): Promise<ChildRow>;
   resetChildPassword(input: ResetChildPasswordInput): Promise<{ ok: true }>;
   childHome(childId: string): Promise<ChildHome>;
+  /** Permanently delete the parent account holder + all cascaded family data. */
+  deleteAccount(parentId: string): Promise<{ ok: true }>;
+  /** A kid asks to delete the family account; emails the owning parent. */
+  requestAccountDeletion(childId: string): Promise<{ ok: true }>;
 }
 export interface RouterServices {
   piggy: PiggyPort;
@@ -474,6 +478,11 @@ export function createAppRouter({ piggy, family, auth, task }: RouterServices) {
           ({ ctx, input }): Promise<ParentSettings> =>
             family.updateParentSettings(ctx.user.sub, input),
         ),
+      // Self-serve permanent account deletion (App Store 5.1.1(v)). Cascades all
+      // family data. Logout is not deletion — this is irreversible.
+      delete: parentProcedure.mutation(
+        ({ ctx }): Promise<{ ok: true }> => auth.deleteAccount(ctx.user.sub),
+      ),
     }),
 
     tasks: router({
@@ -552,6 +561,11 @@ export function createAppRouter({ piggy, family, auth, task }: RouterServices) {
         .mutation(
           ({ ctx, input }): Promise<ChildWins> => family.resistImpulse(ctx.user.sub, input),
         ),
+      // A kid asks to delete the family account; the owning parent is emailed a
+      // link to the dashboard's permanent-delete flow (the kid can't self-delete).
+      requestAccountDeletion: childProcedure.mutation(
+        ({ ctx }): Promise<{ ok: true }> => auth.requestAccountDeletion(ctx.user.sub),
+      ),
     }),
 
     goals: router({

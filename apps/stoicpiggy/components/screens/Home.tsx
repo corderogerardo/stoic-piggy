@@ -1,4 +1,5 @@
 import { type DashboardGoal, formatMoney, XP_PER_LEVEL } from '@stoicpiggy/shared';
+import { router } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useLang, useTheme } from '@/lib/providers';
 import { Icon } from '../Icon';
@@ -102,6 +103,23 @@ export function Home({
             <Txt w="800" style={{ fontSize: 11, letterSpacing: 0.5, color: colors.ink3 }}>
               {lang === 'es' ? 'ES' : 'EN'}
             </Txt>
+          </Pressable>
+          <Pressable
+            testID="home-settings"
+            accessibilityRole="button"
+            accessibilityLabel={t.settings.title}
+            onPress={() => router.push('/settings')}
+            hitSlop={8}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 9999,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors.chip,
+            }}
+          >
+            <Icon name="gear" size={14} color={colors.ink3} />
           </Pressable>
           {onLogout && (
             <Pressable

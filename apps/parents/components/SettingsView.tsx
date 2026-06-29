@@ -1,8 +1,15 @@
 'use client';
 
-import { useParentSettings, useTRPC, useUpdateParentSettings } from '@stoicpiggy/api';
+import {
+  useDeleteAccount,
+  useParentSettings,
+  useTRPC,
+  useUpdateParentSettings,
+} from '@stoicpiggy/api';
 import type { PayoutMethod, UpdateParentSettingsInput } from '@stoicpiggy/shared';
 import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useAuth } from '../lib/auth';
 
 type Lang = 'es' | 'en';
 
@@ -43,6 +50,14 @@ const T = {
         live: false,
       },
     ],
+    dangerTitle: 'Eliminar cuenta',
+    dangerSub:
+      'Borra de forma permanente tu cuenta y todos los datos de tus hijos (ahorros, metas, misiones y tareas). Esta acción no se puede deshacer.',
+    deleteBtn: 'Eliminar mi cuenta',
+    confirmBody: '¿Seguro? Se eliminará todo de forma permanente y no se puede recuperar.',
+    confirmBtn: 'Sí, eliminar todo',
+    cancel: 'Cancelar',
+    deleting: 'Eliminando…',
   },
   en: {
     loading: 'Loading…',
@@ -75,6 +90,14 @@ const T = {
         live: false,
       },
     ],
+    dangerTitle: 'Delete account',
+    dangerSub:
+      "Permanently delete your account and all of your children's data (savings, goals, quests, and tasks). This cannot be undone.",
+    deleteBtn: 'Delete my account',
+    confirmBody: 'Are you sure? Everything will be permanently deleted and cannot be recovered.',
+    confirmBtn: 'Yes, delete everything',
+    cancel: 'Cancel',
+    deleting: 'Deleting…',
   },
 } as const;
 
@@ -85,6 +108,15 @@ export function SettingsView({ lang }: { lang: Lang }) {
   const settingsQ = useParentSettings();
   const update = useUpdateParentSettings();
   const s = settingsQ.data;
+  const { logout } = useAuth();
+  const deleteAccount = useDeleteAccount();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+  const onDeleteAccount = async () => {
+    await deleteAccount.mutateAsync();
+    // The account is gone — clear the session and return to the sign-in screen.
+    logout();
+  };
 
   const save = async (patch: UpdateParentSettingsInput) => {
     await update.mutateAsync(patch);
@@ -171,6 +203,42 @@ export function SettingsView({ lang }: { lang: Lang }) {
             );
           })}
         </div>
+      </div>
+
+      <div className="rounded-[20px] border-2 border-red-500/30 bg-red-500/[0.03] p-6">
+        <h2 className="m-0 mb-1 text-[17px] font-extrabold text-red-600">{t.dangerTitle}</h2>
+        <p className="m-0 mb-5 text-[13.5px] leading-relaxed text-navy/60">{t.dangerSub}</p>
+        {confirmingDelete ? (
+          <div className="flex flex-col gap-3">
+            <p className="m-0 text-[13.5px] font-bold text-red-600">{t.confirmBody}</p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                disabled={deleteAccount.isPending}
+                onClick={onDeleteAccount}
+                className="rounded-[12px] bg-red-600 px-5 py-3 text-[14px] font-extrabold text-white disabled:opacity-60"
+              >
+                {deleteAccount.isPending ? t.deleting : t.confirmBtn}
+              </button>
+              <button
+                type="button"
+                disabled={deleteAccount.isPending}
+                onClick={() => setConfirmingDelete(false)}
+                className="rounded-[12px] border-2 border-navy/15 px-5 py-3 text-[14px] font-extrabold text-navy/70 disabled:opacity-60"
+              >
+                {t.cancel}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmingDelete(true)}
+            className="rounded-[12px] border-2 border-red-500/40 px-5 py-3 text-[14px] font-extrabold text-red-600"
+          >
+            {t.deleteBtn}
+          </button>
+        )}
       </div>
     </div>
   );

@@ -289,6 +289,45 @@ export class AuthService {
     return { ok: true };
   }
 
+  // ---- Account deletion ----
+
+  /**
+   * Permanently delete the account holder (parent) and everything below them.
+   * The schema's `onDelete: Cascade` removes every Child, PiggyBank, Transaction,
+   * SavingsGoal, Quest, Task, ResistedImpulse, and outstanding token. This is the
+   * App Store 5.1.1(v) self-serve deletion path, wired from the parents dashboard.
+   */
+  async deleteAccount(parentId: string): Promise<{ ok: true }> {
+    await this.prisma.parent.delete({ where: { id: parentId } });
+    return { ok: true };
+  }
+
+  /**
+   * A signed-in kid asks (from the mobile app) to delete the family account. The
+   * kid can't self-delete — the parent owns the account — so this best-effort
+   * emails the parent a link to the dashboard's Delete-account flow. Always
+   * resolves OK so a mail hiccup never surfaces an error to the child.
+   */
+  async requestAccountDeletion(childId: string): Promise<{ ok: true }> {
+    const child = await this.prisma.child.findUnique({
+      where: { id: childId },
+      include: { parent: true },
+    });
+    if (!child) {
+      throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Account no longer exists.' });
+    }
+    try {
+      await this.mail.sendAccountDeletionRequestEmail(
+        child.parent.email,
+        child.displayName,
+        resolveAppUrl(),
+      );
+    } catch (error) {
+      this.logger.error(`Failed to email deletion request for child ${childId}`, error as Error);
+    }
+    return { ok: true };
+  }
+
   // ---- Shared ----
 
   /** Resolve the current user for the `auth.me` query. */
