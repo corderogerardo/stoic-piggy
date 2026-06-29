@@ -14,6 +14,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '@/lib/auth';
@@ -45,7 +46,30 @@ function RootLayout() {
     }
   }, [loaded, markInteractive]);
 
-  if (!loaded) return null;
+  if (!loaded) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: '#1D3557',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          paddingBottom: 56,
+        }}
+      >
+        <Text
+          style={{
+            color: 'rgba(255,255,255,0.35)',
+            fontSize: 11,
+            fontWeight: '700',
+            letterSpacing: 1,
+          }}
+        >
+          Made by No office location
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
