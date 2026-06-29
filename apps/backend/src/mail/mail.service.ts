@@ -37,6 +37,29 @@ export class MailService {
     });
   }
 
+  /** Notify a parent that their kid asked (from the app) to delete the family account. */
+  async sendAccountDeletionRequestEmail(
+    to: string,
+    childName: string,
+    dashboardLink: string,
+  ): Promise<void> {
+    await this.transport.send({
+      to,
+      subject: 'Solicitud para eliminar la cuenta · Stoic Piggy',
+      text: deletionRequestText(childName, dashboardLink),
+      html: layout(
+        'Solicitud para eliminar la cuenta',
+        'Tu hijo pidió eliminar la cuenta',
+        'Abrir el panel',
+        dashboardLink,
+        [
+          `${childName} solicitó eliminar la cuenta familiar desde la app de Stoic Piggy.`,
+          'Solo tú, como titular de la cuenta, puedes eliminarla: abre el panel y ve a Ajustes → Eliminar cuenta. Esto borra de forma permanente todos los datos de tu familia.',
+        ],
+      ),
+    });
+  }
+
   /** Send the password-reset link to a parent who asked to reset. */
   async sendPasswordResetEmail(to: string, link: string): Promise<void> {
     await this.transport.send({
@@ -62,6 +85,9 @@ const verificationText = (link: string) =>
 
 const resetText = (link: string) =>
   `Restablece tu contraseña de Stoic Piggy abriendo este enlace:\n${link}\n\nEl enlace caduca en 1 hora. Si no lo solicitaste, ignora este mensaje y tu contraseña seguirá igual.`;
+
+const deletionRequestText = (childName: string, link: string) =>
+  `${childName} solicitó eliminar la cuenta familiar de Stoic Piggy desde la app.\n\nSolo tú, como titular de la cuenta, puedes eliminarla. Abre el panel y ve a Ajustes → Eliminar cuenta:\n${link}\n\nEsto borra de forma permanente todos los datos de tu familia.`;
 
 /** Minimal, inline-styled responsive email shell (no external CSS in email clients). */
 function layout(

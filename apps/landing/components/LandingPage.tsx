@@ -484,7 +484,15 @@ export function LandingPage() {
               </span>
               <span className="text-[15px] font-extrabold">Stoic Piggy</span>
             </div>
-            <span className="text-[12.5px] text-cream/55">{c.footer.legal}</span>
+            <div className="flex items-center gap-[18px]">
+              <a href="/privacy" className="text-[12.5px] text-cream/70 hover:text-cream">
+                {c.footer.privacy}
+              </a>
+              <a href="/terms" className="text-[12.5px] text-cream/70 hover:text-cream">
+                {c.footer.terms}
+              </a>
+              <span className="text-[12.5px] text-cream/55">{c.footer.legal}</span>
+            </div>
           </div>
         </div>
       </footer>

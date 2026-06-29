@@ -10,6 +10,7 @@ import {
   registerParentSchema,
   requestPasswordResetSchema,
 } from '@stoicpiggy/schemas';
+import { LANDING_URL } from '../../lib/links';
 import { Field, FormError } from './Field';
 import { useZodForm } from './useZodForm';
 
@@ -102,6 +103,29 @@ export function ParentRegisterForm({
       <button type="submit" disabled={formState.isSubmitting} className={submitBtn}>
         {formState.isSubmitting ? 'Un momento…' : 'Crear cuenta'}
       </button>
+      {/* COPPA consent vector: creating the account (and later each child profile)
+          is the parent's verifiable consent. Surface the legal docs at that moment. */}
+      <p className="mt-1 text-center text-[11.5px] leading-[1.5] text-navy/55">
+        Al crear una cuenta, y al crear el perfil de cada hijo, aceptas nuestros{' '}
+        <a
+          href={`${LANDING_URL}/terms`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-bold text-accent underline"
+        >
+          Términos
+        </a>{' '}
+        y la{' '}
+        <a
+          href={`${LANDING_URL}/privacy`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-bold text-accent underline"
+        >
+          Política de privacidad
+        </a>
+        , y das tu consentimiento como madre/padre para el tratamiento de los datos de tus hijos.
+      </p>
     </form>
   );
 }

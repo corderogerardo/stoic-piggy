@@ -240,6 +240,18 @@ export function useMyPatterns(enabled = true) {
   return useQuery(trpc.me.patterns.queryOptions(undefined, { enabled }));
 }
 
+/** A kid asks to delete the family account; the owning parent is emailed the link. */
+export function useRequestAccountDeletion() {
+  const trpc = useTRPC();
+  return useMutation(trpc.me.requestAccountDeletion.mutationOptions());
+}
+
+/** A parent permanently deletes their account + all family data (App Store 5.1.1(v)). */
+export function useDeleteAccount() {
+  const trpc = useTRPC();
+  return useMutation(trpc.parent.delete.mutationOptions());
+}
+
 // ---- Per-child reads (parent or owning kid) ----
 
 export function usePiggyBanks(childId: string) {

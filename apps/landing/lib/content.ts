@@ -72,7 +72,15 @@ export interface LandingContent {
   stoic: { eyebrow: string; quote: string; author: string; body: string };
   testi: { eyebrow: string; title: string; items: Testimonial[] };
   faq: { eyebrow: string; title: string; items: Faq[] };
-  footer: { title: string; sub: string; cta1: string; cta2: string; legal: string };
+  footer: {
+    title: string;
+    sub: string;
+    cta1: string;
+    cta2: string;
+    legal: string;
+    privacy: string;
+    terms: string;
+  };
 }
 
 export const CONTENT: Record<Lang, LandingContent> = {
@@ -257,6 +265,8 @@ export const CONTENT: Record<Lang, LandingContent> = {
       cta1: 'Empezar gratis',
       cta2: 'Ver cómo funciona',
       legal: '© 2026 Stoic Piggy · Hecho con calma',
+      privacy: 'Privacidad',
+      terms: 'Términos',
     },
   },
   en: {
@@ -439,6 +449,8 @@ export const CONTENT: Record<Lang, LandingContent> = {
       cta1: 'Start free',
       cta2: 'See how it works',
       legal: '© 2026 Stoic Piggy · Made with calm',
+      privacy: 'Privacy',
+      terms: 'Terms',
     },
   },
 };

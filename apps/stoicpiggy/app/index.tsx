@@ -1,7 +1,7 @@
 import { useChildHome, useMyPatterns } from '@stoicpiggy/api';
 import { Observe } from 'expo-observe';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Piggy } from '@/components/Piggy';
 import { Coach } from '@/components/screens/Coach';
@@ -19,6 +19,7 @@ import { coachReport } from '@/lib/coach';
 import { useCoachLLM } from '@/lib/coach-llm';
 import { type AppStrings, REPLIES } from '@/lib/content';
 import { loadOnboardingSeen, setOnboardingSeen } from '@/lib/first-run';
+import { supportMailto } from '@/lib/links';
 import { useLang, useTheme } from '@/lib/providers';
 import type { ThemeColors } from '@/lib/theme';
 
@@ -231,6 +232,7 @@ function KidApp() {
             messages={messages}
             suggestions={suggestions}
             onSend={send}
+            onReport={() => Linking.openURL(supportMailto('Stoic Piggy — Report a concern'))}
             ai={{
               available: coach.available,
               on: aiOn,

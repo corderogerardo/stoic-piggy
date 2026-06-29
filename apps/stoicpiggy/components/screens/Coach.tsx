@@ -33,11 +33,14 @@ export function Coach({
   messages,
   suggestions,
   onSend,
+  onReport,
   ai,
 }: {
   messages: Msg[];
   suggestions: string[];
   onSend: (text: string) => void;
+  /** Opens the "report a concern" contact path (App Store safeguard for child AI). */
+  onReport?: () => void;
   ai?: CoachAI;
 }) {
   const { colors } = useTheme();
@@ -96,6 +99,37 @@ export function Coach({
             </Txt>
           </View>
         </View>
+      </View>
+
+      {/* Always-visible AI disclosure + a reachable report path (child-AI safeguard). */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          paddingHorizontal: 22,
+          paddingVertical: 8,
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+          <Icon name="info-circle" size={11} color={colors.ink3} />
+          <Txt w="600" style={{ fontSize: 10.5, color: colors.ink3 }}>
+            {t.coach.disclaimer}
+          </Txt>
+        </View>
+        {onReport && (
+          <Pressable
+            testID="coach-report"
+            onPress={onReport}
+            hitSlop={8}
+            accessibilityRole="button"
+          >
+            <Txt w="800" style={{ fontSize: 10.5, letterSpacing: 0.3, color: colors.accent }}>
+              {t.coach.report}
+            </Txt>
+          </Pressable>
+        )}
       </View>
 
       {ai?.available && (

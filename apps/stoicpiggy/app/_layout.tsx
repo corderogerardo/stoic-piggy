@@ -57,6 +57,7 @@ function RootLayout() {
                 <Stack.Screen name="goal-new" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="mission-history" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="task-history" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
               </Stack>
               <StatusBar style="auto" />
             </AppProviders>
