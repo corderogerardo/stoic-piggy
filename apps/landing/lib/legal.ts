@@ -1,21 +1,21 @@
-// Single source of truth for the legal documents' fill-in-the-blank facts.
+// Single source of truth for the legal documents' facts.
 //
-// TODO(founder): replace every [BRACKETED] placeholder before publishing — these
-// strings render verbatim in the public Privacy Policy and Terms, and the App
-// Store / Google Play reviews check that a real entity + contact are named.
-// See docs/compliance/ios-appstore-review.md (Open questions).
+// Operator is an individual (sole developer), not a company — that's fine for
+// the App Store, COPPA, and GDPR. See docs/compliance/ios-appstore-review.md.
 export const LEGAL = {
   appName: 'Stoic Piggy',
-  /** Registered legal entity that operates the app (the data controller/operator). */
-  company: '[LEGAL ENTITY NAME]',
-  /** Registered business mailing address. */
-  address: '[REGISTERED BUSINESS ADDRESS]',
-  /** Governing-law jurisdiction for the Terms (e.g. "the State of California, USA"). */
-  jurisdiction: '[GOVERNING-LAW JURISDICTION]',
-  /** Published privacy / data-request contact. */
-  privacyEmail: 'privacy@stoicpiggy.app',
+  /** The individual who operates the app (the data controller/operator). */
+  company: 'Gerardo Cordero',
+  // TODO(founder): once you have a PO box / virtual mailbox, put the full line
+  // here (COPPA expects a contact address). City + country is the interim.
+  address: 'Barquisimeto, Lara, Venezuela',
+  /** Governing-law jurisdiction for the Terms. Kept to "Venezuela" so it reads
+   *  cleanly in both the English and Spanish documents. */
+  jurisdiction: 'Venezuela',
+  /** Published privacy / data-request contact (role email on the root domain). */
+  privacyEmail: 'privacy@noofficelocation.com',
   /** Published support / report-a-concern contact. */
-  supportEmail: 'support@stoicpiggy.app',
-  /** Date these documents take effect (e.g. "June 29, 2026"). */
-  effectiveDate: '[EFFECTIVE DATE]',
+  supportEmail: 'support@noofficelocation.com',
+  /** Date these documents take effect. Update at launch if later. */
+  effectiveDate: { es: '29 de junio de 2026', en: 'June 29, 2026' },
 } as const;

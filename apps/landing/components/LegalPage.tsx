@@ -18,7 +18,7 @@ export function LegalPage({
   bodies,
 }: {
   title: Record<Lang, string>;
-  effectiveDate: string;
+  effectiveDate: Record<Lang, string>;
   bodies: Record<Lang, ReactNode>;
 }) {
   const [lang, setLang] = useState<Lang>('es');
@@ -68,7 +68,7 @@ export function LegalPage({
           {title[lang]}
         </h1>
         <p className="mt-3 text-[13px] text-navy/50">
-          {ui.effective} {effectiveDate}
+          {ui.effective} {effectiveDate[lang]}
         </p>
         <div className="legal-body mt-8 text-[15px] leading-[1.7] text-navy/85">{bodies[lang]}</div>
       </main>
