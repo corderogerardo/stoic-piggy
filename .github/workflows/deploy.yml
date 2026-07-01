@@ -117,6 +117,11 @@ jobs:
       # turbo builds the workspace deps (shared, ui) then the static export → apps/landing/out
       - name: Build landing (static export)
         run: pnpm turbo run build --filter=@stoicpiggy/landing
+        env:
+          # Kids' Android APK download link, baked into the static export.
+          # Set the value in GitHub → Settings → Secrets and variables →
+          # Actions → Variables → ANDROID_APK_URL. Empty = button shows "coming soon".
+          NEXT_PUBLIC_ANDROID_APK_URL: ${{ vars.ANDROID_APK_URL }}
 
       - name: Deploy to Cloudflare Pages
         run: pnpm dlx wrangler@4 pages deploy apps/landing/out --project-name=stoic-piggy-landing --branch=main

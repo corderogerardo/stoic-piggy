@@ -30,6 +30,12 @@ const DASHBOARD_URL =
   process.env.NEXT_PUBLIC_DASHBOARD_URL ?? 'https://stoic-piggy-parents.noofficelocation.com';
 const SIGNUP_URL = `${DASHBOARD_URL}/?signup=1`;
 
+// Direct download of the kids' Android APK (sideload). Host it OFF Cloudflare
+// Pages — an RN+ExecuTorch APK exceeds the 25 MB/file Pages limit — e.g. R2,
+// GitHub Releases, or the EAS build artifact URL. Set at build time via
+// NEXT_PUBLIC_ANDROID_APK_URL; when unset the button shows "coming soon".
+const APK_URL = process.env.NEXT_PUBLIC_ANDROID_APK_URL ?? '';
+
 export function LandingPage() {
   const [lang, setLang] = useState<Lang>('es');
   const [openFaq, setOpenFaq] = useState(0);
@@ -61,6 +67,9 @@ export function LandingPage() {
               </a>
               <a href="#faq" className="text-sm font-bold text-navy/70 hover:text-navy">
                 {c.nav.faq}
+              </a>
+              <a href="#download" className="text-sm font-bold text-navy/70 hover:text-navy">
+                {c.nav.download}
               </a>
             </div>
             <div className="flex items-center gap-1 rounded-full bg-navy/[0.07] p-[3px]">
@@ -354,6 +363,41 @@ export function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ============ DOWNLOAD (Android) ============ */}
+      <section id="download" className="bg-teal/[0.18]">
+        <div className="mx-auto max-w-[920px] px-[26px] py-[clamp(56px,7vw,92px)] text-center">
+          <div className="mb-[14px] text-xs font-extrabold tracking-[0.8px] text-accent">
+            {c.download.eyebrow}
+          </div>
+          <h2 className="m-0 text-[clamp(28px,3.6vw,44px)] font-extrabold leading-[1.08] tracking-[-1px]">
+            {c.download.title}
+          </h2>
+          <p className="mx-auto mt-4 max-w-[520px] text-[16.5px] leading-[1.6] text-navy/70">
+            {c.download.sub}
+          </p>
+          <div className="mt-8 flex justify-center">
+            {APK_URL ? (
+              <a
+                href={APK_URL}
+                download
+                className="inline-flex items-center gap-[10px] rounded-[14px] bg-navy px-7 py-4 text-base font-extrabold text-cream"
+              >
+                <i className="fa fa-android text-[20px]" />
+                {c.download.cta}
+              </a>
+            ) : (
+              <span className="inline-flex items-center gap-[10px] rounded-[14px] bg-navy/30 px-7 py-4 text-base font-extrabold text-cream/80">
+                <i className="fa fa-android text-[20px]" />
+                {c.download.ctaSoon}
+              </span>
+            )}
+          </div>
+          <p className="mx-auto mt-5 max-w-[440px] text-[12.5px] leading-[1.55] text-navy/55">
+            {c.download.note}
+          </p>
         </div>
       </section>
 
