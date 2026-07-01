@@ -30,6 +30,11 @@ export interface StepText {
   title: string;
   body: string;
 }
+export interface Screen {
+  src: string;
+  title: string;
+  body: string;
+}
 
 export interface LandingContent {
   nav: { how: string; features: string; faq: string; download: string; cta: string };
@@ -68,6 +73,7 @@ export interface LandingContent {
     goalName: string;
   };
   feat: { eyebrow: string; title: string };
+  screens: { eyebrow: string; title: string; sub: string; items: Screen[] };
   download: {
     eyebrow: string;
     title: string;
@@ -174,6 +180,38 @@ export const CONTENT: Record<Lang, LandingContent> = {
       goalName: 'Bici nueva',
     },
     feat: { eyebrow: 'TODO EN UN LUGAR', title: 'Hecho para padres ocupados' },
+    screens: {
+      eyebrow: 'LA APP DE TUS HIJOS',
+      title: 'Así se ve por dentro',
+      sub: 'Capturas reales de la app que usan tus hijos: su alcancía, tareas, metas, mentor y misiones.',
+      items: [
+        {
+          src: '/screens/home.png',
+          title: 'Su alcancía de un vistazo',
+          body: 'Saldo ahorrado, avance hacia su meta y el reto del día, en su pantalla de inicio.',
+        },
+        {
+          src: '/screens/tareas.png',
+          title: 'Tareas que pagan',
+          body: 'Ven cuánto pueden ganar esta semana y marcan cada tarea como hecha.',
+        },
+        {
+          src: '/screens/metas.png',
+          title: 'Metas de ahorro',
+          body: 'Fijan una meta — una bici nueva — y abonan $1, $5 o $10 cada vez que cobran.',
+        },
+        {
+          src: '/screens/mentor.png',
+          title: 'Cochinita Zen, su mentor',
+          body: 'Un coach IA en su teléfono, gratis y privado, que responde sus dudas de dinero.',
+        },
+        {
+          src: '/screens/misiones.png',
+          title: 'Misiones de finanzas',
+          body: 'Lecciones cortas con XP: aprende a ahorrar, pon una meta, resiste una tentación.',
+        },
+      ],
+    },
     download: {
       eyebrow: 'APP PARA HIJOS · ANDROID',
       title: 'Descarga la app en Android',
@@ -373,6 +411,38 @@ export const CONTENT: Record<Lang, LandingContent> = {
       goalName: 'New bike',
     },
     feat: { eyebrow: 'ALL IN ONE PLACE', title: 'Built for busy parents' },
+    screens: {
+      eyebrow: 'THE KIDS APP',
+      title: 'A look inside',
+      sub: 'Real screenshots of the app your kids use: piggy bank, tasks, goals, mentor, and quests.',
+      items: [
+        {
+          src: '/screens/home.png',
+          title: 'Their piggy bank at a glance',
+          body: 'Saved balance, goal progress, and the challenge of the day, right on their home screen.',
+        },
+        {
+          src: '/screens/tareas.png',
+          title: 'Tasks that pay',
+          body: 'They see what they can earn this week and mark each task as done.',
+        },
+        {
+          src: '/screens/metas.png',
+          title: 'Savings goals',
+          body: 'They set a goal — a new bike — and add $1, $5, or $10 every time they get paid.',
+        },
+        {
+          src: '/screens/mentor.png',
+          title: 'Zen Piggy, their mentor',
+          body: 'An on-device AI coach, free and private, that answers their money questions.',
+        },
+        {
+          src: '/screens/misiones.png',
+          title: 'Finance quests',
+          body: 'Bite-size lessons with XP: learn to save, set a goal, resist a temptation.',
+        },
+      ],
+    },
     download: {
       eyebrow: 'KIDS APP · ANDROID',
       title: 'Download the app on Android',

@@ -366,6 +366,39 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* ============ SCREENSHOTS ============ */}
+      <section id="screens" className="mx-auto max-w-[1180px] px-[26px] py-[clamp(56px,7vw,92px)]">
+        <div className="mx-auto mb-12 max-w-[600px] text-center">
+          <div className="mb-[14px] text-xs font-extrabold tracking-[0.8px] text-accent">
+            {c.screens.eyebrow}
+          </div>
+          <h2 className="m-0 text-[clamp(30px,3.6vw,44px)] font-extrabold leading-[1.08] tracking-[-1px]">
+            {c.screens.title}
+          </h2>
+          <p className="mt-4 text-[17px] leading-[1.55] text-navy/70">{c.screens.sub}</p>
+        </div>
+        <div className="flex snap-x snap-mandatory gap-[22px] overflow-x-auto pb-4 lg:justify-center">
+          {c.screens.items.map((s) => (
+            <figure key={s.src} className="m-0 w-[208px] flex-none snap-center">
+              <div className="rounded-[34px] bg-[#0b1320] p-[7px] shadow-[0_24px_48px_rgba(11,19,32,0.25)]">
+                <img
+                  src={s.src}
+                  alt={s.title}
+                  width={640}
+                  height={1390}
+                  loading="lazy"
+                  className="block w-full rounded-[28px]"
+                />
+              </div>
+              <figcaption className="mt-4 px-1">
+                <div className="text-[16px] font-extrabold leading-tight">{s.title}</div>
+                <p className="m-0 mt-[6px] text-[13.5px] leading-[1.55] text-navy/70">{s.body}</p>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+
       {/* ============ DOWNLOAD (Android) ============ */}
       <section id="download" className="bg-teal/[0.18]">
         <div className="mx-auto max-w-[920px] px-[26px] py-[clamp(56px,7vw,92px)] text-center">
