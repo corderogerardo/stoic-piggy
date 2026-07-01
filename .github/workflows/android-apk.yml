@@ -1,0 +1,79 @@
+name: Android APK → GitHub Release
+
+# Builds the kids' Android app on EAS and publishes the APK as a stable, public,
+# sideloadable download at a URL that never changes:
+#
+#   https://github.com/corderogerardo/stoic-piggy/releases/download/android-latest/stoic-piggy.apk
+#
+# The repo is public, so the release asset is anonymously downloadable — free,
+# no payment method, no R2. A fixed `android-latest` tag + --clobber means the
+# URL is permanent, so the landing's ANDROID_APK_URL variable is set once.
+#
+# Run it manually from the Actions tab. Public repos get unlimited free Actions
+# minutes, so the (~10-30 min) --wait for the EAS build costs nothing.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write # create/update the release and upload the asset
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build & publish APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # The `preview` profile is distribution:internal → emits an APK.
+      # (The `production` profile defaults to distribution:store → an AAB, which
+      # cannot be sideloaded, so it must NOT be used here.)
+      # --wait blocks until the build finishes; --json prints the build record.
+      - name: Build APK on EAS
+        id: build
+        working-directory: apps/stoicpiggy
+        run: |
+          eas build --platform android --profile preview --non-interactive --wait --json > build.json
+          URL=$(jq -r '.[0].artifacts.applicationArchiveUrl // .[0].artifacts.buildUrl // empty' build.json)
+          if [ -z "$URL" ]; then
+            echo "::error::Could not find the APK artifact URL in the EAS build output"
+            cat build.json
+            exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Download APK
+        working-directory: apps/stoicpiggy
+        run: curl -fSL "${{ steps.build.outputs.url }}" -o stoic-piggy.apk
+
+      - name: Publish to the android-latest release
+        working-directory: apps/stoicpiggy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view android-latest >/dev/null 2>&1 \
+            || gh release create android-latest \
+                 --title "Android APK (latest)" \
+                 --notes "Rolling build of the Stoic Piggy kids' app for Android. Sideload only — install via the landing page."
+          gh release upload android-latest stoic-piggy.apk --clobber
