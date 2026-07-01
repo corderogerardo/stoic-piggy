@@ -32,7 +32,7 @@ export interface StepText {
 }
 
 export interface LandingContent {
-  nav: { how: string; features: string; faq: string; cta: string };
+  nav: { how: string; features: string; faq: string; download: string; cta: string };
   hero: {
     eyebrow: string;
     title1: string;
@@ -68,6 +68,14 @@ export interface LandingContent {
     goalName: string;
   };
   feat: { eyebrow: string; title: string };
+  download: {
+    eyebrow: string;
+    title: string;
+    sub: string;
+    cta: string;
+    ctaSoon: string;
+    note: string;
+  };
   features: Feature[];
   stoic: { eyebrow: string; quote: string; author: string; body: string };
   testi: { eyebrow: string; title: string; items: Testimonial[] };
@@ -85,7 +93,13 @@ export interface LandingContent {
 
 export const CONTENT: Record<Lang, LandingContent> = {
   es: {
-    nav: { how: 'Cómo funciona', features: 'Funciones', faq: 'Preguntas', cta: 'Empezar gratis' },
+    nav: {
+      how: 'Cómo funciona',
+      features: 'Funciones',
+      faq: 'Preguntas',
+      download: 'Descargar',
+      cta: 'Empezar gratis',
+    },
     hero: {
       eyebrow: 'PARA PADRES QUE CRÍAN HIJOS LISTOS CON EL DINERO',
       title1: 'Tareas que enseñan.',
@@ -160,6 +174,14 @@ export const CONTENT: Record<Lang, LandingContent> = {
       goalName: 'Bici nueva',
     },
     feat: { eyebrow: 'TODO EN UN LUGAR', title: 'Hecho para padres ocupados' },
+    download: {
+      eyebrow: 'APP PARA HIJOS · ANDROID',
+      title: 'Descarga la app en Android',
+      sub: 'La app de tus hijos, directa a su teléfono Android. Descarga el archivo, ábrelo y permite la instalación. Sin tienda, sin costo.',
+      cta: 'Descargar APK',
+      ctaSoon: 'Disponible pronto',
+      note: 'Android 8 o superior. Al instalar fuera de Play Store, tu teléfono pedirá permiso una vez. iOS: próximamente.',
+    },
     features: [
       {
         icon: 'list-ul',
@@ -270,7 +292,13 @@ export const CONTENT: Record<Lang, LandingContent> = {
     },
   },
   en: {
-    nav: { how: 'How it works', features: 'Features', faq: 'FAQ', cta: 'Start free' },
+    nav: {
+      how: 'How it works',
+      features: 'Features',
+      faq: 'FAQ',
+      download: 'Download',
+      cta: 'Start free',
+    },
     hero: {
       eyebrow: 'FOR PARENTS RAISING MONEY-SMART KIDS',
       title1: 'Chores that teach.',
@@ -345,6 +373,14 @@ export const CONTENT: Record<Lang, LandingContent> = {
       goalName: 'New bike',
     },
     feat: { eyebrow: 'ALL IN ONE PLACE', title: 'Built for busy parents' },
+    download: {
+      eyebrow: 'KIDS APP · ANDROID',
+      title: 'Download the app on Android',
+      sub: "Your kids' app, straight to their Android phone. Download the file, open it, and allow the install. No store, no cost.",
+      cta: 'Download APK',
+      ctaSoon: 'Coming soon',
+      note: 'Android 8 or newer. Installing outside the Play Store prompts your phone for permission once. iOS: coming soon.',
+    },
     features: [
       {
         icon: 'list-ul',
